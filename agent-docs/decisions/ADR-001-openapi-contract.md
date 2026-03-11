@@ -61,7 +61,7 @@ backend (e.g. in CI). It must be regenerated after any API change.
 {
   "scripts": {
     "generate-api": "openapi-typescript http://localhost:8000/openapi.json -o src/generated/api.d.ts",
-    "generate-api:file": "openapi-typescript ../../api-contract/openapi.json -o src/generated/api.d.ts"
+    "generate-api:file": "openapi-typescript ../api-contract/openapi.json -o src/generated/api.d.ts"
   }
 }
 ```

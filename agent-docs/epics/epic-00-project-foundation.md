@@ -46,7 +46,7 @@ None – this is the starting epic.
   ```json
   {
     "generate-api": "openapi-typescript http://localhost:8000/openapi.json -o src/generated/api.d.ts",
-    "generate-api:file": "openapi-typescript ../../api-contract/openapi.json -o src/generated/api.d.ts"
+    "generate-api:file": "openapi-typescript ../api-contract/openapi.json -o src/generated/api.d.ts"
   }
   ```
 - `frontend/src/generated/` directory created (empty `.gitkeep` placeholder until
