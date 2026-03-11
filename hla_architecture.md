@@ -120,11 +120,9 @@ Die Auswahl erfolgt ausschließlich über die Konfiguration. Kein Modus kennt de
 
 ### 2.5 Structured Output Strategie (MVP)
 
-Das LLM wird im Systemprompt instruiert, ausschließlich im definierten JSON-Format zu antworten (Output-Kontrakt, SDD 6.5.2). Es gibt keine technische Erzwingung auf API-Ebene.
-
-Der `OutputValidator` prüft jeden LLM-Output gegen den Kontrakt. Bei Verletzung wird der Turn abgebrochen, der Systemzustand bleibt auf dem letzten validen Stand, und der Nutzer erhält eine Fehlermeldung mit der Option, den Turn zu wiederholen (SDD 6.5.2, FR-E-04).
-
-Das ist für den MVP bewusst akzeptiert: eine Output-Kontrakt-Verletzung ist für den Nutzer sichtbar und behebbar. Kein silenter Fehler.
+Das LLM wird über Tool-Use zur strukturierten Ausgabe gezwungen. Jeder Modus definiert ein Tool apply_patches mit dem RFC 6902 Patch-Array als Input-Schema. Der Aufruf wird via tool_choice: {"type": "tool", "name": "apply_patches"} erzwungen.
+Der OutputValidator prüft das zurückgegebene Tool-Input-Dict gegen das Patch-Schema. Da das LLM kein Freitext-JSON mehr produziert, entfällt das Parsing. Kontrakt-Verletzungen reduzieren sich auf semantische Fehler (ungültige Pfade, falsche Typen) — diese werden weiterhin vom Executor abgefangen.
+Der nutzeraeusserung-Text (Chat-Antwort an den Nutzer) kommt als separates text-Block vor dem Tool-Use-Block — das Anthropic SDK liefert beides im content-Array.
 
 ---
 
@@ -374,6 +372,15 @@ class LLMClient(ABC):
         messages: list[Message],
         **kwargs
     ) -> AsyncIterator[str]: ...
+
+    async def complete(
+        self,
+        system: str,
+        messages: list[Message],
+        tools: list[dict] | None = None,
+        tool_choice: dict | None = None,
+        **kwargs
+    ) -> str: ...
 ```
 
 Implementierungen: `AnthropicClient`, `OllamaClient`. Auswahl über Konfiguration.
