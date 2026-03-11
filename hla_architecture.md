@@ -1,7 +1,9 @@
 # HIGH-LEVEL ARCHITECTURE — Digitalisierungsfabrik
-**Version:** 0.1
+**Version:** 0.2
 **Status:** Entwurf
 **Bezug:** SDD `digitalisierungsfabrik_systemdefinition.md`
+**Changelog:**
+- v0.2: Chainlit ersetzt durch FastAPI + React; SQLite statt JSON-Files; Dict-Keyed Artefakt-Slots; Structured-Output-Strategie (Option A) definiert
 
 ---
 
@@ -40,65 +42,89 @@ Die Entscheidungen in diesem Dokument sind **bindend für die Implementierung**,
 
 | Schicht | Komponente | Version |
 |---|---|---|
-| Anwendungs-Framework | **Chainlit** | ≥ 1.3 |
+| Backend-Framework | **FastAPI** | ≥ 0.111 |
 | Backend-Sprache | **Python** | ≥ 3.11 |
 | Datenmodelle | **Pydantic v2** | ≥ 2.6 |
 | LLM-Client (Cloud) | **anthropic SDK** | ≥ 0.25 |
 | JSON Patch | **jsonpatch** | ≥ 1.33 |
 | Konfiguration | **pydantic-settings** | ≥ 2.2 |
 | Logging | **structlog** | ≥ 24.1 |
-| Persistenz | JSON-Dateien mit atomarem Write | — |
+| Persistenz | **SQLite** (stdlib `sqlite3`) | — |
+| Frontend-Framework | **React** | ≥ 18 |
+| Frontend-Build | **Vite** | ≥ 5 |
+| Frontend-Sprache | **TypeScript** | ≥ 5 |
 
-### 2.2 Begründungen
+### 2.2 Frontend-Backend-Trennung
 
-#### Chainlit (Anwendungs-Framework)
+Das System besteht aus zwei eigenständigen Prozessen:
 
-Chainlit ist ein Python-natives Framework, das exakt die im SDD beschriebene UI-Struktur abdeckt:
+```
+Backend  (Python / FastAPI)     →  Port 8000
+Frontend (React / Vite SPA)     →  Port 5173 (dev) / statische Files (prod)
+```
 
-| SDD-Anforderung | Chainlit-Lösung |
+Die Kommunikation erfolgt über zwei Kanäle:
+
+| Kanal | Verwendung |
 |---|---|
-| Chat-Bereich (links) | Nativer Chat-Stream |
-| Artefakt-Bereich (rechts) | `cl.CustomElement` / `cl.Text` als Side Panel |
-| Datei-Upload (Dokumente, Bilder, Logs) | Nativer Upload-Support |
-| Panik-Button | `cl.Action` |
-| Download-Button | `cl.Action` + `cl.File` |
-| Debug-Bereich | `cl.Step` / expandierbares Element |
-| Streaming | Nativ (`cl.Message.stream_token`) |
+| **REST** (`/api/...`) | Projektverwaltung, Artefakt-Download, Stateless-Operationen |
+| **WebSocket** (`/ws/session/{project_id}`) | Turn-Verarbeitung, Streaming, Live-Updates |
 
-Chainlit läuft als Python-Prozess und enthält die UI-Logik. Die Systemlogik (Orchestrator, Modi, Artefakte) lebt in separaten Python-Modulen. Die SDD-Anforderung "Frontend-Backend-Trennung" ist auf **Modul-Ebene** eingehalten — die Schnittstelle zwischen UI und Orchestrator ist sauber definiert und kann ohne Aufwand in eine Prozess-Trennung (FastAPI + Chainlit als Client) überführt werden.
+Das Frontend hat keinen direkten Zugriff auf LLMs, Datenbank oder Systemlogik. Das Backend hat keine UI-Logik. Der Schnitt ist prozessseitig, nicht nur konventionell. Dies erfüllt die SDD-Anforderung "Frontend-Backend-Trennung" direkt (SDD 8.2).
 
-> **Prototyp-Entscheidung:** Monolith (ein Python-Prozess). Die modulare Struktur erlaubt die spätere Extraktion des Backends ohne Umbau der Geschäftslogik.
+### 2.3 Begründungen
+
+#### FastAPI (Backend)
+
+FastAPI ist der Standard für Python-REST-APIs mit async-Support. Relevante Eigenschaften:
+- Native WebSocket-Unterstützung (für Streaming-Antworten und Live-Artefakt-Updates)
+- Pydantic-Integration (Request/Response-Modelle sind dieselben Pydantic-Klassen wie im Orchestrator)
+- Deterministisch testbar — jeder Endpunkt ist eine pure Funktion
+- Kein UI-Coupling, keine Session-Magie
+
+#### React + Vite (Frontend)
+
+React gibt vollständige Layout-Kontrolle für das Split-Pane-Design des SDD (Chat links, Artefakt-Panel rechts, Debug-Panel). Die Chat-UI-Komponente ist in React ~150 Zeilen Code oder kann aus einer Bibliothek bezogen werden (`@chatscope/chat-ui-kit-react`). Streaming wird nativ via WebSocket-Events gehandhabt.
+
+Vite liefert schnelle Hot-Module-Replacement-Entwicklungszyklen. Der Build-Output sind statische HTML/CSS/JS-Files, die vom FastAPI-Backend mitausgeliefert oder separat deployed werden können.
+
+#### SQLite (Persistenz)
+
+SQLite ist in Python's Stdlib (`sqlite3`), braucht keine externe Abhängigkeit und keine Serverinstallation. Entscheidend: SQLite-Transaktionen sind ACID — ein `BEGIN / COMMIT` über mehrere Tabellen-Writes ist atomar. Ein Crash mid-Transaction hinterlässt den Zustand vor dem `BEGIN`. Das erfüllt FR-E-01 direkt.
+
+Die Alternative (JSON-Dateien) erlaubt keine atomaren Multi-File-Writes. Ein Projektzustand umfasst mehrere Dateien — `os.replace()` ist per-Datei atomar, aber nicht cross-file. JSON-Files scheiden daher aus.
 
 #### Pydantic v2 (Datenmodelle)
 
-Das SDD definiert präzise Slot-Schemas mit Pflichtfeldern, Enums und Konsistenzregeln. Pydantic v2 ist die natürliche Implementierung dieser Schemas:
-- Exploration-Slot, Strukturschritt, Algorithmusabschnitt → direkte Pydantic-Modelle
-- Enum-Werte (`leer`/`teilweise`/`vollständig`/`nutzervalidiert`) → `StrEnum`
-- Das Template-Schema (SDD 5.8) wird aus den Pydantic-Modellen **abgeleitet**, nicht separat gepflegt
+Pydantic v2 ist die natürliche Implementierung der im SDD definierten Slot-Schemas mit Pflichtfeldern, Enums und Konsistenzregeln. Die Serialisierung zu JSON (für DB-Speicherung) und das Schema für die LLM-Kontextinjektion werden direkt aus den Modellen abgeleitet.
 
 #### jsonpatch (RFC 6902)
 
-Das SDD schreibt RFC 6902 JSON Patch für alle Artefakt-Schreiboperationen vor (SDD 5.7). Die Bibliothek `jsonpatch` ist die Standard-Python-Implementierung. Sie wird vom Executor intern verwendet — kein anderer Code verwendet sie direkt.
-
-#### JSON-Dateien (Persistenz)
-
-Begründung für OP-10 (s. Abschnitt 7): JSON-Dateien mit atomarem Write-Protokoll erfüllen alle Persistenz-Constraints des SDD ohne Datenbank-Overhead. Für den Prototyp ist das die einfachste, zuverlässigste Lösung.
+Das SDD schreibt RFC 6902 JSON Patch für alle Artefakt-Schreiboperationen vor (SDD 5.7). Die Bibliothek `jsonpatch` ist die Standard-Python-Implementierung und wird ausschließlich intern im Executor verwendet.
 
 #### structlog (Logging)
 
 Das SDD fordert vollständiges Logging aller LLM-Aufrufe, Orchestrator-Entscheidungen und Schreiboperationen (SDD 8.1.3). `structlog` ermöglicht strukturiertes JSON-Logging, das direkt als Analyse-Input genutzt werden kann.
 
-### 2.3 LLM-Flexibilität
+### 2.4 LLM-Flexibilität
 
-Das SDD fordert, dass das verwendete Modell ohne Code-Änderung austauschbar ist (lokal ↔ Cloud). Dies wird durch ein abstraktes `LLMClient`-Interface erreicht:
+Das SDD fordert, dass das verwendete Modell ohne Code-Änderung austauschbar ist (lokal ↔ Cloud, SDD 8.1.1). Dies wird durch ein abstraktes `LLMClient`-Interface erreicht:
 
 ```
 LLMClient (abstrakt)
 ├── AnthropicClient    → Anthropic API (Claude)
-└── OllamaClient       → Ollama (lokale Modelle, z.B. Llama, Mistral)
+└── OllamaClient       → Ollama (lokale Modelle)
 ```
 
-Die Auswahl erfolgt über die Konfiguration (`.env` / `config.yaml`). Kein Modus kennt den konkreten Client — alle arbeiten gegen das Interface.
+Die Auswahl erfolgt ausschließlich über die Konfiguration. Kein Modus kennt den konkreten Client.
+
+### 2.5 Structured Output Strategie (MVP)
+
+Das LLM wird im Systemprompt instruiert, ausschließlich im definierten JSON-Format zu antworten (Output-Kontrakt, SDD 6.5.2). Es gibt keine technische Erzwingung auf API-Ebene.
+
+Der `OutputValidator` prüft jeden LLM-Output gegen den Kontrakt. Bei Verletzung wird der Turn abgebrochen, der Systemzustand bleibt auf dem letzten validen Stand, und der Nutzer erhält eine Fehlermeldung mit der Option, den Turn zu wiederholen (SDD 6.5.2, FR-E-04).
+
+Das ist für den MVP bewusst akzeptiert: eine Output-Kontrakt-Verletzung ist für den Nutzer sichtbar und behebbar. Kein silenter Fehler.
 
 ---
 
@@ -108,182 +134,318 @@ Das System besteht aus acht Komponenten-Gruppen:
 
 | Komponente | Verantwortlichkeit | SDD-Referenz |
 |---|---|---|
-| **UI-Schicht (Chainlit)** | Nutzerinteraktion, Darstellung, Events | Abschnitt 2 |
+| **Frontend (React SPA)** | Nutzerinteraktion, Darstellung, Events | Abschnitt 2 |
+| **Backend-API (FastAPI)** | REST-Endpunkte, WebSocket-Session | SDD 8.2 |
 | **Orchestrator** | Zentraler Steuerknoten, Zyklus-Koordination | Abschnitt 6.2, 6.3 |
 | **Executor** (intern im Orchestrator) | RFC 6902 Patch-Validierung und -Ausführung | Abschnitt 5.7 |
 | **Working Memory** | Operativer Zustandsspeicher | Abschnitt 6.4 |
 | **Kognitive Modi** | LLM-Aufrufe, Modus-spezifische Logik | Abschnitt 6.6 |
 | **Artefakt-Store** | Artefakt-Verwaltung, Versionierung, Completeness | Abschnitt 5.1–5.6 |
-| **Persistenz-Schicht** | Projekt-Speicherung und -Wiederherstellung | Abschnitt 7.2, 7.3 |
+| **Persistenz-Schicht (SQLite)** | Projekt-Speicherung und -Wiederherstellung | Abschnitt 7.2, 7.3 |
 | **LLM-Client** | Abstrakte LLM-Schnittstelle | Abschnitt 8.1.1 |
 
-### 3.1 Orchestrator
+### 3.1 Frontend (React SPA)
+
+Das Frontend ist eine React-Single-Page-Application. Es kommuniziert ausschließlich über die definierten API-Endpunkte mit dem Backend.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────────────┐
+│  Phasen-Header: [Phase] [Fortschritt] [Buttons]      │
+├─────────────────────────┬───────────────────────────┤
+│  Chat-Pane              │  Artefakt-Pane             │
+│  (Nachrichten-Stream,   │  (3 Tabs: Exploration /    │
+│   Eingabe, Datei-Upload)│   Struktur / Algorithmus,  │
+│                         │   live-updatend)            │
+├─────────────────────────┴───────────────────────────┤
+│  Debug-Panel (collapsible)                           │
+└─────────────────────────────────────────────────────┘
+```
+
+**Komponenten:**
+- `ChatPane` — Nachrichten-Liste, Streaming-Anzeige, Text-/Datei-Eingabe
+- `ArtifactPane` — Tab-Ansicht der drei Artefakte, Invalidierungsmarkierungen
+- `DebugPanel` — Working Memory, aktiver Modus, Flags, letzte Schreiboperation
+- `PhaseHeader` — aktive Phase, Slot-Zähler, Panik-Button, Download-Button
+
+**WebSocket-Events (Backend → Frontend):**
+
+| Event | Payload | Auslöser |
+|---|---|---|
+| `chat_token` | `{token: str}` | LLM-Streaming-Token |
+| `chat_done` | `{message: str}` | Turn abgeschlossen |
+| `artifact_update` | `{typ, artefakt}` | Nach jeder Schreiboperation |
+| `progress_update` | `{phasenstatus, befuellte_slots, bekannte_slots}` | Nach jeder Schreiboperation |
+| `debug_update` | `{working_memory, flags}` | Nach jedem Zyklus |
+| `error` | `{message, recoverable}` | LLM-Fehler, Kontrakt-Verletzung |
+
+### 3.2 Backend-API (FastAPI)
+
+**REST-Endpunkte:**
+
+| Method | Path | Beschreibung |
+|---|---|---|
+| `GET` | `/api/projects` | Projektliste |
+| `POST` | `/api/projects` | Neues Projekt anlegen |
+| `GET` | `/api/projects/{id}` | Projektdetails laden |
+| `GET` | `/api/projects/{id}/artifacts` | Alle drei Artefakte (aktuell) |
+| `GET` | `/api/projects/{id}/artifacts/{typ}/versions` | Versionshistorie |
+| `POST` | `/api/projects/{id}/artifacts/{typ}/restore` | Version wiederherstellen |
+| `GET` | `/api/projects/{id}/download` | Download (JSON + Markdown) |
+| `POST` | `/api/projects/{id}/import` | Artefakt importieren |
+| `POST` | `/api/projects/{id}/complete` | Projekt abschließen |
+
+**WebSocket:**
+
+| Path | Beschreibung |
+|---|---|
+| `/ws/session/{project_id}` | Bidirektionaler Kanal für Turn-Verarbeitung |
+
+WebSocket-Messages vom Frontend:
+
+| Event | Payload |
+|---|---|
+| `turn` | `{text: str, file?: base64}` |
+| `panic` | `{}` |
+
+### 3.3 Orchestrator
 
 **Typ:** Reiner Python-Code, kein LLM-Aufruf.
 
-**Verantwortlichkeiten:**
-- Empfang des Nutzer-Inputs (von der UI-Schicht)
+**Verantwortlichkeiten** (gemäß SDD 6.3 — 11-Schritt-Zyklus):
+- Empfang des Nutzer-Inputs
 - Auswertung von Steuerungsflags aus dem vorherigen Turn
-- Entscheidung über den aktiven Modus (Moduswechsel-Logik gemäß SDD 6.3)
-- Context-Assembly für den LLM-Aufruf (via ContextAssembler)
+- Entscheidung über den aktiven Modus
+- Context-Assembly für den LLM-Aufruf
 - Aufruf des aktiven Modus
-- Validierung des LLM-Outputs gegen den Output-Kontrakt (via OutputValidator)
+- Validierung des LLM-Outputs (OutputValidator)
 - Beauftragung des Executors mit Schreiboperationen
 - Auslösung von Invalidierungen
 - Aktualisierung von Working Memory und Completeness-State
 - Persistierung nach jedem abgeschlossenen Zyklus
 
-**Schnittstellen:**
-- Eingang: Nutzer-Input (Text, Datei, Button-Event)
-- Ausgang: Nutzer-Antwort (Text), aktualisierte Artefakte, aktualisierter UI-Zustand
+**Schnittstelle:**
+```python
+async def process_turn(project_id: str, input: TurnInput) -> TurnOutput
+```
 
-### 3.2 Executor (intern)
+Der Orchestrator kennt weder FastAPI noch WebSocket-Details. Die Backend-API-Schicht ist verantwortlich für das Mapping zwischen WebSocket-Events und `process_turn`-Aufrufen, sowie für das Streamen der Rückgabe an den Client.
 
-**Typ:** Internes Modul des Orchestrators. Nach außen nicht sichtbar.
+### 3.4 Executor (intern)
 
-**Verantwortlichkeiten (gemäß SDD 5.7 Executor-Pipeline):**
-1. Formale Validierung des RFC 6902 Patch-Objekts
-2. Prüfung aller Pfade gegen das Template-Schema
-3. Atomarer Snapshot vor Änderung
-4. Patch-Anwendung via `jsonpatch`
-5. Preservation-Check (nur adressierte Pfade geändert)
-6. Versionserzeugung im Artefakt-Store
+Internes Modul des Orchestrators. Nach außen nicht sichtbar (SDD 5.7).
 
-Bei Fehler in einem beliebigen Schritt: Restore auf Snapshot. Kein partieller Zustand.
+**Pipeline (sequenziell, bei Fehler → Rollback auf Snapshot):**
 
-### 3.3 Kognitive Modi
+| Schritt | Aktion |
+|---|---|
+| 1 | Formale RFC 6902 Validierung |
+| 2 | Pfad-Prüfung gegen Template-Schema |
+| 3 | Atomarer Snapshot (aktueller Artefaktzustand) |
+| 4 | Patch-Anwendung via `jsonpatch` |
+| 5 | Preservation-Check (nur adressierte Pfade geändert) |
+| 6 | Invalidierungs-Check (Strukturschritt geändert → alle `algorithmus_ref` → `invalidiert`) |
+| 7 | Versionserzeugung im Artefakt-Store |
 
-Jeder Modus ist eine Python-Klasse, die von einer gemeinsamen Basisklasse erbt.
+### 3.5 Kognitive Modi
 
-**Gemeinsame Basis:**
-- `call(context: ModeContext) → ModeOutput`
-- Gibt immer `ModeOutput` zurück: `(nutzeraeusserung, patches, phasenstatus, flags)`
-- Schreibt nicht direkt ins Working Memory oder in Artefakte
-- Enthält den Modus-spezifischen Systemprompt
+Jeder Modus erbt von einer gemeinsamen Basisklasse.
 
-**Modi:**
-| Modus | Klasse | Artefakt-Schreibrechte |
+```python
+class BaseMode:
+    async def call(self, context: ModeContext) -> ModeOutput: ...
+
+@dataclass
+class ModeOutput:
+    nutzeraeusserung: str
+    patches: list[dict]          # RFC 6902, kann leer sein
+    phasenstatus: Phasenstatus   # in_progress / nearing_completion / phase_complete
+    flags: list[Flag]            # s. SDD 6.4.1
+```
+
+| Modus | Klasse | Artefakt (Patches auf) |
 |---|---|---|
-| Exploration | `ExplorationMode` | Explorationsartefakt-Slots |
-| Strukturierung | `StructuringMode` | Strukturartefakt-Slots |
-| Spezifikation | `SpecificationMode` | Algorithmusartefakt-Slots |
-| Validierung | `ValidationMode` | keine (gibt Validierungsbericht aus) |
-| Moderator | `Moderator` | keine |
+| Exploration | `ExplorationMode` | Explorationsartefakt |
+| Strukturierung | `StructuringMode` | Strukturartefakt |
+| Spezifikation | `SpecificationMode` | Algorithmusartefakt |
+| Validierung | `ValidationMode` | keines (gibt Validierungsbericht aus) |
+| Moderator | `Moderator` | keines |
 
-> **Wichtig:** Schreibrechte sind konzeptuell — kein Modus kann direkt schreiben. Der Orchestrator/Executor führt alle Schreiboperationen aus. Die Tabelle zeigt, auf welche Artefakte ein Modus *Patches vorschlagen darf*.
+Kein Modus schreibt direkt in Artefakte oder Working Memory.
 
-### 3.4 Artefakt-Store
+### 3.6 Artefakt-Store
+
+**Artefakt-Slot-Modell: Dict-Keyed (nicht Listen)**
+
+Alle Collections innerhalb der Artefakte sind als ID-keyede Dicts implementiert:
+
+```python
+class Strukturartefakt(BaseModel):
+    schritte: dict[str, Strukturschritt]   # key = schritt_id
+
+class Algorithmusartefakt(BaseModel):
+    abschnitte: dict[str, Algorithmusabschnitt]  # key = abschnitt_id
+```
+
+Dies ist eine fundamentale Designentscheidung: RFC 6902 Patch-Pfade auf Dict-Elemente sind stabil (`/schritte/step_003/beschreibung`). Pfade auf Listen-Elemente wären numerische Indizes (`/schritte/2`), die bei Einfüge- und Löschoperationen instabil werden und silente Schreibfehler auf falsche Slots ermöglichen. Die Reihenfolge der Schritte wird durch das `reihenfolge`-Feld im Strukturschritt codiert, nicht durch die Collection-Reihenfolge.
 
 **Verantwortlichkeiten:**
-- Verwaltung der drei Artefakte (Exploration, Struktur, Algorithmus) in ihrer aktuellen Version
-- Versionierung: jede Schreiboperation erzeugt eine neue Version
-- Completeness-Berechnung: aggregierte Map aller Slot-Status
-- Markdown-Rendering: JSON-Artefakt → menschenlesbare Darstellung
+- Verwaltung aller drei Artefakte in ihrer aktuellen Version
+- Versionierung: jede Schreiboperation → neue Version in SQLite
+- Completeness-Berechnung: aggregierte Map `slot_id → Status`
+- Markdown-Rendering: JSON-Artefakt → menschenlesbare Darstellung (für Download)
 
-**Wichtig:** Der Completeness-State liegt primär im Artefakt selbst (`completeness_status`-Feld pro Slot). Die Working-Memory-Map ist abgeleitet und wird nach jeder Schreiboperation neu berechnet.
+### 3.7 Persistenz-Schicht (SQLite)
 
-### 3.5 Persistenz-Schicht
+**Schema (vereinfacht):**
 
-**Modell:** Ein Projekt = ein Verzeichnis auf dem Dateisystem.
+```sql
+CREATE TABLE projects (
+    projekt_id   TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    beschreibung TEXT,
+    erstellt_am  TEXT NOT NULL,
+    zuletzt_geaendert TEXT NOT NULL,
+    aktive_phase TEXT NOT NULL,
+    aktiver_modus TEXT NOT NULL,
+    projektstatus TEXT NOT NULL
+);
 
-**Struktur pro Projekt:**
+CREATE TABLE artifact_versions (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    projekt_id   TEXT NOT NULL,
+    typ          TEXT NOT NULL,   -- 'exploration' | 'structure' | 'algorithm'
+    version_id   INTEGER NOT NULL,
+    timestamp    TEXT NOT NULL,
+    created_by   TEXT NOT NULL,
+    slot_id      TEXT,
+    change_summary TEXT,
+    inhalt       TEXT NOT NULL,   -- vollständiges Artefakt als JSON
+    FOREIGN KEY (projekt_id) REFERENCES projects(projekt_id)
+);
+
+CREATE TABLE working_memory (
+    projekt_id   TEXT PRIMARY KEY,
+    inhalt       TEXT NOT NULL    -- JSON
+);
+
+CREATE TABLE dialog_history (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    projekt_id   TEXT NOT NULL,
+    turn_id      INTEGER NOT NULL,
+    role         TEXT NOT NULL,   -- 'user' | 'assistant'
+    inhalt       TEXT NOT NULL,
+    timestamp    TEXT NOT NULL
+);
+
+CREATE TABLE validation_reports (
+    projekt_id   TEXT PRIMARY KEY,
+    inhalt       TEXT NOT NULL,   -- JSON
+    timestamp    TEXT NOT NULL
+);
 ```
-data/projects/{projekt_id}/
-  metadata.json           ← Projektmetadaten (SDD 7.2.1)
-  working_memory.json     ← Letzter Working-Memory-Zustand
-  dialog_history.jsonl    ← Vollständige Dialoghistorie (append-only)
-  validation_report.json  ← Letzter Validierungsbericht
-  artifacts/
-    exploration/
-      v0000.json          ← Leerstand (initialisiert bei Projektanlage)
-      v0001.json
-      ...
-    structure/
-      v0000.json
-      ...
-    algorithm/
-      v0000.json
-      ...
-  logs/
-    llm_calls.jsonl       ← Vollständige LLM I/O-Logs (SDD 8.1.3, OP-14)
-    orchestrator.jsonl    ← Orchestrator-Entscheidungen, Moduswechsel
+
+**Atomarität:** Jeder Projektzustand-Write läuft in einer einzigen SQLite-Transaktion:
+
+```python
+with db.transaction():
+    db.update_project_metadata(...)
+    db.insert_artifact_version(...)
+    db.update_working_memory(...)
+    db.append_dialog_history(...)
 ```
 
-**Atomare Schreibvorgänge:**
-Alle Schreiboperationen folgen dem Muster: Schreibe in temporäre Datei → `os.replace()` → atomar. Auf POSIX-Systemen ist `os.replace()` atomar wenn Quelle und Ziel auf demselben Dateisystem liegen.
+Ein Crash mid-Transaction hinterlässt exakt den Zustand vor dem `BEGIN`. Kein partieller Zustand möglich (FR-E-01).
 
-### 3.6 LLM-Client
+### 3.8 LLM-Client
 
+```python
+class LLMClient(ABC):
+    async def complete(
+        self,
+        system: str,
+        messages: list[Message],
+        **kwargs
+    ) -> str: ...
+
+    async def stream(
+        self,
+        system: str,
+        messages: list[Message],
+        **kwargs
+    ) -> AsyncIterator[str]: ...
 ```
-LLMClient (ABC)
-  └── complete(messages, system_prompt, **kwargs) → LLMResponse
-  └── stream(messages, system_prompt, **kwargs) → AsyncIterator[str]
 
-AnthropicClient(LLMClient)
-  → anthropic.AsyncAnthropic
-
-OllamaClient(LLMClient)
-  → httpx (async REST-Calls an Ollama API)
-```
-
-Der aktive Client wird beim Start über die Konfiguration gewählt. Kein Modus importiert den konkreten Client.
+Implementierungen: `AnthropicClient`, `OllamaClient`. Auswahl über Konfiguration.
 
 ---
 
 ## 4. Komponentendiagramm
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  UI-Schicht (Chainlit)                                               │
-│                                                                      │
-│  ┌──────────────┐  ┌───────────────┐  ┌───────────┐  ┌──────────┐  │
-│  │ Chat-Handler  │  │ Artefakt-Panel │  │ Debug-    │  │ Event-   │  │
-│  │ (Nachrichten, │  │ (3 Artefakte,  │  │ Panel     │  │ Handler  │  │
-│  │  Datei-Upload)│  │  live-update)  │  │           │  │ (Panic,  │  │
-│  └──────┬───────┘  └───────┬───────┘  └─────┬─────┘  │  DL, ..) │  │
-│         │                   │                │         └────┬─────┘  │
-└─────────┼───────────────────┼────────────────┼──────────────┼────────┘
-          │ Nutzer-Input       │ Artefakt-State │ Debug-State  │ Events
-          ▼                   ▲                ▲              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  Orchestrator                                                        │
-│                                                                      │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌────────────────────┐  │
-│  │ ZyklusKoordinator│  │ ContextAssembler  │  │ OutputValidator    │  │
-│  │ (11-Schritt-     │  │ (Kontext für LLM- │  │ (Output-Kontrakt,  │  │
-│  │  Zyklus SDD 6.3) │  │  Aufruf SDD 6.5)  │  │  SDD 6.5.2)        │  │
-│  └────────┬────────┘  └──────────────────┘  └────────────────────┘  │
-│           │                                                           │
-│  ┌────────▼────────────────────────────────────────────────────────┐ │
-│  │ Executor (intern)                                                │ │
-│  │  PatchValidator → Snapshot → PatchApplicator → PreservationCheck│ │
-│  │  → InvalidationEngine → Versioning (SDD 5.7)                    │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
-└──────────┬────────────────────────────────────────────────────────────┘
-           │ mode.call(context)                   ▲ ModeOutput
-           ▼                                      │
 ┌──────────────────────────────────────────────────────────────────────┐
-│  Kognitive Modi                                                       │
+│  FRONTEND (React SPA)                            Port 5173 / static  │
 │                                                                       │
-│  ExplorationMode │ StructuringMode │ SpecificationMode │ Moderator    │
+│  ┌────────────┐  ┌──────────────┐  ┌───────────┐  ┌──────────────┐  │
+│  │  ChatPane   │  │ ArtifactPane │  │ DebugPanel│  │  PhaseHeader │  │
+│  │  (Stream,   │  │ (3 Tabs,     │  │ (WM, Flags│  │  (Phase,     │  │
+│  │   Upload)   │  │  live update)│  │  Ops)     │  │   Slots,     │  │
+│  │             │  │              │  │           │  │   Panic, DL) │  │
+│  └──────┬──────┘  └──────┬───────┘  └─────┬────┘  └──────┬───────┘  │
+└─────────┼────────────────┼────────────────┼───────────────┼──────────┘
+          │ WebSocket /ws/session/{id}       │               │ REST /api
+          │ ←─────────────────────────────────────────────── │
+          ▼                                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│  BACKEND (FastAPI)                                       Port 8000   │
+│                                                                       │
+│  ┌─────────────────────────┐   ┌───────────────────────────────────┐ │
+│  │ WebSocketHandler         │   │ REST Router                       │ │
+│  │ - empfängt turn/panic    │   │ /api/projects, /artifacts, ...    │ │
+│  │ - streamt Events zurück  │   └───────────────────────────────────┘ │
+│  └───────────┬─────────────┘                                         │
+└──────────────┼───────────────────────────────────────────────────────┘
+               │ orchestrator.process_turn(input)
+               ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│  ORCHESTRATOR                                                         │
+│                                                                       │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌────────────────────┐  │
+│  │ ZyklusKoordinator│  │ ContextAssembler  │  │ OutputValidator    │  │
+│  │ (11 Schritte)    │  │ (SDD 6.5)         │  │ (Output-Kontrakt)  │  │
+│  └────────┬─────────┘  └──────────────────┘  └────────────────────┘  │
+│           │                                                            │
+│  ┌────────▼──────────────────────────────────────────────────────┐    │
+│  │ EXECUTOR (intern)                                              │    │
+│  │  Validate → Snapshot → Apply → PreservationCheck →            │    │
+│  │  Invalidation → Versioning          (SDD 5.7)                 │    │
+│  └────────────────────────────────────────────────────────────────┘   │
+└──────────┬─────────────────────────────────────────────────────────────┘
+           │ mode.call(context)
+           ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│  KOGNITIVE MODI                                                       │
+│                                                                       │
+│  ExplorationMode │ StructuringMode │ SpecificationMode │ Moderator   │
 │  ValidationMode                                                       │
 │                                                                       │
-│  Jeder Modus: call(context) → ModeOutput(text, patches, flags)       │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │ LLMClient.complete(...)
-                           ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  LLM-Client                                                           │
-│  AnthropicClient  │  OllamaClient                                     │
-└──────────────────────────────────────────────────────────────────────┘
+│  call(context: ModeContext) → ModeOutput(text, patches, flags)       │
+└──────────────────────────────┬───────────────────────────────────────┘
+                               │ LLMClient.complete(system, messages)
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  LLM-CLIENT                                                          │
+│  AnthropicClient  │  OllamaClient                                    │
+└─────────────────────────────────────────────────────────────────────┘
 
-     Orchestrator liest/schreibt:
-     ┌────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-     │ Working Memory │    │  Artefakt-Store   │    │ Persistenz-      │
-     │ (Laufzeit-     │    │  (3 Artefakte +   │    │ Schicht          │
-     │  Zustand)      │    │   Versionen +     │    │ (JSON-Dateien)   │
-     │                │    │   Completeness)   │    │                  │
-     └────────────────┘    └──────────────────┘    └──────────────────┘
+   Orchestrator liest/schreibt:
+   ┌────────────────┐   ┌──────────────────┐   ┌──────────────────────┐
+   │ Working Memory │   │  Artefakt-Store   │   │  SQLite              │
+   │ (Laufzeit-     │   │  (3 Artefakte,    │   │  (ACID-Transaktionen,│
+   │  Zustand)      │   │   dict-keyed,     │   │   vollständiger      │
+   │                │   │   Versionen,      │   │   Projektzustand)    │
+   │                │   │   Completeness)   │   │                      │
+   └────────────────┘   └──────────────────┘   └──────────────────────┘
 ```
 
 ---
@@ -293,7 +455,10 @@ Der aktive Client wird beim Start über die Konfiguration gewählt. Kein Modus i
 Ein vollständiger Turn, entsprechend SDD Abschnitt 6.3:
 
 ```
-Nutzer-Input (Text / Datei / Button-Event)
+WebSocket-Event 'turn' vom Frontend
+    │
+    ▼
+WebSocketHandler.handle_turn(project_id, input)
     │
     ▼
 [1] Orchestrator.process_turn(input)
@@ -318,42 +483,39 @@ Nutzer-Input (Text / Datei / Button-Event)
     │
     ▼
 [6] modus.call(context)
-    └── LLMClient.complete(messages) → LLM-Antwort
+    └── LLMClient.complete(system, messages) → LLM-Antwort
+        └── Jedes streaming token → WebSocket Event 'chat_token' an Frontend
     │
     ▼
 [7] OutputValidator.validate(llm_output)
     ├── OK → weiter
-    └── Verletzung → Fehlerbehandlung, kein Zustandsänderung,
-                     Nutzer-Meldung, Turn abgebrochen
+    └── Verletzung → WebSocket Event 'error' an Frontend,
+                     Turn abgebrochen, kein Zustandsänderung
     │
     ▼
-[8] Executor.apply_patches(patches)  [wenn artefakt_updated flag gesetzt]
-    ├── PatchValidator: RFC 6902 syntaktisch valide?
-    ├── PatchValidator: Pfade im Template-Schema registriert?
-    ├── Snapshot: atomarer JSON-Snapshot des aktuellen Artefakts
-    ├── PatchApplicator: jsonpatch.apply_patch(artefakt, patches)
-    ├── PreservationCheck: nur adressierte Pfade geändert?
-    ├── InvalidationEngine: Strukturschritt geändert?
-    │   └── ja → alle referenzierten Algorithmusabschnitte → invalidiert
-    └── Versioning: neue Artefaktversion erzeugen
+[8] Executor.apply_patches(patches)  [wenn patches nicht leer]
+    ├── RFC 6902 syntaktisch valide? Pfade im Schema?
+    ├── Snapshot des aktuellen Artefakts
+    ├── jsonpatch.apply_patch(artefakt, patches)
+    ├── Preservation-Check
+    ├── Invalidierungs-Check (Strukturschritt geändert → referenzierte Algo-Abschnitte → invalidiert)
+    ├── Neue Artefaktversion erzeugen
+    └── WebSocket Event 'artifact_update' an Frontend
     │
     ▼
 [9] CompletenessCalculator.recalculate(artefakte)
     → WorkingMemory.completeness_state aktualisieren
     │
     ▼
-[10] ProgressTracker.update(phasenstatus_from_modus, slot_counts)
+[10] ProgressTracker.update(phasenstatus, slot_counts)
      → WorkingMemory.phasenstatus, befuellte_slots, bekannte_slots
+     └── WebSocket Event 'progress_update' an Frontend
     │
     ▼
-[11] ProjectRepository.save(projekt)  [atomar]
+[11] ProjectRepository.save(projekt)  [SQLite-Transaktion, atomar]
     │
     ▼
-Rückgabe an UI-Schicht:
-    ├── nutzeraeusserung → Chat-Bereich
-    ├── aktualisierte Artefakte → Artefakt-Panel
-    ├── phasenstatus + slot_counts → Fortschrittsanzeige
-    └── working_memory → Debug-Panel
+WebSocket Event 'chat_done' + 'debug_update' an Frontend
 ```
 
 ---
@@ -363,267 +525,167 @@ Rückgabe an UI-Schicht:
 ```
 digitalisierungsfabrik/
 │
-├── app.py                          # Chainlit-Einstiegspunkt
-├── config.py                       # Konfiguration (pydantic-settings)
-├── .env.example                    # Konfig-Template
-├── requirements.txt
-├── chainlit.md                     # Chainlit Begrüßungstext
+├── backend/
+│   ├── main.py                         # FastAPI-App, Startup
+│   ├── config.py                       # Konfiguration (pydantic-settings)
+│   ├── .env.example
+│   ├── requirements.txt
+│   │
+│   ├── api/
+│   │   ├── router.py                   # REST-Endpunkte
+│   │   └── websocket.py                # WebSocket-Handler
+│   │
+│   ├── core/
+│   │   ├── orchestrator.py             # Orchestrator-Zyklus (SDD 6.3)
+│   │   ├── context_assembler.py        # Kontext-Zusammenstellung (SDD 6.5)
+│   │   ├── output_validator.py         # Output-Kontrakt-Prüfung (SDD 6.5.2)
+│   │   ├── executor.py                 # RFC 6902 Executor (SDD 5.7)
+│   │   ├── working_memory.py           # Working-Memory-Datenmodell (SDD 6.4)
+│   │   └── progress_tracker.py        # Phasenstatus + Slot-Zähler (SDD 6.7)
+│   │
+│   ├── modes/
+│   │   ├── base.py                     # Abstrakte Basis + ModeContext/ModeOutput
+│   │   ├── exploration.py              # Explorationsmodus (SDD 6.6.1)
+│   │   ├── structuring.py              # Strukturierungsmodus (SDD 6.6.2)
+│   │   ├── specification.py            # Spezifikationsmodus (SDD 6.6.3)
+│   │   ├── validation.py               # Validierungsmodus (SDD 6.6.4)
+│   │   └── moderator.py                # Moderator (SDD 6.6.5)
+│   │
+│   ├── artifacts/
+│   │   ├── models.py                   # Pydantic-Modelle (dict-keyed Collections)
+│   │   ├── store.py                    # Artefakt-Store + Versionierung
+│   │   ├── template_schema.py          # Template-Schema (aus models.py abgeleitet)
+│   │   ├── completeness.py             # Completeness-State-Berechnung (SDD 5.6)
+│   │   └── renderer.py                 # JSON → Markdown (für Download, OP-19)
+│   │
+│   ├── persistence/
+│   │   ├── database.py                 # SQLite-Verbindung + Transaktions-Helper
+│   │   ├── project_repository.py       # Projekt CRUD (atomar via Transaktion)
+│   │   └── schema.sql                  # DDL (CREATE TABLE statements)
+│   │
+│   ├── llm/
+│   │   ├── base.py                     # Abstraktes LLMClient-Interface
+│   │   ├── anthropic_client.py         # Anthropic Claude
+│   │   └── ollama_client.py            # Ollama
+│   │
+│   ├── prompts/                        # Systemprompts der Modi (Markdown)
+│   │   ├── exploration.md
+│   │   ├── structuring.md
+│   │   ├── specification.md
+│   │   ├── validation.md
+│   │   └── moderator.md
+│   │
+│   ├── static/
+│   │   └── emma_catalog.json           # EMMA-Aktionskatalog (SDD 8.3)
+│   │
+│   └── tests/
+│       ├── test_executor.py
+│       ├── test_artifacts.py
+│       ├── test_orchestrator.py
+│       ├── test_completeness.py
+│       └── test_persistence.py
 │
-├── core/                           # Systemlogik
-│   ├── orchestrator.py             # Orchestrator-Zyklus (SDD 6.3)
-│   ├── context_assembler.py        # Kontext-Zusammenstellung (SDD 6.5)
-│   ├── output_validator.py         # Output-Kontrakt-Prüfung (SDD 6.5.2)
-│   ├── executor.py                 # RFC 6902 Executor (SDD 5.7)
-│   ├── working_memory.py           # Working-Memory-Datenmodell (SDD 6.4)
-│   └── progress_tracker.py        # Phasenstatus + Slot-Zähler (SDD 6.7)
-│
-├── modes/                          # Kognitive Modi (SDD 6.6)
-│   ├── base.py                     # Abstrakte Basisklasse + ModeContext/ModeOutput
-│   ├── exploration.py              # Explorationsmodus (SDD 6.6.1)
-│   ├── structuring.py              # Strukturierungsmodus (SDD 6.6.2)
-│   ├── specification.py            # Spezifikationsmodus (SDD 6.6.3)
-│   ├── validation.py               # Validierungsmodus (SDD 6.6.4)
-│   └── moderator.py                # Moderator (SDD 6.6.5)
-│
-├── artifacts/                      # Artefakt-Verwaltung (SDD Abschnitt 5)
-│   ├── models.py                   # Pydantic-Modelle aller drei Artefakte
-│   ├── store.py                    # Artefakt-Store + Versionierung
-│   ├── template_schema.py          # Template-Schema (abgeleitet aus models.py)
-│   ├── completeness.py             # Completeness-State-Berechnung (SDD 5.6)
-│   └── renderer.py                 # JSON-Artefakt → Markdown (OP-19)
-│
-├── persistence/                    # Persistenz-Schicht (SDD 7.2, 7.3)
-│   ├── project_repository.py       # Projekt CRUD
-│   ├── atomic_writer.py            # Atomarer Datei-Write
-│   └── models.py                   # Persistenz-Datenmodelle
-│
-├── llm/                            # LLM-Client-Abstraktion
-│   ├── base.py                     # Abstraktes Interface LLMClient
-│   ├── anthropic_client.py         # Anthropic Claude
-│   └── ollama_client.py            # Ollama (lokale Modelle)
-│
-├── ui/                             # UI-Hilfsmodule
-│   ├── artifact_panel.py           # Artefakt-Rendering für Chainlit
-│   └── debug_panel.py              # Debug-Bereich für Chainlit
-│
-├── prompts/                        # Systemprompts der Modi (Markdown)
-│   ├── exploration.md
-│   ├── structuring.md
-│   ├── specification.md
-│   ├── validation.md
-│   └── moderator.md
-│
-├── static/                         # Statische Ressourcen
-│   └── emma_catalog.json           # EMMA-Aktionskatalog (SDD 8.3)
-│
-├── data/                           # Laufzeit-Daten (gitignored)
-│   └── projects/                   # Projektverzeichnisse
-│
-└── tests/
-    ├── test_executor.py
-    ├── test_artifacts.py
-    ├── test_orchestrator.py
-    ├── test_completeness.py
-    └── test_persistence.py
+└── frontend/
+    ├── index.html
+    ├── package.json
+    ├── vite.config.ts
+    ├── tsconfig.json
+    │
+    └── src/
+        ├── main.tsx                    # React-Einstiegspunkt
+        ├── App.tsx                     # Root-Layout (Split-Pane)
+        ├── api/
+        │   ├── rest.ts                 # REST-Client (fetch-Wrapper)
+        │   └── websocket.ts            # WebSocket-Client + Event-Handling
+        ├── components/
+        │   ├── ChatPane.tsx
+        │   ├── ArtifactPane.tsx
+        │   ├── ArtifactTab.tsx         # Einzelne Artefakt-Ansicht
+        │   ├── DebugPanel.tsx
+        │   └── PhaseHeader.tsx
+        ├── store/
+        │   └── session.ts              # React-State (Zustand/Context)
+        └── types/
+            └── api.ts                  # TypeScript-Typen (gespiegelt von Pydantic)
 ```
 
-### Konfiguration (`.env` / `config.py`)
+### Konfiguration (`.env`)
 
-Alle systemrelevanten Parameter sind konfigurierbar — kein Hardcoding (SDD 8.1.1):
+Alle systemrelevanten Parameter sind konfigurierbar (SDD 8.1.1):
 
 | Parameter | Beschreibung | Standard |
 |---|---|---|
 | `LLM_PROVIDER` | `anthropic` / `ollama` | `anthropic` |
 | `LLM_MODEL` | Modell-ID | `claude-opus-4-6` |
-| `LLM_API_KEY` | API-Key | — |
+| `LLM_API_KEY` | API-Key (nie im Frontend) | — |
 | `OLLAMA_BASE_URL` | URL für Ollama | `http://localhost:11434` |
-| `DIALOG_HISTORY_N` | Turns an Dialoghistorie für Modi | `3` |
+| `DIALOG_HISTORY_N` | Turns für Modi | `3` |
 | `DIALOG_HISTORY_MODERATOR_M` | Turns für Moderator (M > N) | `10` |
-| `TOKEN_WARN_THRESHOLD` | Token-Warnschwelle für Partitionierung | `80000` |
-| `TOKEN_HARD_LIMIT` | Hartes Tokenlimit, Turn-Abbruch | `100000` |
-| `AUTOMATION_WARN_THRESHOLD` | Anzahl nicht-automatisierbarer Schritte | `1` |
-| `DATA_DIR` | Wurzelverzeichnis für Projektdaten | `./data` |
+| `TOKEN_WARN_THRESHOLD` | Token-Warnschwelle | `80000` |
+| `TOKEN_HARD_LIMIT` | Hartes Tokenlimit | `100000` |
+| `AUTOMATION_WARN_THRESHOLD` | Schwelle nicht-automatisierbarer Schritte | `1` |
+| `DATABASE_PATH` | Pfad zur SQLite-Datei | `./data/digitalisierungsfabrik.db` |
 | `LOG_LEVEL` | Log-Level | `INFO` |
-| `LLM_LOG_ENABLED` | LLM I/O-Logging aktiv | `true` |
+| `LLM_LOG_ENABLED` | LLM I/O-Logging | `true` |
 
 ---
 
 ## 7. Schließung kritischer Open Points
 
-Dieser Abschnitt schließt die vier Blocker-OPs, die für die Implementierung zwingend notwendig sind.
-
----
-
 ### OP-01: JSON-Schema Artefakte
 
-**Entscheidung:** Die formale Schemadefinition aller drei Artefakte wird durch **Pydantic-v2-Modelle** in `artifacts/models.py` implementiert.
+Die formale Schemadefinition aller drei Artefakte wird durch **Pydantic-v2-Modelle** in `artifacts/models.py` implementiert. Collections sind durchgängig als Dicts mit stabiler ID als Key modelliert.
 
-**Mapping SDD → Pydantic:**
-
-```
-# Exploration
-ExplorationSlot:
-  slot_id: str
-  titel: str
-  inhalt: str
-  completeness_status: CompletenessStatus  ← StrEnum
-
-ExplorationArtefakt:
-  version_id: int
-  prozesszusammenfassung: ExplorationSlot
-  slots: list[ExplorationSlot]
-
-# Struktur
-Strukturschritt:
-  schritt_id: str
-  titel: str
-  beschreibung: str
-  typ: SchrittTyp  ← StrEnum: aktion/entscheidung/schleife/ausnahme
-  reihenfolge: int
-  nachfolger: list[str]
-  bedingung: str | None
-  ausnahme_beschreibung: str | None
-  algorithmus_ref: list[str]  ← min 1
-  algorithmus_status: AlgorithmusStatus  ← StrEnum
-  completeness_status: CompletenessStatus
-  spannungsfeld: str | None
-
-Strukturartefakt:
-  version_id: int
-  prozesszusammenfassung: str
-  schritte: list[Strukturschritt]
-
-# Algorithmus
-EmmaAktion:
-  aktion_id: str
-  aktionstyp: EmmaAktionstyp  ← StrEnum (18 Werte aus EMMA-Katalog)
-  parameter: dict[str, Any]
-  nachfolger: str  ← aktion_id oder "END"
-  emma_kompatibel: bool
-  kompatibilitaets_hinweis: str | None
-
-Algorithmusabschnitt:
-  abschnitt_id: str
-  struktur_ref: str
-  titel: str
-  status: AbschnittStatus  ← StrEnum
-  completeness_status: CompletenessStatus
-  aktionen: list[EmmaAktion]
-
-Algorithmusartefakt:
-  version_id: int
-  prozesszusammenfassung: str
-  abschnitte: list[Algorithmusabschnitt]
-```
-
-**Template-Schema:** Wird programmatisch aus den Pydantic-Modellen abgeleitet — alle gültigen JSON-Pfade, Feldtypen und Enum-Werte. Dies ist die single source of truth. Kein separates Schema-Dokument.
-
-**RFC 6902 Pfad-Konventionen:**
+**RFC 6902 Pfad-Konventionen (dict-keyed):**
 ```
 # Exploration
 /slots/{slot_id}/inhalt
 /slots/{slot_id}/completeness_status
-/prozesszusammenfassung/inhalt
 
-# Struktur
+# Struktur (dict-keyed by schritt_id)
 /schritte/{schritt_id}/beschreibung
 /schritte/{schritt_id}/completeness_status
 /schritte/{schritt_id}/algorithmus_status
-... (add/remove für neue/gelöschte Schritte)
 
-# Algorithmus
+# Algorithmus (dict-keyed by abschnitt_id)
 /abschnitte/{abschnitt_id}/aktionen
 /abschnitte/{abschnitt_id}/completeness_status
 /abschnitte/{abschnitt_id}/status
 ```
 
----
+Alle Pfade sind stabil durch Einfüge- und Löschoperationen. Numerische Indizes werden nirgendwo als Pfadsegmente verwendet.
 
 ### OP-10: Persistenztechnologie
 
-**Entscheidung:** JSON-Dateien mit atomarem Write-Protokoll.
+**Entscheidung:** SQLite mit ACID-Transaktionen.
 
-**Begründung:**
-- Kein Datenbank-Setup, keine externe Abhängigkeit
-- On-Premise-fähig ohne Installation
-- Atomar realisierbar via `os.replace()` (POSIX-atomar)
-- Versionierung als separate Dateien trivial (keine DB-Migrationen)
-- Vollständig lesbar ohne Tools (Debugging, Analyse)
-- Für Prototyp-Größen (< 100 Prozessschritte, Single-User) performant genug
-
-**Atomaritäts-Protokoll:**
-```
-Schreibe vollständigen Projektzustand in .tmp-Datei
-→ os.replace(tmp_path, target_path)  # POSIX-atomar
-```
-Ein unterbrochener Write hinterlässt maximal eine .tmp-Datei — der alte Zustand bleibt intakt.
-
-**Versionierung:** Jede Artefaktversion als eigene Datei `v{n:04d}.json`. Keine Deletions — append-only.
-
-**Projektisolation:** Jedes Projekt hat sein eigenes Verzeichnis. Kein shared state zwischen Projekten.
-
-**Zukünftige Migration:** SQLite oder PostgreSQL wäre später möglich, indem `ProjectRepository` austauschbar implementiert wird. Das Interface bleibt identisch.
-
----
+Begründung: ein Projektzustand umfasst mehrere logische Einheiten (Metadaten, Working Memory, Artefaktversion, Dialoghistorie). SQLite-Transaktionen garantieren atomare Multi-Entity-Writes. FR-E-01 ist direkt erfüllt.
 
 ### OP-19: Markdown-Renderlogik
 
-**Entscheidung:** Renderer in `artifacts/renderer.py` mit festgelegten Regeln pro Artefakt-Typ.
-
-**Explorationsartefakt → Markdown:**
-```
-# Prozesszusammenfassung
-{inhalt}
-
-## {slot.titel}  [{completeness_status}]
-{slot.inhalt}
-```
+Renderer in `artifacts/renderer.py`:
 
 **Strukturartefakt → Markdown:**
 ```
-# Prozesszusammenfassung
-{text}
-
-## Prozessschritte
-
-### {reihenfolge}. {titel}  [TYP: {typ}] [{completeness_status}]
+## {reihenfolge}. {titel}  [TYP: {typ}] [{completeness_status}]
 {beschreibung}
 Nachfolger: {nachfolger_liste}
-⚠️ INVALIDIERT  ← wenn algorithmus_status = invalidiert
-🔴 Spannungsfeld: {spannungsfeld}  ← wenn gesetzt
+⚠️ INVALIDIERT       ← wenn algorithmus_status = invalidiert
+🔴 Spannungsfeld: … ← wenn gesetzt
 ```
 
 **Algorithmusartefakt → Markdown:**
 ```
-# Prozesszusammenfassung
-{text}
-
-## Algorithmusabschnitte
-
-### {titel}  [{status}] [{completeness_status}]
+## {titel}  [{status}] [{completeness_status}]
 Bezug: Strukturschritt {struktur_ref}
 
-| Nr | Aktion | Parameter | Nachfolger | EMMA-OK |
-|---|---|---|---|---|
-| {aktion_id} | {aktionstyp} | {parameter} | {nachfolger} | ✓/✗ |
+| Aktion-ID | Typ | Parameter | Nachfolger | EMMA-OK |
+...
 ```
-
-**Visuelle Markierung invalidierter Slots (FR-F-05):** In Chainlit werden invalidierte Abschnitte mit einem roten Badge (`⚠️ INVALIDIERT`) markiert. Die Chainlit-Custom-Element-Komponente für den Artefakt-Panel wertet `algorithmus_status` / `status` aus und wendet entsprechende CSS-Klassen an.
-
----
 
 ### OP-16: Erfolgs-/Fehlerkanten im Kontrollflussgraph
 
-**Entscheidung für Prototyp:** Fehlerbehandlung wird als explizite `DECISION`-Knoten im Algorithmusartefakt modelliert.
-
-**Muster:**
-```
-Aktion_X → DECISION (Erfolg?) → [JA: Aktion_Y] / [NEIN: DECISION (Fehlertyp?) → ...]
-```
-
-Damit ist kein neues Feld im Schema nötig. Der Kontrollflussgraph ist vollständig mit den bestehenden `aktionen` und `nachfolger`-Feldern darstellbar.
-
-**Post-Prototyp:** Einführung expliziter `success_edge` / `error_edge`-Felder pro Aktion — als optionale Erweiterung des bestehenden Schemas, rückwärtskompatibel.
+Für den Prototyp: Fehlerbehandlung als explizite `DECISION`-Knoten modelliert. Kein neues Schema-Feld nötig. Post-Prototyp: optionale `success_edge`/`error_edge`-Felder als rückwärtskompatible Erweiterung.
 
 ---
 
@@ -631,67 +693,38 @@ Damit ist kein neues Feld im Schema nötig. Der Kontrollflussgraph ist vollstän
 
 Jeder Schritt ist ein eigenständig testbares Inkrement.
 
-### Schritt 1: Datenmodelle + Persistenz
-**Ziel:** Pydantic-Modelle aller Artefakte + Projekt-CRUD + atomare Writes
-**Testbar:** Artefakt anlegen, Slot schreiben, Version laden, Projekt speichern/laden
-**Module:** `artifacts/models.py`, `persistence/`, `config.py`
-
-### Schritt 2: Executor + Template-Schema
-**Ziel:** RFC 6902 Patch-Pipeline vollständig implementiert
-**Testbar:** Gültiger Patch auf Artefakt anwenden, ungültiger Patch abgelehnt, Snapshot & Rollback
-**Module:** `core/executor.py`, `artifacts/template_schema.py`
-
-### Schritt 3: Orchestrator-Skeleton + Working Memory
-**Ziel:** Orchestrator-Zyklus ohne LLM (stub-Modi)
-**Testbar:** Zyklus läuft durch, Working Memory wird aktualisiert, Persistenz nach Zyklus
-**Module:** `core/orchestrator.py`, `core/working_memory.py`, `core/progress_tracker.py`
-
-### Schritt 4: LLM-Client + Erster Modus (Exploration)
-**Ziel:** Vollständiger erster LLM-Turn mit Explorationsmodus
-**Testbar:** LLM-Aufruf, Patch-Output, Artefakt-Update, Completeness-State aktualisiert
-**Module:** `llm/`, `modes/base.py`, `modes/exploration.py`, `core/context_assembler.py`, `core/output_validator.py`, `prompts/exploration.md`
-
-### Schritt 5: Chainlit-Frontend
-**Ziel:** Vollständige UI — Chat, Artefakt-Panel, Debug-Panel, Panik-Button, Download
-**Testbar:** Kompletter Nutzerdialog, Artefakt-Anzeige live, alle Buttons funktional
-**Module:** `app.py`, `ui/`
-
-### Schritt 6: Moderator + Phasenwechsel
-**Ziel:** Vollständiger Phasenwechsel-Zyklus inkl. Moderator
-**Module:** `modes/moderator.py`, Orchestrator-Moduswechsel-Logik erweitern
-
-### Schritt 7: Strukturierungsmodus
-**Module:** `modes/structuring.py`, `prompts/structuring.md`
-
-### Schritt 8: Spezifikationsmodus
-**Module:** `modes/specification.py`, `prompts/specification.md`
-
-### Schritt 9: Validierungsmodus + Korrekturschleife
-**Module:** `modes/validation.py`, `prompts/validation.md`
-
-### Schritt 10: End-to-End-Durchlauf + Stabilisierung
-**Ziel:** Vollständiger Durchlauf Exploration → Validierung mit echtem Prozess
+| Schritt | Inhalt | Testbar wenn |
+|---|---|---|
+| 1 | Pydantic-Modelle + SQLite-Schema + ProjectRepository | Projekt anlegen, speichern, laden |
+| 2 | Executor + Template-Schema | Patch anwenden, Fehler → Rollback |
+| 3 | Orchestrator-Skeleton + Working Memory (stub-Modi) | Zyklus läuft, WM aktualisiert, Persistenz |
+| 4 | LLM-Client + Explorationsmodus + ContextAssembler + OutputValidator | Erster LLM-Turn vollständig |
+| 5 | FastAPI-Backend (REST + WebSocket) | API-Endpunkte testbar ohne Frontend |
+| 6 | React-Frontend | Vollständiger Nutzerdialog im Browser |
+| 7 | Moderator + Phasenwechsel | Phasenwechsel-Zyklus vollständig |
+| 8 | Strukturierungsmodus | |
+| 9 | Spezifikationsmodus | |
+| 10 | Validierungsmodus + Korrekturschleife | |
+| 11 | End-to-End-Durchlauf + Stabilisierung | Vollständiger Prozess Exploration → Validierung |
 
 ---
 
 ## 9. Offene Punkte (HLA-Ebene)
 
-Die folgenden OPs bleiben offen und werden im Implementierungsdesign-Dokument behandelt:
-
 | ID | Thema | Auswirkung |
 |---|---|---|
-| OP-02 | EMMA-Parameterdefinition | Felder in `EmmaAktion.parameter` — erst vollständig definierbar wenn EMMA-Spezifikation vorliegt. Prototyp: `dict[str, Any]` |
-| OP-03 | Versionshistorie im UI | UI-Detail: Liste oder Timeline? Chainlit-Umsetzung im Schritt 5 klären |
+| OP-02 | EMMA-Parameterdefinition | `EmmaAktion.parameter: dict[str, Any]` im Prototyp — vollständige Definition wenn EMMA-Spezifikation vorliegt |
+| OP-03 | Versionshistorie im UI | Liste oder Diff-Ansicht? Im Frontend-Design (Schritt 6) klären |
 | OP-04 | Maximale Versionszahl | Prototyp: unbegrenzt. Ggf. konfigurierbares Limit post-Prototyp |
-| OP-05 | Token-Schwellenwerte | `TOKEN_WARN_THRESHOLD` und `TOKEN_HARD_LIMIT` in Konfiguration als Platzhalter. Konkrete Werte nach erstem Testlauf mit echtem Prozess kalibrieren |
-| OP-06 | nearing_completion-Kriterien | Pro Modus im Implementierungsdesign definieren |
-| OP-07 | Steuerungsflags vollständig | Basis-Flags (SDD 6.4.1) im Implementierungsdesign vervollständigen |
-| OP-11 | Dialoghistorie-Umfang | Prototyp: vollständige History speichern (`.jsonl` append-only). Größe nach Testläufen abschätzen |
-| OP-12 | Projektliste im UI | Chainlit-Startseite mit Projekt-Auswahl: im Schritt 5 definieren |
-| OP-14 | LLM-Log-Format | `logs/llm_calls.jsonl` mit Feldern: `timestamp`, `modus`, `turn_id`, `input_tokens`, `output_tokens`, `input` (vollständig), `output` (vollständig). Format ist damit hinreichend definiert — Schritt 4 implementiert |
-| OP-17 | Eventlog-Format | Prototyp: Eventlog-Upload vorerst als Freitext behandeln, kein strukturiertes Parsing |
-| OP-20 | Wiederholte Output-Kontrakt-Verletzung | Prototyp: kein Retry. Fehlermeldung an Nutzer, Turn abgebrochen. Post-Prototyp: konfigurierbares Retry-Limit + Moderator-Eskalation |
+| OP-05 | Token-Schwellenwerte | Konfigurierbare Platzhalter. Nach erstem Testlauf kalibrieren |
+| OP-06 | nearing_completion-Kriterien | Pro Modus im Implementierungsdesign |
+| OP-07 | Steuerungsflags vollständig | Basis-Flags definiert (SDD 6.4.1), Vervollständigung im Implementierungsdesign |
+| OP-11 | Dialoghistorie-Umfang | Prototyp: vollständig in SQLite. Größe nach Testläufen abschätzen |
+| OP-12 | Projektliste im UI | Frontend-Komponente in Schritt 6 |
+| OP-14 | LLM-Log-Format | `logs`-Tabelle in SQLite: `timestamp, modus, turn_id, input_tokens, output_tokens, input_json, output_json` |
+| OP-17 | Eventlog-Format | Prototyp: Upload als Freitext, kein strukturiertes Parsing |
+| OP-20 | Wiederholte Output-Kontrakt-Verletzung | Prototyp: Fehlermeldung + Retry durch Nutzer. Post-Prototyp: konfigurierbares Retry-Limit + Moderator-Eskalation |
 
 ---
 
-*Dokument-Ende. Nächstes Dokument: Implementierungsdesign Schritt 1 — Datenmodelle & Persistenz.*
+*Dokument-Ende. Nächstes Dokument: Implementierungsdesign Schritt 1 — Datenmodelle & SQLite-Schema.*
