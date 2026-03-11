@@ -50,3 +50,28 @@
 
 ### Commits
 - `147e9d1` `docs(agent-docs): add epic implementation timeline`
+
+## 2026-03-11
+
+### Task
+- Break Epic `00` into concrete implementation stories.
+- Define a reusable story structure for future epics.
+
+### Status
+- Completed
+
+### Touched areas
+- `agent-docs/session-notes.md`
+- `agent-docs/task-log.md`
+- `agent-docs/decision-log.md`
+- `agent-docs/epics/00-bootstrap-shell/epic.md`
+- `agent-docs/epics/00-bootstrap-shell/stories/`
+
+### TDD applicability
+- Not applicable for this task. This is story planning and documentation structure work, not executable behavior.
+
+### Tests
+- None
+
+### Commits
+- Pending Epic 00 story commit

@@ -27,3 +27,17 @@
 ### Consequences
 - The implementation timeline will be traceable at epic level before story planning starts.
 - Future agents can add stories without restructuring the planning artifacts.
+
+## 2026-03-11
+
+### Decision
+- Define stories as individual files inside each epic's `stories/` folder, with a consistent structure: summary, value, scope, acceptance criteria, test notes, dependencies, and explicit user validation.
+
+### Rationale
+- Story files should be directly actionable by an implementation agent.
+- A fixed structure reduces ambiguity during execution and keeps TDD expectations visible before coding begins.
+- User-validation criteria are needed because each epic is expected to end in a visible, testable increment.
+
+### Consequences
+- Future story creation can follow a stable template.
+- Story files will double as lightweight implementation briefs.

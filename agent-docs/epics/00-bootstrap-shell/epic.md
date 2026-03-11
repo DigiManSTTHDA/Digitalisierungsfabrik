@@ -20,4 +20,4 @@ A user can start the system locally, open the application in the browser, see th
 - Creates the baseline needed before implementing persistence, orchestration, or modes.
 
 ## Story placeholder
-- Add detailed stories in `stories/`.
+- Story breakdown is defined in `stories/README.md`.
