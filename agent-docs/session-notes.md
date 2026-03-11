@@ -5,10 +5,13 @@
 ### Current focus
 - Create the repository-level `AGENTS.md`.
 - Establish the required `agent-docs` structure and operating rules.
+- Define the implementation timeline as epics from bootstrap to finished prototype.
+- Create an `agent-docs/epics/` structure that can later hold detailed stories.
 
 ### Status
 - `AGENTS.md` and the initial `agent-docs` workflow structure are in place.
 - Initial documentation commit created: `c75b490` `docs(agent-docs): define repository workflow`.
+- Implementation timeline and epic structure are now defined.
 
 ### Relevant constraints
 - Goal is a working prototype guided by `digitalisierungsfabrik_systemdefinition.md`.
@@ -18,5 +21,5 @@
 - Agents should commit frequently in small coherent increments.
 
 ### Next steps
-- Start the first implementation increment from the HLA implementation order.
-- Update these docs before the next code change.
+- Commit the epic timeline documentation.
+- Start story definition for Epic 00 when implementation planning begins.
