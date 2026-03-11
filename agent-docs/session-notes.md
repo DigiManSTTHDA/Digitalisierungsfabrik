@@ -15,6 +15,7 @@
 - Implementation timeline and epic structure are now defined.
 - Epic timeline commit created: `147e9d1` `docs(agent-docs): add epic implementation timeline`.
 - Epic 00 stories are now defined and ready for implementation.
+- Epic 00 story commit created: `a99f29f` `docs(agent-docs): define epic 00 stories`.
 
 ### Relevant constraints
 - Goal is a working prototype guided by `digitalisierungsfabrik_systemdefinition.md`.
@@ -24,5 +25,5 @@
 - Agents should commit frequently in small coherent increments.
 
 ### Next steps
-- Commit the Epic 00 story breakdown.
 - Start implementation with Story `00-01`.
+- Apply TDD where executable behavior begins.

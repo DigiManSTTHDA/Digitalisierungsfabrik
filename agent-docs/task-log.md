@@ -74,4 +74,4 @@
 - None
 
 ### Commits
-- Pending Epic 00 story commit
+- `a99f29f` `docs(agent-docs): define epic 00 stories`
