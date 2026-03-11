@@ -41,3 +41,16 @@
 ### Consequences
 - Future story creation can follow a stable template.
 - Story files will double as lightweight implementation briefs.
+
+## 2026-03-11
+
+### Decision
+- Use `pytest` for backend tests and `vitest` with React Testing Library for frontend tests during Epic 00.
+
+### Rationale
+- Both tools fit the HLA stack choices and are lightweight enough for bootstrap work.
+- They support the required TDD workflow for health endpoints, UI smoke coverage, and frontend-backend connectivity behavior.
+
+### Consequences
+- Backend and frontend bootstrap will include test harness setup as part of the epic.
+- Later epics can extend these testing foundations instead of introducing a second test stack.

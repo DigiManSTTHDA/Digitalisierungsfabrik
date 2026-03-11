@@ -1,0 +1,1 @@
+"""Structuring mode placeholder."""

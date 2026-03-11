@@ -75,3 +75,30 @@
 
 ### Commits
 - `a99f29f` `docs(agent-docs): define epic 00 stories`
+
+## 2026-03-11
+
+### Task
+- Implement Epic `00` end to end.
+- Complete Stories `00-01` through `00-05` with documentation, tests, and frequent commits.
+
+### Status
+- In progress
+
+### Touched areas
+- `agent-docs/session-notes.md`
+- `agent-docs/task-log.md`
+- `agent-docs/decision-log.md`
+- `backend/`
+- `frontend/`
+- top-level developer setup files
+
+### TDD applicability
+- Applicable for executable backend and frontend behavior.
+- Not primary for pure directory scaffolding, but required once runtime behavior or integration surfaces exist.
+
+### Tests
+- Pending implementation
+
+### Commits
+- None yet

@@ -1,0 +1,1 @@
+"""JSON Patch executor placeholder."""
