@@ -38,6 +38,14 @@ patches against the artifact schema, and rolls back cleanly on any failure.
   per artifact type)
 - `backend/tests/test_executor.py` – comprehensive patch apply / rollback tests
 
+## OpenAPI Contract Note
+
+The `Executor` is an internal component — it has no API surface of its own. However, the
+patch-operation schema it validates against will be referenced in the WebSocket message
+contract defined in Epic 05. When defining `ArtifactTemplate` in this epic, ensure patch
+path structures are documented with Python docstrings/comments so they can be accurately
+described in the OpenAPI spec's WebSocket message schemas later.
+
 ## Stories
 
 _To be defined before this epic begins._

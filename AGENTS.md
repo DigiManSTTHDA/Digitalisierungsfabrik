@@ -30,9 +30,14 @@ The canonical architecture is defined in `hla_architecture.md`. Follow it.
 | LLM client | anthropic SDK ≥ 0.25 |
 | Persistence | SQLite (stdlib `sqlite3`) |
 | Frontend | React ≥ 18, TypeScript ≥ 5, Vite ≥ 5 |
+| API contract | OpenAPI 3.x (FastAPI auto-generated) |
+| API type generation | `openapi-typescript` ≥ 7 (devDependency) |
+| API client (frontend) | `openapi-fetch` ≥ 0.9 |
 | Logging | structlog |
 
-**Project structure** follows `hla_architecture.md` Section 6 exactly.
+**Project structure** follows `hla_architecture.md` Section 6 exactly, with the following
+binding addition: `frontend/src/types/api.ts` (referenced in HLA Section 6) does **not**
+exist. It is replaced by the generated file `frontend/src/generated/api.d.ts` per ADR-001.
 
 ### Deviations from Architecture
 
@@ -197,6 +202,45 @@ These are **non-negotiable** — they come directly from the SDD and HLA:
 
 ---
 
+## API Contract (OpenAPI)
+
+The REST interface between frontend and backend is governed by a machine-readable
+OpenAPI 3.x contract. **This section is binding.** See `agent-docs/decisions/ADR-001-openapi-contract.md`
+for the full rationale.
+
+### Rules
+
+1. **Backend exposes the live spec** at `GET /openapi.json` (FastAPI default — no extra code).
+2. **All request and response shapes** are explicit Pydantic models in `backend/api/schemas.py`.
+   Route handlers must declare typed parameters and return types; no `dict` or `Any` responses.
+3. **Frontend types are generated**, never hand-written. The generated file is
+   `frontend/src/generated/api.d.ts`. It must never be edited manually.
+4. **Frontend API client** uses `openapi-fetch` initialised in `frontend/src/api/client.ts`.
+   All REST calls go through this client; no hand-written `fetch` wrappers for API endpoints.
+5. **Contract snapshot** lives at `api-contract/openapi.json` (committed to the repository).
+   It is the source of truth for frontend development when the backend is not running.
+6. **Regeneration command** (run from `frontend/`):
+   ```bash
+   npm run generate-api          # from running backend (http://localhost:8000/openapi.json)
+   npm run generate-api:file     # from committed snapshot (api-contract/openapi.json)
+   ```
+7. **Every new endpoint** introduced in any epic must:
+   - Add or update its Pydantic schema in `backend/api/schemas.py`
+   - Export an updated snapshot: `GET http://localhost:8000/openapi.json > api-contract/openapi.json`
+   - Regenerate types: `npm run generate-api:file` in `frontend/`
+   - Commit `api-contract/openapi.json` and `frontend/src/generated/api.d.ts` together
+
+### File locations
+
+| File | Role | Editable? |
+|---|---|---|
+| `backend/api/schemas.py` | Pydantic request/response models | Yes — source of truth |
+| `api-contract/openapi.json` | Committed OpenAPI snapshot | Only via regeneration |
+| `frontend/src/generated/api.d.ts` | Generated TypeScript types | **Never** — auto-generated |
+| `frontend/src/api/client.ts` | `openapi-fetch` client init | Yes |
+
+---
+
 ## Environment Setup
 
 ```bash
@@ -215,6 +259,7 @@ uvicorn main:app --reload
 # Frontend
 cd frontend
 npm install
+npm run generate-api:file   # generate TypeScript types from committed OpenAPI snapshot
 npm run dev
 ```
 
@@ -236,4 +281,6 @@ DATABASE_PATH=./data/digitalisierungsfabrik.db
 - `hla_adversarial_review.md` — Critical review of earlier architecture draft; key issues
   already resolved in current HLA (SQLite, dict-keyed slots, Tool Use strategy)
 - `agent-docs/decisions/` — ADRs for any deviations from HLA
+- `agent-docs/decisions/ADR-001-openapi-contract.md` — OpenAPI contract for frontend–backend integration
 - `agent-docs/open-points/open-points.md` — Tracking of HLA Section 9 open points
+- `api-contract/openapi.json` — Committed OpenAPI 3.x snapshot (source of truth for frontend type generation)

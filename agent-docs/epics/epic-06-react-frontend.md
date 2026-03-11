@@ -39,9 +39,36 @@ in the artifact pane.
 - `frontend/src/components/ArtifactPane.tsx` – tabbed artifact viewer
 - `frontend/src/components/DebugPanel.tsx` – collapsible Working Memory view
 - `frontend/src/hooks/useWebSocket.ts` – WebSocket connection + message handling
-- `frontend/src/api/client.ts` – REST API client (project CRUD)
-- `frontend/src/types/` – TypeScript interfaces matching backend schemas
 - Basic CSS / layout (functional; visual polish comes in Epic 11)
+
+### API Client & Types (binding — see ADR-001)
+
+**`frontend/src/types/api.ts` does not exist.** All API types come from the generated file.
+
+| File | Description | Editable? |
+|---|---|---|
+| `frontend/src/generated/api.d.ts` | Auto-generated TypeScript types from `api-contract/openapi.json` | **Never** |
+| `frontend/src/api/client.ts` | `openapi-fetch` client, typed with generated types | Yes |
+
+**`frontend/src/api/client.ts`** must initialise the client as follows:
+
+```typescript
+import createClient from "openapi-fetch";
+import type { paths } from "../generated/api";
+
+export const apiClient = createClient<paths>({
+  baseUrl: "http://localhost:8000",
+});
+```
+
+All REST calls in components and hooks go through `apiClient`. No component may call
+`fetch()` directly for REST endpoints.
+
+**`frontend/src/types/`** may only contain app-internal types that are not part of the
+API contract (e.g. local UI state shapes). It must not shadow or re-define API types.
+
+**Before starting frontend development**, confirm that `frontend/src/generated/api.d.ts`
+exists and `tsc --noEmit` passes (these are committed at the end of Epic 05).
 
 ## Stories
 

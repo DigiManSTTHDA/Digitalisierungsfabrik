@@ -36,9 +36,30 @@ automated tests.
 - `backend/main.py` – FastAPI application factory
 - `backend/api/routes.py` – REST route definitions
 - `backend/api/websocket.py` – WebSocket handler, streams orchestrator events
-- `backend/api/schemas.py` – request/response Pydantic models for the API layer
+- `backend/api/schemas.py` – **required** Pydantic request/response models for every
+  endpoint (drives the OpenAPI spec — no `dict` or `Any` return types on route handlers)
 - `backend/tests/test_api.py` – REST + WebSocket endpoint tests
 - `backend/tests/test_websocket.py` – streaming event tests
+
+### OpenAPI Contract Deliverables (binding — see ADR-001)
+
+This epic **must** freeze the API contract before Epic 06 begins:
+
+1. Verify the live spec is correct: `GET http://localhost:8000/openapi.json` — all
+   endpoints appear with typed request/response schemas.
+2. Export the snapshot:
+   ```bash
+   curl http://localhost:8000/openapi.json > api-contract/openapi.json
+   ```
+3. Generate TypeScript types from the snapshot:
+   ```bash
+   cd frontend && npm run generate-api:file
+   ```
+4. Commit both `api-contract/openapi.json` and `frontend/src/generated/api.d.ts`.
+5. Verify `tsc --noEmit` passes in the frontend after generation.
+
+**Definition of Done addition:** Epic 05 is not complete until `api-contract/openapi.json`
+is committed and `frontend/src/generated/api.d.ts` compiles without errors.
 
 ## Stories
 

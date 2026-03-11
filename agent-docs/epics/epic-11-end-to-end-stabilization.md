@@ -44,6 +44,29 @@ away with downloadable JSON and Markdown artifacts – without any developer ass
 - `backend/tests/test_export.py` – export format and content tests
 - Updated `README.md` with full usage walkthrough
 
+## OpenAPI Contract Note
+
+This epic adds the export endpoint:
+
+- `GET /api/projects/{id}/export`
+
+This must have an explicit Pydantic response schema in `backend/api/schemas.py`. Before
+this epic closes, perform a **final contract audit**:
+
+1. Verify `GET http://localhost:8000/openapi.json` shows all endpoints with fully typed
+   request/response schemas (no `{}` or missing models).
+2. Export the final snapshot: `curl http://localhost:8000/openapi.json > api-contract/openapi.json`
+3. Regenerate frontend types: `cd frontend && npm run generate-api:file`
+4. Commit both `api-contract/openapi.json` and `frontend/src/generated/api.d.ts`
+5. Run `npm run build` — TypeScript compilation must succeed with zero errors and zero
+   implicit-any warnings related to API types.
+
+The `ExportButton.tsx` component that triggers the JSON + Markdown download must use the
+generated type for the export response body.
+
+**Definition of Done addition (Epic 11):** The production build (`npm run build`) passes
+with the final `frontend/src/generated/api.d.ts` committed in the repository.
+
 ## Stories
 
 _To be defined before this epic begins._
