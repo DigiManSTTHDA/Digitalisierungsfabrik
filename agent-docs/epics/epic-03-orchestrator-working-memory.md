@@ -39,6 +39,14 @@ state. All without LLM or HTTP.
 - `backend/tests/test_orchestrator.py` – full-cycle integration tests
 - `backend/tests/test_working_memory.py` – Working Memory unit tests
 
+## OpenAPI Contract Note
+
+The `Orchestrator` and `WorkingMemory` are internal components with no direct API surface.
+However, the `TurnInput` and `TurnOutput` types that `process_turn` accepts and returns
+will become the payload types of the WebSocket messages in Epic 05. Define these as
+Pydantic models (not plain dataclasses) so they can be exported as JSON schemas and
+included in the OpenAPI spec without rework.
+
 ## Stories
 
 _To be defined before this epic begins._

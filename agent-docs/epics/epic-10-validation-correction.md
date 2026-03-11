@@ -46,6 +46,26 @@ re-validate until all artifacts pass.
 - `backend/tests/test_validation_mode.py` – validation pass/fail and correction-loop tests
 - ADR resolving OP-20 committed to `agent-docs/decisions/`
 
+## OpenAPI Contract Note
+
+This epic introduces validation report data flowing to the frontend (via WebSocket events
+and potentially a REST endpoint). Ensure:
+
+- Any validation report structure is a Pydantic model in `backend/api/schemas.py` (not a
+  raw `dict`), so it appears correctly in the OpenAPI spec.
+- If a new REST endpoint is added to retrieve the validation report (e.g.
+  `GET /api/projects/{id}/validation`), update the spec and regenerate types.
+
+After any API change:
+
+1. Regenerate the OpenAPI snapshot: `curl http://localhost:8000/openapi.json > api-contract/openapi.json`
+2. Regenerate frontend types: `cd frontend && npm run generate-api:file`
+3. Commit both `api-contract/openapi.json` and `frontend/src/generated/api.d.ts`
+4. Verify `tsc --noEmit` passes
+
+Frontend updates in this epic (`ArtifactPane.tsx` highlighting, `ChatPane.tsx` validation
+summary) must use generated types for all validation-related data structures.
+
 ## Stories
 
 _To be defined before this epic begins._

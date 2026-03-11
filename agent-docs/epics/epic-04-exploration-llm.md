@@ -39,6 +39,15 @@ everything is persisted.
 - `backend/tests/test_exploration_mode.py` – integration test (mocked or live)
 - `backend/.env.example` updated with `LLM_PROVIDER`, `LLM_MODEL`, `LLM_API_KEY`
 
+## OpenAPI Contract Note
+
+This epic introduces no new REST API endpoints. However, the streaming event payloads
+(`chat_token`, `chat_done`, `artifact_update`, `error`) that the orchestrator will emit
+via WebSocket should be defined as Pydantic models in this epic (e.g. in
+`backend/api/schemas.py` or a shared `backend/core/events.py`). Typed event models allow
+Epic 05 to reference them directly in the WebSocket endpoint schema without rework, and
+keep the generated OpenAPI spec accurate.
+
 ## Stories
 
 _To be defined before this epic begins._

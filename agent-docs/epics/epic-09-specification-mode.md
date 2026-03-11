@@ -44,6 +44,23 @@ questions; no technical knowledge is required from them.
 - `backend/tests/test_specification_mode.py` – multi-turn specification tests
 - ADR resolving OP-02 committed to `agent-docs/decisions/`
 
+## OpenAPI Contract Note
+
+This epic finalises the Algorithm Artifact schema in `backend/core/models.py`, including
+the resolution of OP-02 (EMMA parameter schema). The finalised schema directly affects the
+OpenAPI spec because the Algorithm Artifact is returned in `GET /api/projects/{id}/artifacts`.
+
+After schema finalisation:
+
+1. Regenerate the OpenAPI snapshot: `curl http://localhost:8000/openapi.json > api-contract/openapi.json`
+2. Regenerate frontend types: `cd frontend && npm run generate-api:file`
+3. Commit both `api-contract/openapi.json` and `frontend/src/generated/api.d.ts`
+4. Verify `tsc --noEmit` passes
+
+The `ArtifactPane.tsx` update that renders Algorithm Artifact fields (parameter tables,
+EMMA actions) must use the generated types — no hand-written TypeScript for EMMA action
+schemas.
+
 ## Stories
 
 _To be defined before this epic begins._

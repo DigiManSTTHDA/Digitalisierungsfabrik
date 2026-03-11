@@ -41,6 +41,23 @@ appears in the chat.
 - `backend/tests/test_moderator.py` – transition condition tests
 - `backend/tests/test_phase_transition.py` – full phase-advance integration test
 
+## OpenAPI Contract Note
+
+This epic adds one new REST endpoint:
+
+- `POST /api/projects/{id}/debug/advance-phase`
+
+This endpoint must have an explicit Pydantic response schema in `backend/api/schemas.py`.
+After implementing it:
+
+1. Regenerate the OpenAPI snapshot: `curl http://localhost:8000/openapi.json > api-contract/openapi.json`
+2. Regenerate frontend types: `cd frontend && npm run generate-api:file`
+3. Commit both `api-contract/openapi.json` and `frontend/src/generated/api.d.ts`
+4. Verify `tsc --noEmit` passes
+
+Frontend changes in this epic (`ChatPane.tsx` update for phase-change messages) must use
+the generated types from `frontend/src/generated/api.d.ts`, not locally-defined interfaces.
+
 ## Stories
 
 _To be defined before this epic begins._

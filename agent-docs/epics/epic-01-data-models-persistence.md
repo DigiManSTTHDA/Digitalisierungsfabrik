@@ -41,6 +41,18 @@ save, load, and list projects.
 - `backend/tests/test_models.py` – model validation tests
 - `backend/tests/test_repository.py` – persistence round-trip tests (in-memory SQLite)
 
+## OpenAPI Contract Note
+
+The Pydantic models defined in this epic (`ExplorationArtifact`, `StructureArtifact`,
+`AlgorithmArtifact`, `WorkingMemory`, `Project`) form the **domain model** that the API
+layer (Epic 05) will reference. Design them for clean JSON serialisation:
+
+- Use explicit field types (no `Any`, no bare `dict` without type parameters where avoidable).
+- All models must pass `model.model_json_schema()` without errors — FastAPI uses this to
+  build the OpenAPI spec.
+- These models are **not** the API schemas (those live in `backend/api/schemas.py`); they
+  are the internal domain types. The API schemas in Epic 05 will compose or reference them.
+
 ## Stories
 
 _To be defined before this epic begins._
