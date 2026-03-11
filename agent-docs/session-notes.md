@@ -12,6 +12,7 @@
 - `AGENTS.md` and the initial `agent-docs` workflow structure are in place.
 - Initial documentation commit created: `c75b490` `docs(agent-docs): define repository workflow`.
 - Implementation timeline and epic structure are now defined.
+- Epic timeline commit created: `147e9d1` `docs(agent-docs): add epic implementation timeline`.
 
 ### Relevant constraints
 - Goal is a working prototype guided by `digitalisierungsfabrik_systemdefinition.md`.
@@ -21,5 +22,5 @@
 - Agents should commit frequently in small coherent increments.
 
 ### Next steps
-- Commit the epic timeline documentation.
 - Start story definition for Epic 00 when implementation planning begins.
+- Convert Epic 00 into concrete stories before starting implementation.

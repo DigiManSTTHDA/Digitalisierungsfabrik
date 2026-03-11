@@ -49,4 +49,4 @@
 - None
 
 ### Commits
-- Pending epic timeline commit
+- `147e9d1` `docs(agent-docs): add epic implementation timeline`
