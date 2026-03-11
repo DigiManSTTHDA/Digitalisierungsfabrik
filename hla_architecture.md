@@ -166,13 +166,15 @@ Das Frontend ist eine React-Single-Page-Application. Es kommuniziert ausschließ
 - `DebugPanel` — Working Memory, aktiver Modus, Flags, letzte Schreiboperation
 - `PhaseHeader` — aktive Phase, Slot-Zähler, Panik-Button, Download-Button
 
+ArtifactTab rendert das JSON-Artefakt direkt als strukturierte Darstellung. Kein serverseitiges Rendering für die Live-Anzeige.
+
 **WebSocket-Events (Backend → Frontend):**
 
 | Event | Payload | Auslöser |
 |---|---|---|
 | `chat_token` | `{token: str}` | LLM-Streaming-Token |
 | `chat_done` | `{message: str}` | Turn abgeschlossen |
-| `artifact_update` | `{typ, artefakt}` | Nach jeder Schreiboperation |
+| `artifact_update` | `{typ, artefakt}` | Nach jeder Schreiboperation. Artefakt ist das vollständige Artefakt als JSON-Objekt. Das Frontend rendert es direkt. Der Markdown-Renderer (artifacts/renderer.py) wird ausschließlich für den Download verwendet. |
 | `progress_update` | `{phasenstatus, befuellte_slots, bekannte_slots}` | Nach jeder Schreiboperation |
 | `debug_update` | `{working_memory, flags}` | Nach jedem Zyklus |
 | `error` | `{message, recoverable}` | LLM-Fehler, Kontrakt-Verletzung |
