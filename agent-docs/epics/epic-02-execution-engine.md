@@ -56,7 +56,9 @@ detail to derive the WebSocket message schemas later — no separate documentati
 
 ## Status
 
-_Noch nicht implementiert._
+**Abgeschlossen:** 2026-03-12
+**Tests:** 39 neue Executor-Tests, 98 gesamt grün
+**Commit:** 65aaf39
 
 ---
 
@@ -162,19 +164,19 @@ dann `backend/artifacts/template_schema.py` implementieren (grün).
 
 **Definition of Done:**
 
-- [ ] `backend/artifacts/template_schema.py` existiert
-- [ ] `TemplatePathPattern` mit `pattern`, `allowed_ops`, `description`
-- [ ] `ArtifactTemplate` mit `artifact_type`, `path_patterns`, `is_valid_patch()`
-- [ ] `EXPLORATION_TEMPLATE` enthält alle oben gelisteten Pfade inkl. `allowed_ops`
-- [ ] `STRUCTURE_TEMPLATE` enthält alle oben gelisteten Pfade inkl. `allowed_ops`
-- [ ] `ALGORITHM_TEMPLATE` enthält alle oben gelisteten Pfade inkl. `allowed_ops`
-- [ ] `TEMPLATES`-Dict mit allen 3 Einträgen vorhanden
-- [ ] `is_valid_patch()` verwendet `re.fullmatch` (kein Partial-Match)
-- [ ] Alle 9 Template-Tests in `test_executor.py` grün
-- [ ] `ruff check .` → exit 0
-- [ ] `ruff format --check .` → exit 0
-- [ ] `python -m mypy . --explicit-package-bases` → exit 0
-- [ ] `pytest --tb=short -q` → exit 0, 0 failures
+- [x] `backend/artifacts/template_schema.py` existiert
+- [x] `TemplatePathPattern` mit `pattern`, `allowed_ops`, `description`
+- [x] `ArtifactTemplate` mit `artifact_type`, `path_patterns`, `is_valid_patch()`
+- [x] `EXPLORATION_TEMPLATE` enthält alle oben gelisteten Pfade inkl. `allowed_ops`
+- [x] `STRUCTURE_TEMPLATE` enthält alle oben gelisteten Pfade inkl. `allowed_ops`
+- [x] `ALGORITHM_TEMPLATE` enthält alle oben gelisteten Pfade inkl. `allowed_ops`
+- [x] `TEMPLATES`-Dict mit allen 3 Einträgen vorhanden
+- [x] `is_valid_patch()` verwendet `re.fullmatch` (kein Partial-Match)
+- [x] Alle 9 Template-Tests in `test_executor.py` grün
+- [x] `ruff check .` → exit 0
+- [x] `ruff format --check .` → exit 0
+- [x] `python -m mypy . --explicit-package-bases` → exit 0
+- [x] `pytest --tb=short -q` → exit 0, 0 failures
 
 ---
 
@@ -301,26 +303,26 @@ Fixture `exploration_artifact` — `ExplorationArtifact` mit einem vordefinierte
 
 **Definition of Done:**
 
-- [ ] `backend/core/executor.py` existiert
-- [ ] `ExecutorResult` Dataclass mit `success`, `artifact`, `invalidated_abschnitt_ids`, `error`
-- [ ] `Executor.apply_patches()` implementiert mit korrekter Typ-Annotation (mypy-sauber)
-- [ ] Pipeline Schritt 1 (RFC-6902-Syntaxcheck) implementiert
-- [ ] Pipeline Schritt 2 (Template-Schema-Prüfung) implementiert
-- [ ] Pipeline Schritt 3 (Snapshot via `model_dump()`) implementiert
-- [ ] Pipeline Schritt 4 (Patch-Anwendung via `jsonpatch`) implementiert
-- [ ] Pipeline Schritt 5 (Preservation-Check) implementiert
-- [ ] Pipeline Schritt 6 (Invalidierungs-Check) ist bewusst NICHT in dieser Story — wird in Story 02-03 implementiert
-- [ ] Pipeline Schritt 7 (Version-Bump bei nicht-leerem Patch) implementiert
-- [ ] Logging via `structlog` für jeden Aufruf (INFO und WARNING)
-- [ ] Alle Happy-Path-Tests grün (≥ 4 Tests)
-- [ ] Alle Syntaxfehler-Tests grün (≥ 4 Tests)
-- [ ] Alle Template-Verletzungs-Tests grün (≥ 2 Tests)
-- [ ] Alle Patch-Fehler-Tests grün inkl. Rollback-Test (≥ 2 Tests)
-- [ ] Preservation-Check-Test grün (≥ 1 Test)
-- [ ] `ruff check .` → exit 0
-- [ ] `ruff format --check .` → exit 0
-- [ ] `python -m mypy . --explicit-package-bases` → exit 0
-- [ ] `pytest --tb=short -q` → exit 0, 0 failures
+- [x] `backend/core/executor.py` existiert
+- [x] `ExecutorResult` Dataclass mit `success`, `artifact`, `invalidated_abschnitt_ids`, `error`
+- [x] `Executor.apply_patches()` implementiert mit korrekter Typ-Annotation (mypy-sauber)
+- [x] Pipeline Schritt 1 (RFC-6902-Syntaxcheck) implementiert
+- [x] Pipeline Schritt 2 (Template-Schema-Prüfung) implementiert
+- [x] Pipeline Schritt 3 (Snapshot via `model_dump()`) implementiert
+- [x] Pipeline Schritt 4 (Patch-Anwendung via `jsonpatch`) implementiert
+- [x] Pipeline Schritt 5 (Preservation-Check) implementiert
+- [x] Pipeline Schritt 6 (Invalidierungs-Check) ist bewusst NICHT in dieser Story — wird in Story 02-03 implementiert
+- [x] Pipeline Schritt 7 (Version-Bump bei nicht-leerem Patch) implementiert
+- [x] Logging via `structlog` für jeden Aufruf (INFO und WARNING)
+- [x] Alle Happy-Path-Tests grün (≥ 4 Tests)
+- [x] Alle Syntaxfehler-Tests grün (≥ 4 Tests)
+- [x] Alle Template-Verletzungs-Tests grün (≥ 2 Tests)
+- [x] Alle Patch-Fehler-Tests grün inkl. Rollback-Test (≥ 2 Tests)
+- [x] Preservation-Check-Test grün (≥ 1 Test)
+- [x] `ruff check .` → exit 0
+- [x] `ruff format --check .` → exit 0
+- [x] `python -m mypy . --explicit-package-bases` → exit 0
+- [x] `pytest --tb=short -q` → exit 0, 0 failures
 
 ---
 
@@ -435,22 +437,22 @@ drei Stories dieses Epics ab:
 
 **Definition of Done:**
 
-- [ ] `Executor.apply_patches()` befüllt `invalidated_abschnitt_ids` korrekt für
+- [x] `Executor.apply_patches()` befüllt `invalidated_abschnitt_ids` korrekt für
       alle triggerenden Felder: `beschreibung`, `typ`, `bedingung`, `ausnahme_beschreibung`
-- [ ] `invalidated_abschnitt_ids` ist bei `add`/`remove` auf ganzen Schritt befüllt
-- [ ] `invalidated_abschnitt_ids` ist bei `add` eines neuen Schritts ohne `algorithmus_ref` leer (`[]`)
-- [ ] `invalidated_abschnitt_ids` ist leer bei nicht-triggerenden Feldern (`titel` etc.)
-- [ ] `invalidated_abschnitt_ids` ist leer wenn `success == False`
-- [ ] `invalidated_abschnitt_ids` ist leer für `ExplorationArtifact` und `AlgorithmArtifact`
-- [ ] Epic-Dokument beschreibt explizit: `Strukturschritt.algorithmus_status` wird vom Orchestrator (Epic 03) gesetzt, nicht vom Executor
-- [ ] Alle Invalidierungstests grün (≥ 6 positive + ≥ 7 negative + ≥ 3 Randfälle)
-- [ ] Gesamte Test-Suite ≥ 38 Tests, alle grün
-- [ ] Kein Test ist tautologisch (T-1 geprüft: jeder Test würde bei korrekter Regression scheitern)
-- [ ] Alle Tests prüfen exakte Werte (`==`), nicht nur Truthiness (T-3)
-- [ ] `ruff check .` → exit 0
-- [ ] `ruff format --check .` → exit 0
-- [ ] `python -m mypy . --explicit-package-bases` → exit 0
-- [ ] `pytest --tb=short -q` → exit 0, 0 failures
-- [ ] `backend/tests/test_executor.py` existiert
-- [ ] `backend/artifacts/template_schema.py` existiert
-- [ ] `backend/core/executor.py` existiert
+- [x] `invalidated_abschnitt_ids` ist bei `add`/`remove` auf ganzen Schritt befüllt
+- [x] `invalidated_abschnitt_ids` ist bei `add` eines neuen Schritts ohne `algorithmus_ref` leer (`[]`)
+- [x] `invalidated_abschnitt_ids` ist leer bei nicht-triggerenden Feldern (`titel` etc.)
+- [x] `invalidated_abschnitt_ids` ist leer wenn `success == False`
+- [x] `invalidated_abschnitt_ids` ist leer für `ExplorationArtifact` und `AlgorithmArtifact`
+- [x] Epic-Dokument beschreibt explizit: `Strukturschritt.algorithmus_status` wird vom Orchestrator (Epic 03) gesetzt, nicht vom Executor (siehe Verantwortungsteilung-Abschnitt in Story 02-03)
+- [x] Alle Invalidierungstests grün (≥ 6 positive + ≥ 7 negative + ≥ 3 Randfälle)
+- [x] Gesamte Test-Suite ≥ 38 Tests, alle grün (39 Tests)
+- [x] Kein Test ist tautologisch (T-1 geprüft: jeder Test würde bei korrekter Regression scheitern)
+- [x] Alle Tests prüfen exakte Werte (`==`), nicht nur Truthiness (T-3)
+- [x] `ruff check .` → exit 0
+- [x] `ruff format --check .` → exit 0
+- [x] `python -m mypy . --explicit-package-bases` → exit 0
+- [x] `pytest --tb=short -q` → exit 0, 0 failures
+- [x] `backend/tests/test_executor.py` existiert
+- [x] `backend/artifacts/template_schema.py` existiert
+- [x] `backend/core/executor.py` existiert
