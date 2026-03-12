@@ -28,6 +28,7 @@ from core.output_validator import validate
 from core.progress_tracker import update_working_memory
 from core.working_memory import WorkingMemory
 from modes.base import BaseMode, Flag
+from persistence.project_repository import ProjectRepository
 
 logger = structlog.get_logger(__name__)
 
@@ -68,7 +69,7 @@ class Orchestrator:
 
     def __init__(
         self,
-        repository: object,  # ProjectRepository — typed as object to avoid circular import
+        repository: ProjectRepository,
         modes: dict[str, BaseMode],
     ) -> None:
         self._repository = repository
@@ -89,9 +90,7 @@ class Orchestrator:
         Raises:
             ValueError: Wenn das Projekt nicht gefunden wird.
         """
-        from persistence.project_repository import ProjectRepository
-
-        repo: ProjectRepository = self._repository  # type: ignore[assignment]
+        repo: ProjectRepository = self._repository
 
         # ------------------------------------------------------------------
         # Schritt 1: Projekt laden
