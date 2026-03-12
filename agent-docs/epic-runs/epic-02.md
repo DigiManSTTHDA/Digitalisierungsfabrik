@@ -75,3 +75,53 @@ ruff format --check .                     → exit 0 ✓
 python -m mypy . --explicit-package-bases → exit 0 ✓
 pytest --tb=short -q                      → 98 passed ✓
 ```
+
+---
+
+## Audit Report (2026-03-12)
+
+### Architecture Compliance — HLA Section 6
+
+| File | Expected path | Status |
+|---|---|---|
+| `backend/artifacts/template_schema.py` | `artifacts/template_schema.py` | ✓ |
+| `backend/core/executor.py` | `core/executor.py` | ✓ |
+| `backend/tests/test_executor.py` | `tests/test_executor.py` | ✓ |
+
+No invented directories. No files outside defined paths. ✓
+
+### Dependency Compliance
+
+No new dependencies added in Epic 02. `jsonpatch` is listed in HLA tech stack and was
+already in `requirements.txt`. ✓
+
+### SDD Compliance Issue Found and Fixed
+
+**Issue:** `ExplorationSlot.bezeichnung` ≠ SDD 5.3 field name `titel`
+
+- SDD 5.3 defines the field as `titel` ("Thema des Slots")
+- `EXPLORATION_TEMPLATE` correctly used path `/slots/{id}/titel`
+- But the model had `bezeichnung` — causing patches on `titel` to silently do nothing
+  (Pydantic v2 ignores extra fields by default, so the field value was discarded on
+  `model_validate()`)
+
+**Fix applied (commit 0747e2b):** Renamed `ExplorationSlot.bezeichnung` → `titel` in:
+- `backend/artifacts/models.py`
+- `backend/tests/test_models.py`
+- `backend/tests/test_persistence.py`
+- `backend/tests/test_executor.py`
+
+### Test Coverage
+
+- 39 executor tests covering all acceptance criteria ✓
+- Positive and negative tests present for all pipeline stages ✓
+- Non-tautological assertions (T-1 verified) ✓
+
+### Final Status
+
+| Check | Result |
+|---|---|
+| AGENTS.md | ✓ COMPLIANT |
+| HLA architecture | ✓ COMPLIANT |
+| SDD requirements | ✓ COMPLIANT (after fix) |
+| Tests pass | ✓ 98/98 |
