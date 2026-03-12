@@ -29,7 +29,7 @@ class TestCompletenessStatus:
 
         slot = ExplorationSlot(
             slot_id="s1",
-            bezeichnung="Validierter Slot",
+            titel="Validierter Slot",
             inhalt="Bestätigt",
             completeness_status=CompletenessStatus.nutzervalidiert,
         )
@@ -122,7 +122,7 @@ class TestExplorationArtifact:
 
         slot = ExplorationSlot(
             slot_id="s1",
-            bezeichnung="Prozessname",
+            titel="Prozessname",
             completeness_status=CompletenessStatus.leer,
         )
         art = ExplorationArtifact(slots={"s1": slot})
@@ -141,7 +141,7 @@ class TestExplorationArtifact:
         with pytest.raises(ValidationError):
             ExplorationSlot(
                 slot_id="s1",
-                bezeichnung="X",
+                titel="X",
                 completeness_status="ungueltig",  # type: ignore[arg-type]
             )
 
@@ -150,7 +150,7 @@ class TestExplorationArtifact:
 
         slot = ExplorationSlot(
             slot_id="s1",
-            bezeichnung="Name",
+            titel="Name",
             inhalt="Rechnungsverarbeitung",
             completeness_status=CompletenessStatus.vollstaendig,
         )

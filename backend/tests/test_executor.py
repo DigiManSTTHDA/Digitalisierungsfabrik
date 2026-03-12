@@ -88,7 +88,7 @@ def executor() -> Executor:
 def exploration_artifact() -> ExplorationArtifact:
     slot = ExplorationSlot(
         slot_id="s01",
-        bezeichnung="Test",
+        titel="Test",
         inhalt="alt",
         completeness_status=CompletenessStatus.leer,
     )
@@ -141,7 +141,7 @@ class TestExecutorHappyPath:
     ) -> None:
         new_slot = {
             "slot_id": "s02",
-            "bezeichnung": "Neu",
+            "titel": "Neu",
             "inhalt": "",
             "completeness_status": "leer",
         }
@@ -279,7 +279,7 @@ class TestExecutorPreservationCheck:
             # The patches only address /slots/s01/inhalt, but we also change slots["s_extra"]
             result["slots"]["s_extra"] = {
                 "slot_id": "s_extra",
-                "bezeichnung": "injected",
+                "titel": "injected",
                 "inhalt": "",
                 "completeness_status": "leer",
             }

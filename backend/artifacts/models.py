@@ -81,7 +81,7 @@ class ExplorationSlot(BaseModel):
     """Ein einzelner Informationsslot im Explorationsartefakt."""
 
     slot_id: str
-    bezeichnung: str
+    titel: str  # SDD 5.3: Thema des Slots
     inhalt: str = ""
     completeness_status: CompletenessStatus
 

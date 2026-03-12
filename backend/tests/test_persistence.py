@@ -207,7 +207,7 @@ class TestProjectRepositoryLoadRoundTrip:
         p = repo.create(name="Test")
         slot = ExplorationSlot(
             slot_id="s1",
-            bezeichnung="Prozessname",
+            titel="Prozessname",
             inhalt="Rechnungsverarbeitung",
             completeness_status=CompletenessStatus.vollstaendig,
         )
@@ -288,7 +288,7 @@ class TestProjectRepositoryLoadRoundTrip:
             slots={
                 "s1": ExplorationSlot(
                     slot_id="s1",
-                    bezeichnung="Name",
+                    titel="Name",
                     inhalt="Inhalt",
                     completeness_status=CompletenessStatus.teilweise,
                 )
@@ -309,7 +309,7 @@ class TestProjectRepositoryLoadRoundTrip:
             slots={
                 "s1": ExplorationSlot(
                     slot_id="s1",
-                    bezeichnung="Name",
+                    titel="Name",
                     inhalt="Version 1",
                     completeness_status=CompletenessStatus.teilweise,
                 )
@@ -322,7 +322,7 @@ class TestProjectRepositoryLoadRoundTrip:
             slots={
                 "s1": ExplorationSlot(
                     slot_id="s1",
-                    bezeichnung="Name",
+                    titel="Name",
                     inhalt="Version 2",
                     completeness_status=CompletenessStatus.vollstaendig,
                 )
@@ -389,7 +389,7 @@ class TestProjectRepositoryAtomicity:
         # Modify artifact so save() would write a new artifact_versions row
         slot = ExplorationSlot(
             slot_id="s1",
-            bezeichnung="Test",
+            titel="Test",
             inhalt="Neuer Inhalt",
             completeness_status=CompletenessStatus.teilweise,
         )
