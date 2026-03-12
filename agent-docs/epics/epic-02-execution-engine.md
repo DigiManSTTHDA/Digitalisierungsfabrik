@@ -37,10 +37,6 @@ caller so the Orchestrator can mark affected `Algorithmusabschnitte` as invalida
 
 ## Key Deliverables
 
-> **Korrektur gegenüber Epic-Stub:** Der Stub nannte `backend/core/templates.py`.
-> Die korrekte HLA-Section-6-Pfad ist `backend/artifacts/template_schema.py`.
-> Keine ADR erforderlich — der Stub war falsch, HLA Section 6 ist bindend.
-
 - `backend/artifacts/template_schema.py` – `ArtifactTemplate` Pydantic-Modell +
   statische Template-Instanzen für alle drei Artefakttypen + `is_valid_patch(op, path) → bool`
 - `backend/core/executor.py` – `Executor`-Klasse mit
@@ -100,6 +96,8 @@ dann `backend/artifacts/template_schema.py` implementieren (grün).
   `EXPLORATION_TEMPLATE` — erlaubte Pfade:
   - `/slots/{id}` — `add`, `remove`
     - Gesamten Slot hinzufügen oder entfernen
+  - `/slots/{id}/titel` — `replace`
+    - Titel/Thema eines Slots aktualisieren (SDD 5.3: Pflichtfeld)
   - `/slots/{id}/inhalt` — `replace`
     - Freitextinhalt eines Slots aktualisieren
   - `/slots/{id}/completeness_status` — `replace`
@@ -148,6 +146,8 @@ dann `backend/artifacts/template_schema.py` implementieren (grün).
 **Tests in `backend/tests/test_executor.py` (Template-Abschnitt):**
 
 - **T-1 (falsifiable):** Jeder Test prüft exakte Rückgabewerte, nicht nur Nicht-Exception.
+- Test: `EXPLORATION_TEMPLATE.is_valid_patch("replace", "/slots/slot_01/titel")` → `True`
+  (SDD 5.3 Pflichtfeld — muss patchbar sein)
 - Test: `EXPLORATION_TEMPLATE.is_valid_patch("replace", "/slots/slot_01/inhalt")` → `True`
 - Test: `EXPLORATION_TEMPLATE.is_valid_patch("add", "/slots/slot_01/inhalt")` → `False`
   (nur `replace` erlaubt auf `/inhalt`)
@@ -170,7 +170,7 @@ dann `backend/artifacts/template_schema.py` implementieren (grün).
 - [ ] `ALGORITHM_TEMPLATE` enthält alle oben gelisteten Pfade inkl. `allowed_ops`
 - [ ] `TEMPLATES`-Dict mit allen 3 Einträgen vorhanden
 - [ ] `is_valid_patch()` verwendet `re.fullmatch` (kein Partial-Match)
-- [ ] Alle 8 Template-Tests in `test_executor.py` grün
+- [ ] Alle 9 Template-Tests in `test_executor.py` grün
 - [ ] `ruff check .` → exit 0
 - [ ] `ruff format --check .` → exit 0
 - [ ] `python -m mypy . --explicit-package-bases` → exit 0
@@ -309,6 +309,7 @@ Fixture `exploration_artifact` — `ExplorationArtifact` mit einem vordefinierte
 - [ ] Pipeline Schritt 3 (Snapshot via `model_dump()`) implementiert
 - [ ] Pipeline Schritt 4 (Patch-Anwendung via `jsonpatch`) implementiert
 - [ ] Pipeline Schritt 5 (Preservation-Check) implementiert
+- [ ] Pipeline Schritt 6 (Invalidierungs-Check) ist bewusst NICHT in dieser Story — wird in Story 02-03 implementiert
 - [ ] Pipeline Schritt 7 (Version-Bump bei nicht-leerem Patch) implementiert
 - [ ] Logging via `structlog` für jeden Aufruf (INFO und WARNING)
 - [ ] Alle Happy-Path-Tests grün (≥ 4 Tests)
@@ -358,6 +359,18 @@ und ein separater Executor-Call das Algorithmusartefakt atomar aktualisiert.
 - `invalidated_abschnitt_ids` ist **niemals** `None`, immer eine Liste (ggf. leer)
 - Der Executor schreibt **nicht** selbst auf das Algorithmusartefakt — er gibt nur die IDs zurück
 
+**Verantwortungsteilung für die vollständige Invalidierung (SDD 5.5):**
+SDD 5.5 fordert, dass bei Invalidierung **zwei** Flags gesetzt werden:
+1. `Algorithmusabschnitt.status` → `invalidiert` (für alle referenzierten Abschnitte)
+2. `Strukturschritt.algorithmus_status` → `invalidiert` (auf dem auslösenden Strukturschritt)
+
+Der Executor übernimmt ausschließlich Schritt 1 — er gibt die betroffenen `abschnitt_ids` zurück.
+Schritt 2 liegt in der Verantwortung des **Orchestrators (Epic 03)**: Der Orchestrator führt nach
+Erhalt der `invalidated_abschnitt_ids` einen separaten `Executor.apply_patches()`-Aufruf aus, der
+`/schritte/{schritt_id}/algorithmus_status` → `replace: "invalidiert"` setzt.
+Diese Aufteilung ist bewusst: Der Executor bleibt zustandslos; der Orchestrator koordiniert
+alle Schreiboperationen gemäß SDD 6.3 (11-Schritt-Zyklus).
+
 **Tests in `backend/tests/test_executor.py` (Invalidierungs-Abschnitt):**
 
 Fixture `structure_artifact_with_refs` — `StructureArtifact` mit:
@@ -388,6 +401,10 @@ Fixture `structure_artifact_with_refs` — `StructureArtifact` mit:
 - **Kein algorithmus_ref → leere Liste:**
   - Test: Strukturschritt ohne `algorithmus_ref`, Patch auf `beschreibung` →
     `result.invalidated_abschnitt_ids == []`
+  - Test: `add /schritte/s_new` (neuer Schritt, `algorithmus_ref=[]`) →
+    `result.success == True`, `result.invalidated_abschnitt_ids == []`
+    *(add eines neuen Schritts löst die Invalidierungslogik aus, aber da noch keine
+    Algorithmusreferenzen existieren, ist die resultierende Menge leer)*
 
 - **Invalidierung bei gescheitertem Patch → keine IDs:**
   - Test: Invalidierender Patch der in Schritt 4 scheitert (Pfad nicht existent) →
@@ -404,7 +421,7 @@ drei Stories dieses Epics ab:
 
 | Kategorie | Mindest-Testanzahl |
 |---|---|
-| Template-Validierung (`is_valid_patch`) | ≥ 8 Tests |
+| Template-Validierung (`is_valid_patch`) | ≥ 9 Tests |
 | Executor Happy Path (Patch angewendet) | ≥ 4 Tests |
 | RFC-6902-Syntaxfehler | ≥ 4 Tests |
 | Template-Schema-Verletzung | ≥ 2 Tests |
@@ -412,20 +429,22 @@ drei Stories dieses Epics ab:
 | Preservation-Check | ≥ 1 Test |
 | Invalidierung ausgelöst | ≥ 6 Tests |
 | Keine Invalidierung | ≥ 7 Tests |
-| Randfall: kein `algorithmus_ref` | ≥ 1 Test |
+| Randfall: kein `algorithmus_ref` / neuer Schritt | ≥ 2 Tests |
 | Randfall: Fehler → keine IDs | ≥ 1 Test |
-| **Gesamt** | **≥ 36 Tests** |
+| **Gesamt** | **≥ 38 Tests** |
 
 **Definition of Done:**
 
 - [ ] `Executor.apply_patches()` befüllt `invalidated_abschnitt_ids` korrekt für
       alle triggerenden Felder: `beschreibung`, `typ`, `bedingung`, `ausnahme_beschreibung`
 - [ ] `invalidated_abschnitt_ids` ist bei `add`/`remove` auf ganzen Schritt befüllt
+- [ ] `invalidated_abschnitt_ids` ist bei `add` eines neuen Schritts ohne `algorithmus_ref` leer (`[]`)
 - [ ] `invalidated_abschnitt_ids` ist leer bei nicht-triggerenden Feldern (`titel` etc.)
 - [ ] `invalidated_abschnitt_ids` ist leer wenn `success == False`
 - [ ] `invalidated_abschnitt_ids` ist leer für `ExplorationArtifact` und `AlgorithmArtifact`
-- [ ] Alle Invalidierungstests grün (≥ 6 positive + ≥ 7 negative + ≥ 2 Randfälle)
-- [ ] Gesamte Test-Suite ≥ 36 Tests, alle grün
+- [ ] Epic-Dokument beschreibt explizit: `Strukturschritt.algorithmus_status` wird vom Orchestrator (Epic 03) gesetzt, nicht vom Executor
+- [ ] Alle Invalidierungstests grün (≥ 6 positive + ≥ 7 negative + ≥ 3 Randfälle)
+- [ ] Gesamte Test-Suite ≥ 38 Tests, alle grün
 - [ ] Kein Test ist tautologisch (T-1 geprüft: jeder Test würde bei korrekter Regression scheitern)
 - [ ] Alle Tests prüfen exakte Werte (`==`), nicht nur Truthiness (T-3)
 - [ ] `ruff check .` → exit 0

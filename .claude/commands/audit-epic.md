@@ -249,3 +249,17 @@ HLA architecture: YES/NO
 SDD requirements: YES/NO  
 
 If any item is NO, continue fixing until YES.
+
+------------------------------------------------
+EPIC LOG UPDATE
+------------------------------------------------
+
+Append audit results to:
+
+agent-docs/epic-runs/<epic-id>.md
+
+Include:
+
+- architecture compliance
+- SDD compliance
+- dependency compliance
