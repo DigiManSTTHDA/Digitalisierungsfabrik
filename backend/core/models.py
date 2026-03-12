@@ -31,9 +31,7 @@ class Project(BaseModel):
     aktive_phase: Projektphase
     aktiver_modus: str
     projektstatus: Projektstatus
-    exploration_artifact: ExplorationArtifact = Field(
-        default_factory=ExplorationArtifact
-    )
+    exploration_artifact: ExplorationArtifact = Field(default_factory=ExplorationArtifact)
     structure_artifact: StructureArtifact = Field(default_factory=StructureArtifact)
     algorithm_artifact: AlgorithmArtifact = Field(default_factory=AlgorithmArtifact)
     working_memory: WorkingMemory

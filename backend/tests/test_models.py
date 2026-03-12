@@ -4,9 +4,10 @@ TDD: tests are written before (or alongside) implementation.
 Each describe-block focuses on one model or concept.
 """
 
+from datetime import UTC
+
 import pytest
 from pydantic import ValidationError
-
 
 # ---------------------------------------------------------------------------
 # Story 01-01: Enums
@@ -20,11 +21,19 @@ class TestCompletenessStatus:
         assert CompletenessStatus.leer == "leer"
         assert CompletenessStatus.teilweise == "teilweise"
         assert CompletenessStatus.vollstaendig == "vollstaendig"
+        assert CompletenessStatus.nutzervalidiert == "nutzervalidiert"
 
-    def test_is_string_based(self) -> None:
-        from artifacts.models import CompletenessStatus
+    def test_nutzervalidiert_accepted_in_slot(self) -> None:
+        """nutzervalidiert muss als Slot-Status akzeptiert werden (FR-C-07)."""
+        from artifacts.models import CompletenessStatus, ExplorationSlot
 
-        assert isinstance(CompletenessStatus.leer, str)
+        slot = ExplorationSlot(
+            slot_id="s1",
+            bezeichnung="Validierter Slot",
+            inhalt="Bestätigt",
+            completeness_status=CompletenessStatus.nutzervalidiert,
+        )
+        assert slot.completeness_status == CompletenessStatus.nutzervalidiert
 
     def test_invalid_value_raises(self) -> None:
         from artifacts.models import CompletenessStatus
@@ -38,14 +47,14 @@ class TestAlgorithmusStatus:
         from artifacts.models import AlgorithmusStatus
 
         assert AlgorithmusStatus.ausstehend == "ausstehend"
-        assert AlgorithmusStatus.in_bearbeitung == "in_bearbeitung"
-        assert AlgorithmusStatus.abgeschlossen == "abgeschlossen"
+        assert AlgorithmusStatus.aktuell == "aktuell"
         assert AlgorithmusStatus.invalidiert == "invalidiert"
 
-    def test_is_string_based(self) -> None:
+    def test_invalid_value_raises(self) -> None:
         from artifacts.models import AlgorithmusStatus
 
-        assert isinstance(AlgorithmusStatus.ausstehend, str)
+        with pytest.raises(ValueError):
+            AlgorithmusStatus("unbekannt")
 
 
 class TestPhasenstatus:
@@ -55,6 +64,12 @@ class TestPhasenstatus:
         assert Phasenstatus.in_progress == "in_progress"
         assert Phasenstatus.nearing_completion == "nearing_completion"
         assert Phasenstatus.phase_complete == "phase_complete"
+
+    def test_invalid_value_raises(self) -> None:
+        from artifacts.models import Phasenstatus
+
+        with pytest.raises(ValueError):
+            Phasenstatus("fertig")
 
 
 class TestProjektphase:
@@ -67,14 +82,26 @@ class TestProjektphase:
         assert Projektphase.validierung == "validierung"
         assert Projektphase.abgeschlossen == "abgeschlossen"
 
+    def test_invalid_value_raises(self) -> None:
+        from artifacts.models import Projektphase
+
+        with pytest.raises(ValueError):
+            Projektphase("unbekannte_phase")
+
 
 class TestProjektstatus:
     def test_values_exist(self) -> None:
         from artifacts.models import Projektstatus
 
         assert Projektstatus.aktiv == "aktiv"
+        assert Projektstatus.pausiert == "pausiert"
         assert Projektstatus.abgeschlossen == "abgeschlossen"
-        assert Projektstatus.archiviert == "archiviert"
+
+    def test_invalid_value_raises(self) -> None:
+        from artifacts.models import Projektstatus
+
+        with pytest.raises(ValueError):
+            Projektstatus("geloescht")
 
 
 # ---------------------------------------------------------------------------
@@ -148,12 +175,13 @@ class TestStructureArtifact:
             CompletenessStatus,
             StructureArtifact,
             Strukturschritt,
+            Strukturschritttyp,
         )
 
         schritt = Strukturschritt(
             schritt_id="step_001",
             titel="Eingang prüfen",
-            typ="ACTIVITY",
+            typ=Strukturschritttyp.aktion,
             reihenfolge=1,
             completeness_status=CompletenessStatus.leer,
             algorithmus_status=AlgorithmusStatus.ausstehend,
@@ -173,12 +201,13 @@ class TestStructureArtifact:
             CompletenessStatus,
             StructureArtifact,
             Strukturschritt,
+            Strukturschritttyp,
         )
 
         schritt = Strukturschritt(
             schritt_id="step_001",
             titel="Validierung",
-            typ="DECISION",
+            typ=Strukturschritttyp.entscheidung,
             reihenfolge=2,
             nachfolger=["step_002"],
             completeness_status=CompletenessStatus.teilweise,
@@ -189,6 +218,47 @@ class TestStructureArtifact:
         art2 = StructureArtifact.model_validate(art.model_dump())
         assert art2.schritte["step_001"].spannungsfeld == "Zeitdruck vs. Qualität"
         assert art2.schritte["step_001"].nachfolger == ["step_002"]
+
+    def test_algorithmus_ref_roundtrip(self) -> None:
+        """Strukturschritt.algorithmus_ref verknüpft auf Algorithmusabschnitt (FR-B-03)."""
+        from artifacts.models import (
+            AlgorithmusStatus,
+            CompletenessStatus,
+            StructureArtifact,
+            Strukturschritt,
+            Strukturschritttyp,
+        )
+
+        schritt = Strukturschritt(
+            schritt_id="step_001",
+            titel="Eingang prüfen",
+            typ=Strukturschritttyp.aktion,
+            reihenfolge=1,
+            algorithmus_ref=["ab1", "ab2"],
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        art = StructureArtifact(schritte={"step_001": schritt})
+        art2 = StructureArtifact.model_validate(art.model_dump())
+        assert art2.schritte["step_001"].algorithmus_ref == ["ab1", "ab2"]
+
+    def test_algorithmus_ref_defaults_to_empty_list(self) -> None:
+        from artifacts.models import (
+            AlgorithmusStatus,
+            CompletenessStatus,
+            Strukturschritt,
+            Strukturschritttyp,
+        )
+
+        schritt = Strukturschritt(
+            schritt_id="step_001",
+            titel="Eingang prüfen",
+            typ=Strukturschritttyp.aktion,
+            reihenfolge=1,
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        assert schritt.algorithmus_ref == []
 
 
 class TestAlgorithmArtifact:
@@ -208,7 +278,7 @@ class TestAlgorithmArtifact:
             EmmaAktion,
         )
 
-        aktion = EmmaAktion(aktion_id="a1", typ="READ_DATA")
+        aktion = EmmaAktion(aktion_id="a1", aktionstyp="READ_DATA")
         abschnitt = Algorithmusabschnitt(
             abschnitt_id="ab1",
             titel="Daten lesen",
@@ -218,7 +288,7 @@ class TestAlgorithmArtifact:
             status=AlgorithmusStatus.ausstehend,
         )
         art = AlgorithmArtifact(abschnitte={"ab1": abschnitt})
-        assert art.abschnitte["ab1"].aktionen["a1"].typ == "READ_DATA"
+        assert art.abschnitte["ab1"].aktionen["a1"].aktionstyp == "READ_DATA"
 
     def test_roundtrip_via_model_dump(self) -> None:
         from artifacts.models import (
@@ -231,9 +301,9 @@ class TestAlgorithmArtifact:
 
         aktion = EmmaAktion(
             aktion_id="a1",
-            typ="SEND_EMAIL",
+            aktionstyp="SEND_EMAIL",
             parameter={"empfaenger": "archiv@firma.de"},
-            emma_ok=True,
+            emma_kompatibel=True,
         )
         abschnitt = Algorithmusabschnitt(
             abschnitt_id="ab1",
@@ -241,11 +311,11 @@ class TestAlgorithmArtifact:
             struktur_ref="step_002",
             aktionen={"a1": aktion},
             completeness_status=CompletenessStatus.vollstaendig,
-            status=AlgorithmusStatus.abgeschlossen,
+            status=AlgorithmusStatus.aktuell,
         )
         art = AlgorithmArtifact(abschnitte={"ab1": abschnitt}, version=2)
         art2 = AlgorithmArtifact.model_validate(art.model_dump())
-        assert art2.abschnitte["ab1"].aktionen["a1"].emma_ok is True
+        assert art2.abschnitte["ab1"].aktionen["a1"].emma_kompatibel is True
         assert art2.version == 2
 
     def test_json_schema_valid(self) -> None:
@@ -262,7 +332,7 @@ class TestAlgorithmArtifact:
 
 class TestWorkingMemory:
     def test_instantiation(self) -> None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from artifacts.models import Phasenstatus, Projektphase
         from core.working_memory import WorkingMemory
@@ -272,7 +342,7 @@ class TestWorkingMemory:
             aktive_phase=Projektphase.exploration,
             aktiver_modus="exploration",
             phasenstatus=Phasenstatus.in_progress,
-            letzte_aenderung=datetime.now(tz=timezone.utc),
+            letzte_aenderung=datetime.now(tz=UTC),
         )
         assert wm.befuellte_slots == 0
         assert wm.bekannte_slots == 0
@@ -280,7 +350,7 @@ class TestWorkingMemory:
         assert wm.flags == []
 
     def test_roundtrip_via_model_dump(self) -> None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from artifacts.models import CompletenessStatus, Phasenstatus, Projektphase
         from core.working_memory import WorkingMemory
@@ -294,12 +364,51 @@ class TestWorkingMemory:
             bekannte_slots=5,
             completeness_state={"s1": CompletenessStatus.vollstaendig},
             flags=["phase_complete"],
-            letzte_aenderung=datetime.now(tz=timezone.utc),
+            letzte_aenderung=datetime.now(tz=UTC),
         )
         data = wm.model_dump()
         wm2 = WorkingMemory.model_validate(data)
         assert wm2.completeness_state["s1"] == CompletenessStatus.vollstaendig
         assert "phase_complete" in wm2.flags
+
+    def test_vorheriger_modus_roundtrip(self) -> None:
+        """vorheriger_modus wird für Rückkehr nach Moderator-Unterbrechung gebraucht."""
+        from datetime import datetime
+
+        from artifacts.models import Phasenstatus, Projektphase
+        from core.working_memory import WorkingMemory
+
+        wm = WorkingMemory(
+            projekt_id="p1",
+            aktive_phase=Projektphase.exploration,
+            aktiver_modus="moderator",
+            vorheriger_modus="exploration",
+            phasenstatus=Phasenstatus.in_progress,
+            letzte_aenderung=datetime.now(tz=UTC),
+        )
+        wm2 = WorkingMemory.model_validate(wm.model_dump())
+        assert wm2.vorheriger_modus == "exploration"
+        assert wm2.aktiver_modus == "moderator"
+
+    def test_spannungsfelder_and_letzter_dialogturn(self) -> None:
+        """spannungsfelder und letzter_dialogturn müssen erhalten bleiben."""
+        from datetime import datetime
+
+        from artifacts.models import Phasenstatus, Projektphase
+        from core.working_memory import WorkingMemory
+
+        wm = WorkingMemory(
+            projekt_id="p1",
+            aktive_phase=Projektphase.exploration,
+            aktiver_modus="exploration",
+            phasenstatus=Phasenstatus.in_progress,
+            spannungsfelder=["Zeitdruck vs. Qualität", "Kosten vs. Vollständigkeit"],
+            letzter_dialogturn=7,
+            letzte_aenderung=datetime.now(tz=UTC),
+        )
+        wm2 = WorkingMemory.model_validate(wm.model_dump())
+        assert wm2.spannungsfelder == ["Zeitdruck vs. Qualität", "Kosten vs. Vollständigkeit"]
+        assert wm2.letzter_dialogturn == 7
 
 
 class TestProject:
@@ -311,7 +420,7 @@ class TestProject:
         assert "exploration_artifact" in schema["properties"]
 
     def test_default_artifacts_are_empty(self) -> None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from artifacts.models import Phasenstatus, Projektphase, Projektstatus
         from core.models import Project
@@ -322,13 +431,13 @@ class TestProject:
             aktive_phase=Projektphase.exploration,
             aktiver_modus="exploration",
             phasenstatus=Phasenstatus.in_progress,
-            letzte_aenderung=datetime.now(tz=timezone.utc),
+            letzte_aenderung=datetime.now(tz=UTC),
         )
         p = Project(
             projekt_id="p1",
             name="Testprojekt",
-            erstellt_am=datetime.now(tz=timezone.utc),
-            zuletzt_geaendert=datetime.now(tz=timezone.utc),
+            erstellt_am=datetime.now(tz=UTC),
+            zuletzt_geaendert=datetime.now(tz=UTC),
             aktive_phase=Projektphase.exploration,
             aktiver_modus="exploration",
             projektstatus=Projektstatus.aktiv,
@@ -340,7 +449,7 @@ class TestProject:
 
     def test_model_dump_is_json_serialisable(self) -> None:
         import json
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from artifacts.models import Phasenstatus, Projektphase, Projektstatus
         from core.models import Project
@@ -351,13 +460,13 @@ class TestProject:
             aktive_phase=Projektphase.exploration,
             aktiver_modus="exploration",
             phasenstatus=Phasenstatus.in_progress,
-            letzte_aenderung=datetime.now(tz=timezone.utc),
+            letzte_aenderung=datetime.now(tz=UTC),
         )
         p = Project(
             projekt_id="p1",
             name="JSON-Test",
-            erstellt_am=datetime.now(tz=timezone.utc),
-            zuletzt_geaendert=datetime.now(tz=timezone.utc),
+            erstellt_am=datetime.now(tz=UTC),
+            zuletzt_geaendert=datetime.now(tz=UTC),
             aktive_phase=Projektphase.exploration,
             aktiver_modus="exploration",
             projektstatus=Projektstatus.aktiv,

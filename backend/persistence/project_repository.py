@@ -10,8 +10,10 @@ user-supplied data (prevents SQL injection).
 
 from __future__ import annotations
 
+import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TypeVar
 
 from artifacts.models import (
     AlgorithmArtifact,
@@ -24,6 +26,8 @@ from artifacts.models import (
 from core.models import Project
 from core.working_memory import WorkingMemory
 from persistence.database import Database
+
+_ArtifactT = TypeVar("_ArtifactT", ExplorationArtifact, StructureArtifact, AlgorithmArtifact)
 
 
 class ProjectRepository:
@@ -38,7 +42,7 @@ class ProjectRepository:
 
     def create(self, name: str, beschreibung: str = "") -> Project:
         """Create a new project with empty artifacts and persist it immediately."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         projekt_id = str(uuid.uuid4())
 
         wm = WorkingMemory(
@@ -67,7 +71,7 @@ class ProjectRepository:
 
         Updates project.zuletzt_geaendert to the current timestamp.
         """
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         project.zuletzt_geaendert = now
         project.working_memory.letzte_aenderung = now
 
@@ -98,13 +102,23 @@ class ProjectRepository:
                 ),
             )
 
-            # 2. Insert new artifact versions
+            # 2. Insert new artifact version — only if version changed since last save.
+            # Each artifact tracks its own version counter (incremented by the Executor
+            # after a successful patch). Artifacts that were not patched keep their
+            # version number and must not produce spurious duplicate rows.
             ts = now.isoformat()
             for typ, artifact in (
                 ("exploration", project.exploration_artifact),
                 ("structure", project.structure_artifact),
                 ("algorithm", project.algorithm_artifact),
             ):
+                already_stored = conn.execute(
+                    """SELECT 1 FROM artifact_versions
+                       WHERE projekt_id = ? AND typ = ? AND version_id = ?""",
+                    (project.projekt_id, typ, artifact.version),
+                ).fetchone()
+                if already_stored is not None:
+                    continue
                 conn.execute(
                     """INSERT INTO artifact_versions
                            (projekt_id, typ, version_id, timestamp, created_by, inhalt)
@@ -133,13 +147,13 @@ class ProjectRepository:
         """Load a project by ID. Raises ValueError if not found."""
         conn = self._db.get_connection()
 
-        row = conn.execute(
-            "SELECT * FROM projects WHERE projekt_id = ?", (projekt_id,)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM projects WHERE projekt_id = ?", (projekt_id,)).fetchone()
         if row is None:
             raise ValueError(f"Projekt '{projekt_id}' nicht gefunden")
 
-        exploration = self._load_latest_artifact(conn, projekt_id, "exploration", ExplorationArtifact)
+        exploration = self._load_latest_artifact(
+            conn, projekt_id, "exploration", ExplorationArtifact
+        )
         structure = self._load_latest_artifact(conn, projekt_id, "structure", StructureArtifact)
         algorithm = self._load_latest_artifact(conn, projekt_id, "algorithm", AlgorithmArtifact)
         wm = self._load_working_memory(conn, projekt_id)
@@ -173,11 +187,11 @@ class ProjectRepository:
 
     def _load_latest_artifact(
         self,
-        conn,  # type: ignore[no-untyped-def]
+        conn: sqlite3.Connection,
         projekt_id: str,
         typ: str,
-        model_class: type,
-    ) -> object:
+        model_class: type[_ArtifactT],
+    ) -> _ArtifactT:
         row = conn.execute(
             """SELECT inhalt FROM artifact_versions
                WHERE projekt_id = ? AND typ = ?
@@ -190,7 +204,7 @@ class ProjectRepository:
             return model_class()
         return model_class.model_validate_json(row["inhalt"])
 
-    def _load_working_memory(self, conn, projekt_id: str) -> WorkingMemory:  # type: ignore[no-untyped-def]
+    def _load_working_memory(self, conn: sqlite3.Connection, projekt_id: str) -> WorkingMemory:
         row = conn.execute(
             "SELECT inhalt FROM working_memory WHERE projekt_id = ?", (projekt_id,)
         ).fetchone()

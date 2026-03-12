@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -m pytest tests/ -q)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_models.py -q)",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(ruff check:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npm run:*)",
+      "Bash(ruff format:*)",
+      "Bash(mypy .)",
+      "Bash(pytest --tb=short -q)",
+      "Bash(python -m mypy .)",
+      "Bash(ls c:/Projects/Digitalisierungsfabrik/Digitalisierungsfabrik/backend/.venv/Scripts/mypy*)",
+      "Bash(pip install:*)",
+      "Bash(python -m mypy . --explicit-package-bases)",
+      "Bash(npx prettier:*)",
+      "Bash(python -c \"from config import get_settings; print\\(get_settings\\(\\)\\)\")",
+      "Bash(python -m mypy main.py config.py --explicit-package-bases)",
+      "Bash(python -m mypy tests/test_health.py --explicit-package-bases)",
+      "Bash(pytest tests/test_health.py --tb=short -q)",
+      "Bash(python -m mypy artifacts/models.py --explicit-package-bases)",
+      "Bash(python -m mypy artifacts/models.py artifacts/models.py --explicit-package-bases)",
+      "Bash(.venv/Scripts/pytest --tb=short -q)"
+    ]
+  }
+}

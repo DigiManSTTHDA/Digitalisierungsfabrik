@@ -1,0 +1,19 @@
+Collecting mypy
+  Downloading mypy-1.19.1-cp312-cp312-win_amd64.whl.metadata (2.3 kB)
+Requirement already satisfied: typing_extensions>=4.6.0 in c:\projects\digitalisierungsfabrik\digitalisierungsfabrik\backend\.venv\lib\site-packages (from mypy) (4.15.0)
+Collecting mypy_extensions>=1.0.0 (from mypy)
+  Using cached mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+Collecting pathspec>=0.9.0 (from mypy)
+  Downloading pathspec-1.0.4-py3-none-any.whl.metadata (13 kB)
+Collecting librt>=0.6.2 (from mypy)
+  Downloading librt-0.8.1-cp312-cp312-win_amd64.whl.metadata (1.4 kB)
+Downloading mypy-1.19.1-cp312-cp312-win_amd64.whl (10.1 MB)
+   ---------------------------------------- 10.1/10.1 MB 1.2 MB/s eta 0:00:00
+Downloading librt-0.8.1-cp312-cp312-win_amd64.whl (62 kB)
+Using cached mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+Downloading pathspec-1.0.4-py3-none-any.whl (55 kB)
+Installing collected packages: pathspec, mypy_extensions, librt, mypy
+Successfully installed librt-0.8.1 mypy-1.19.1 mypy_extensions-1.1.0 pathspec-1.0.4
+
+[notice] A new release of pip is available: 24.2 -> 26.0.1
+[notice] To update, run: python.exe -m pip install --upgrade pip

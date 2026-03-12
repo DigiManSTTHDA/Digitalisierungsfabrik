@@ -9,13 +9,11 @@ from httpx import ASGITransport, AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_health_returns_ok():
+async def test_health_returns_ok() -> None:
     """GET /health must return HTTP 200 with body {"status": "ok"}."""
     from main import app
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/health")
 
     assert response.status_code == 200
@@ -23,13 +21,11 @@ async def test_health_returns_ok():
 
 
 @pytest.mark.asyncio
-async def test_health_content_type_is_json():
+async def test_health_content_type_is_json() -> None:
     """GET /health must return application/json."""
     from main import app
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/health")
 
     assert "application/json" in response.headers["content-type"]

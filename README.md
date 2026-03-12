@@ -2,7 +2,7 @@
 
 AI-geführtes System zur Prozesserhebung für Digitalisierungsprojekte.
 
-**Status:** Implementierung läuft — Epic 00 (Projektfundament) abgeschlossen.
+**Status:** Implementierung läuft — Epic 00 + 01 abgeschlossen.
 
 ---
 
@@ -126,6 +126,27 @@ digitalisierungsfabrik/
 
 ---
 
+## Konfigurationsreferenz
+
+Alle Parameter werden aus `backend/.env` gelesen (Vorlage: `backend/.env.example`):
+
+| Parameter | Standardwert | Beschreibung |
+|---|---|---|
+| `LLM_PROVIDER` | `anthropic` | LLM-Anbieter: `anthropic` oder `ollama` |
+| `LLM_MODEL` | `claude-opus-4-6` | Modellname |
+| `LLM_API_KEY` | *(leer)* | API-Key (Anthropic) |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama-Endpoint (nur bei `ollama`) |
+| `DATABASE_PATH` | `./data/digitalisierungsfabrik.db` | SQLite-Datenbankpfad |
+| `DIALOG_HISTORY_N` | `3` | Anzahl letzter Turns im Kontext |
+| `DIALOG_HISTORY_MODERATOR_M` | `10` | Turns-Fenster für den Moderator |
+| `TOKEN_WARN_THRESHOLD` | `80000` | Token-Warnschwelle |
+| `TOKEN_HARD_LIMIT` | `100000` | Maximale Token-Anzahl |
+| `AUTOMATION_WARN_THRESHOLD` | `1` | Automatisierungs-Warnschwelle (SDD 8.1.2) |
+| `LOG_LEVEL` | `INFO` | Log-Level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `LLM_LOG_ENABLED` | `true` | LLM-Requests loggen |
+
+---
+
 ## OpenAPI-Vertrag (ADR-001)
 
 Die REST-Schnittstelle zwischen Backend und Frontend wird durch einen
@@ -152,12 +173,24 @@ Vollständige Begründung: `agent-docs/decisions/ADR-001-openapi-contract.md`
 
 ---
 
+## Weiterführende Dokumentation
+
+| Dokument | Inhalt |
+|---|---|
+| `AGENTS.md` | Regeln für AI-Agenten: Workflow, DoD, TDD, Designconstraints |
+| `digitalisierungsfabrik_systemdefinition.md` | Vollständige Systemanforderungen (SDD) |
+| `hla_architecture.md` | High-Level-Architektur (bindend) |
+| `agent-docs/decisions/` | Architecture Decision Records (ADRs) |
+| `agent-docs/epics/` | Epic-Planung mit Stories und DoD-Checklisten |
+
+---
+
 ## Implementierungsfortschritt
 
 | Epic | Thema | Status |
 |---|---|---|
 | 00 | Projektfundament | ✅ abgeschlossen |
-| 01 | Datenmodelle & Persistenz | ⏳ ausstehend |
+| 01 | Datenmodelle & Persistenz | ✅ abgeschlossen |
 | 02 | Execution Engine | ⏳ ausstehend |
 | 03 | Orchestrator & Working Memory | ⏳ ausstehend |
 | 04 | Exploration Mode & LLM | ⏳ ausstehend |

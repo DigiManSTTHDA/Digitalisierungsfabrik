@@ -6,13 +6,17 @@ All tests use in-memory SQLite (:memory:) — no file I/O required.
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime, timezone
+from collections.abc import Generator
+from datetime import UTC, datetime
 
 import pytest
 
 from artifacts.models import (
+    AlgorithmArtifact,
+    Algorithmusabschnitt,
     AlgorithmusStatus,
     CompletenessStatus,
+    EmmaAktion,
     ExplorationArtifact,
     ExplorationSlot,
     Phasenstatus,
@@ -20,10 +24,12 @@ from artifacts.models import (
     Projektstatus,
     StructureArtifact,
     Strukturschritt,
+    Strukturschritttyp,
 )
 from core.models import Project
 from core.working_memory import WorkingMemory
-
+from persistence.database import Database
+from persistence.project_repository import ProjectRepository
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -36,7 +42,7 @@ def make_working_memory(projekt_id: str = "p1") -> WorkingMemory:
         aktive_phase=Projektphase.exploration,
         aktiver_modus="exploration",
         phasenstatus=Phasenstatus.in_progress,
-        letzte_aenderung=datetime.now(tz=timezone.utc),
+        letzte_aenderung=datetime.now(tz=UTC),
     )
 
 
@@ -57,9 +63,7 @@ class TestDatabase:
 
         db = Database(":memory:")
         conn = db.get_connection()
-        cursor = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-        )
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
         tables = {row[0] for row in cursor.fetchall()}
         assert "projects" in tables
         assert "artifact_versions" in tables
@@ -68,16 +72,20 @@ class TestDatabase:
         assert "validation_reports" in tables
         db.close()
 
-    def test_idempotent_schema_init(self) -> None:
-        """Calling Database twice on the same connection must not raise."""
+    def test_idempotent_schema_init(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
+        """CREATE TABLE IF NOT EXISTS — zweites Database auf derselben Datei darf nicht schmeißen."""
         from persistence.database import Database
 
-        db = Database(":memory:")
-        # A second Database on a real file would re-run IF NOT EXISTS — fine.
-        # For :memory: just verify no exception on repeated use.
-        conn = db.get_connection()
-        conn.execute("SELECT 1")
-        db.close()
+        db_file = str(tmp_path / "test.db")
+        db1 = Database(db_file)
+        db1.close()
+        # If IF NOT EXISTS were missing, this second init would raise "table already exists"
+        db2 = Database(db_file)
+        conn = db2.get_connection()
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = {row[0] for row in cursor.fetchall()}
+        assert "projects" in tables
+        db2.close()
 
     def test_foreign_keys_enforced(self) -> None:
         from persistence.database import Database
@@ -102,7 +110,16 @@ class TestDatabase:
         with db.transaction():
             db.get_connection().execute(
                 "INSERT INTO projects VALUES (?,?,?,?,?,?,?,?)",
-                ("p1", "Test", "", "2026-01-01", "2026-01-01", "exploration", "exploration", "aktiv"),
+                (
+                    "p1",
+                    "Test",
+                    "",
+                    "2026-01-01",
+                    "2026-01-01",
+                    "exploration",
+                    "exploration",
+                    "aktiv",
+                ),
             )
         # Verify row is visible after transaction
         cursor = db.get_connection().execute("SELECT projekt_id FROM projects")
@@ -119,7 +136,16 @@ class TestDatabase:
             with db.transaction():
                 db.get_connection().execute(
                     "INSERT INTO projects VALUES (?,?,?,?,?,?,?,?)",
-                    ("p2", "Test", "", "2026-01-01", "2026-01-01", "exploration", "exploration", "aktiv"),
+                    (
+                        "p2",
+                        "Test",
+                        "",
+                        "2026-01-01",
+                        "2026-01-01",
+                        "exploration",
+                        "exploration",
+                        "aktiv",
+                    ),
                 )
                 raise ValueError("simulated failure")
         # Row must NOT be present after rollback
@@ -134,10 +160,7 @@ class TestDatabase:
 
 
 @pytest.fixture
-def repo():  # type: ignore[return]
-    from persistence.database import Database
-    from persistence.project_repository import ProjectRepository
-
+def repo() -> Generator[ProjectRepository, None, None]:
     db = Database(":memory:")
     yield ProjectRepository(db)
     db.close()
@@ -195,12 +218,36 @@ class TestProjectRepositoryLoadRoundTrip:
         assert loaded.exploration_artifact.slots["s1"].inhalt == "Rechnungsverarbeitung"
         assert loaded.exploration_artifact.version == 1
 
+    def test_save_and_load_algorithm_artifact(self, repo) -> None:  # type: ignore[no-untyped-def]
+        p = repo.create(name="Test")
+        aktion = EmmaAktion(
+            aktion_id="a1",
+            aktionstyp="SEND_EMAIL",
+            parameter={"empfaenger": "archiv@firma.de"},
+            emma_kompatibel=True,
+        )
+        abschnitt = Algorithmusabschnitt(
+            abschnitt_id="ab1",
+            titel="Benachrichtigung versenden",
+            struktur_ref="step_001",
+            aktionen={"a1": aktion},
+            completeness_status=CompletenessStatus.vollstaendig,
+            status=AlgorithmusStatus.aktuell,
+        )
+        p.algorithm_artifact = AlgorithmArtifact(abschnitte={"ab1": abschnitt}, version=1)
+        repo.save(p)
+
+        loaded = repo.load(p.projekt_id)
+        assert loaded.algorithm_artifact.abschnitte["ab1"].titel == "Benachrichtigung versenden"
+        assert loaded.algorithm_artifact.abschnitte["ab1"].aktionen["a1"].emma_kompatibel is True
+        assert loaded.algorithm_artifact.version == 1
+
     def test_save_and_load_structure_artifact(self, repo) -> None:  # type: ignore[no-untyped-def]
         p = repo.create(name="Test")
         schritt = Strukturschritt(
             schritt_id="step_001",
             titel="Eingang prüfen",
-            typ="ACTIVITY",
+            typ=Strukturschritttyp.aktion,
             reihenfolge=1,
             completeness_status=CompletenessStatus.teilweise,
             algorithmus_status=AlgorithmusStatus.ausstehend,
@@ -212,22 +259,49 @@ class TestProjectRepositoryLoadRoundTrip:
         assert loaded.structure_artifact.schritte["step_001"].titel == "Eingang prüfen"
         assert loaded.structure_artifact.schritte["step_001"].schritt_id == "step_001"
 
-    def test_save_increments_version_in_artifact_versions(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """Each save() must create a new row in artifact_versions."""
-        from persistence.database import Database
+    def test_only_changed_artifacts_create_new_version_rows(self, repo) -> None:  # type: ignore[no-untyped-def]
+        """save() schreibt nur dann eine neue Zeile, wenn sich die version des Artefakts
+        erhöht hat. Unveränderte Artefakte erzeugen keine Duplikat-Zeilen."""
 
         p = repo.create(name="Test")
-        repo.save(p)  # second save (create already saved once)
-
         db: Database = repo._db
-        cursor = db.get_connection().execute(
-            "SELECT COUNT(*) FROM artifact_versions WHERE projekt_id=?",
-            (p.projekt_id,),
+
+        def count_rows() -> int:
+            return int(
+                db.get_connection()
+                .execute(
+                    "SELECT COUNT(*) FROM artifact_versions WHERE projekt_id=?",
+                    (p.projekt_id,),
+                )
+                .fetchone()[0]
+            )
+
+        # create() speichert version=0 für alle 3 Artefakte → 3 Zeilen
+        assert count_rows() == 3
+
+        # save() ohne Änderung → keine neuen Zeilen
+        repo.save(p)
+        assert count_rows() == 3
+
+        # Nur Explorationsartefakt wird gepatcht (version 0 → 1)
+        p.exploration_artifact = ExplorationArtifact(
+            slots={
+                "s1": ExplorationSlot(
+                    slot_id="s1",
+                    bezeichnung="Name",
+                    inhalt="Inhalt",
+                    completeness_status=CompletenessStatus.teilweise,
+                )
+            },
+            version=1,
         )
-        count = cursor.fetchone()[0]
-        # create() saves 3 artifact types × 1 = 3 rows,
-        # explicit save() adds another 3 = 6 total
-        assert count >= 6
+        repo.save(p)
+        # Nur exploration bekommt eine neue Zeile → 4 Zeilen total
+        assert count_rows() == 4
+
+        # Struktur- und Algorithmusartefakt noch unverändert → erneutes save → immer noch 4
+        repo.save(p)
+        assert count_rows() == 4
 
     def test_multiple_saves_load_returns_latest(self, repo) -> None:  # type: ignore[no-untyped-def]
         p = repo.create(name="Test")
@@ -292,10 +366,64 @@ class TestProjectRepositoryAtomicity:
         assert loaded.working_memory.befuellte_slots == 5
         assert loaded.working_memory.bekannte_slots == 10
 
-    def test_save_updates_zuletzt_geaendert(self, repo) -> None:  # type: ignore[no-untyped-def]
+    def test_save_updates_zuletzt_geaendert_in_db(self, repo) -> None:  # type: ignore[no-untyped-def]
+        """zuletzt_geaendert muss nach save() in der Datenbank tatsächlich neuer sein."""
+        import time
+
         p = repo.create(name="Test")
         original_ts = p.zuletzt_geaendert
-        import time
-        time.sleep(0.01)
+        time.sleep(0.02)
         repo.save(p)
-        assert p.zuletzt_geaendert >= original_ts
+
+        loaded = repo.load(p.projekt_id)
+        assert loaded.zuletzt_geaendert > original_ts
+
+    def test_save_is_atomic_partial_failure_rolls_back(self, repo, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+        """FR-E-01: Bei einem Fehler mitten in save() darf kein Partial State geschrieben werden.
+
+        Strategie: Wir patchen working_memory.model_dump_json() so, dass es nach dem
+        Artifact-INSERT wirft. Danach darf die neue Artifact-Version NICHT in der DB stehen.
+        """
+        p = repo.create(name="Atomic Test")
+
+        # Modify artifact so save() would write a new artifact_versions row
+        slot = ExplorationSlot(
+            slot_id="s1",
+            bezeichnung="Test",
+            inhalt="Neuer Inhalt",
+            completeness_status=CompletenessStatus.teilweise,
+        )
+        p.exploration_artifact = ExplorationArtifact(slots={"s1": slot}, version=1)
+
+        # Force failure when working_memory is serialized (last step in save()).
+        # Pydantic v2 blocks instance-level attribute patching, so we patch the class.
+        def fail(self: object) -> str:
+            raise RuntimeError("simulated DB write failure")
+
+        monkeypatch.setattr(WorkingMemory, "model_dump_json", fail)
+
+        with pytest.raises(RuntimeError, match="simulated DB write failure"):
+            repo.save(p)
+
+        # Artifact version 1 must NOT be in the DB — transaction was rolled back
+        conn = repo._db.get_connection()
+        count = conn.execute(
+            "SELECT COUNT(*) FROM artifact_versions WHERE projekt_id=? AND version_id=1",
+            (p.projekt_id,),
+        ).fetchone()[0]
+        assert count == 0, "Partial write committed — atomicity (FR-E-01) violated"
+
+    def test_phase_change_persists(self, repo) -> None:  # type: ignore[no-untyped-def]
+        """aktive_phase-Änderung muss nach save()/load() erhalten bleiben."""
+        p = repo.create(name="Test")
+        assert p.aktive_phase == Projektphase.exploration
+
+        p.aktive_phase = Projektphase.strukturierung
+        p.aktiver_modus = "structuring"
+        p.working_memory.aktive_phase = Projektphase.strukturierung
+        repo.save(p)
+
+        loaded = repo.load(p.projekt_id)
+        assert loaded.aktive_phase == Projektphase.strukturierung
+        assert loaded.aktiver_modus == "structuring"
+        assert loaded.working_memory.aktive_phase == Projektphase.strukturierung

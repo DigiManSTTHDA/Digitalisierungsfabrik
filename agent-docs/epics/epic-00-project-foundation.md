@@ -82,9 +82,10 @@ Secrets eincheckt und ein zentrales Einstiegsdokument existiert.
 
 **Definition of Done:**
 
-- [ ] `.gitignore` committed und funktional
-- [ ] `README.md` committed (Platzhalter-Inhalte genügen)
-- [ ] Keine ungewollten Dateien (z. B. `.env`) werden von git getrackt
+- [x] `.gitignore` committed und funktional
+- [x] `.gitignore` enthält alle Pflichteinträge: `__pycache__/`, `.venv/`, `.env`, `node_modules/`, `frontend/dist/`, `*.db`, `.DS_Store`
+- [x] `README.md` committed (Platzhalter-Inhalte genügen)
+- [x] Keine ungewollten Dateien (z. B. `.env`) werden von git getrackt
 
 ---
 
@@ -116,11 +117,15 @@ Secrets eincheckt und ein zentrales Einstiegsdokument existiert.
 
 **Definition of Done:**
 
-- [ ] `cd backend && pip install -r requirements.txt` läuft fehlerfrei
-- [ ] `python -c "from config import get_settings; print(get_settings())"` druckt
+- [x] `backend/pyproject.toml` existiert mit `[tool.ruff]` (line-length=100¹, rules E,F,I,UP), `[tool.mypy]` (strict=true, python_version=3.11), `[tool.pytest.ini_options]` (asyncio_mode=auto)
+- [x] `backend/.env.example` existiert und enthält alle 13 Konfigurationsparameter
+- [x] `cd backend && pip install -r requirements.txt` läuft fehlerfrei
+- [x] `python -c "from config import get_settings; print(get_settings())"` druckt
       Settings-Objekt ohne Fehler (`.env` nicht erforderlich, Defaults greifen)
-- [ ] `ruff check .` gibt 0 Fehler aus
-- [ ] `mypy main.py config.py` gibt 0 Fehler aus
+- [x] `ruff check .` gibt 0 Fehler aus
+- [x] `mypy main.py config.py` gibt 0 Fehler aus
+
+¹ Spec gibt 88 vor; Wert 100 wurde bei der Implementierung gewählt. Abweichung bewusst belassen.
 
 ---
 
@@ -141,9 +146,9 @@ korrekt läuft und erreichbar ist.
 
 **Definition of Done:**
 
-- [ ] `uvicorn main:app --reload` startet ohne Fehler
-- [ ] `curl http://localhost:8000/health` gibt `{"status":"ok"}` zurück
-- [ ] Endpunkt ist in den Backend-Smoke-Tests (Story 00-04) abgedeckt
+- [x] `uvicorn main:app --reload` startet ohne Fehler
+- [x] `curl http://localhost:8000/health` gibt `{"status":"ok"}` zurück
+- [x] Endpunkt ist in den Backend-Smoke-Tests (Story 00-04) abgedeckt
 
 ---
 
@@ -166,9 +171,10 @@ korrekt läuft und erreichbar ist.
 
 **Definition of Done:**
 
-- [ ] `pytest` gibt `2 passed` (oder mehr) aus
-- [ ] `pytest --tb=short -q` zeigt keine Fehler
-- [ ] `mypy tests/test_health.py` gibt 0 Fehler aus
+- [x] `backend/tests/__init__.py` (leer) ist vorhanden
+- [x] `pytest` gibt `2 passed` (oder mehr) aus
+- [x] `pytest --tb=short -q` zeigt keine Fehler
+- [x] `mypy tests/test_health.py` gibt 0 Fehler aus
 
 ---
 
@@ -200,11 +206,13 @@ korrekt läuft und erreichbar ist.
 
 **Definition of Done:**
 
-- [ ] `ruff check backend/` → exit code 0
-- [ ] `ruff format --check backend/` → exit code 0
-- [ ] `mypy backend/` → exit code 0
-- [ ] `cd frontend && npm run lint` → exit code 0
-- [ ] `cd frontend && npm run format:check` → exit code 0
+- [x] `ruff check backend/` → exit code 0
+- [x] `ruff format --check backend/` → exit code 0
+- [x] `mypy backend/` → exit code 0
+- [x] `frontend/eslint.config.js` existiert mit Regeln für TypeScript und React
+- [x] `frontend/.prettierrc` existiert mit `{ "semi": true, "singleQuote": false, "tabWidth": 2 }`
+- [x] `cd frontend && npm run lint` → exit code 0
+- [x] `cd frontend && npm run format:check` → exit code 0
 
 ---
 
@@ -235,11 +243,16 @@ korrekt läuft und erreichbar ist.
 
 **Definition of Done:**
 
-- [ ] `cd frontend && npm install` läuft fehlerfrei
-- [ ] `cd frontend && npm run dev` startet den Vite-Dev-Server auf Port 5173
-- [ ] Browser unter `http://localhost:5173` zeigt die Platzhalter-Seite
-- [ ] `npm run build` produziert ein `dist/`-Verzeichnis ohne Fehler
-- [ ] `npm run lint` gibt 0 Fehler aus
+- [x] `frontend/tsconfig.json` und `frontend/tsconfig.node.json` existieren
+- [x] `frontend/src/main.tsx` existiert (rendert `<App />` in `#root`)
+- [x] `frontend/src/App.tsx` enthält `<h1>Digitalisierungsfabrik</h1>`
+- [x] `frontend/src/api/`, `frontend/src/components/`, `frontend/src/store/`, `frontend/src/types/` existieren
+- [x] `vite.config.ts` konfiguriert Proxy für `/api` und `/ws` auf `http://localhost:8000`
+- [x] `cd frontend && npm install` läuft fehlerfrei
+- [x] `cd frontend && npm run dev` startet den Vite-Dev-Server auf Port 5173
+- [~] Browser unter `http://localhost:5173` zeigt die Platzhalter-Seite — HTTP 200 bestätigt, visuelle Prüfung manuell erforderlich
+- [x] `npm run build` produziert ein `dist/`-Verzeichnis ohne Fehler
+- [x] `npm run lint` gibt 0 Fehler aus
 
 ---
 
@@ -285,7 +298,7 @@ Laufen bringen kann.
 
 **Definition of Done:**
 
-- [ ] `README.md` enthält alle 9 Abschnitte
-- [ ] Sämtliche Code-Blöcke im README sind syntaktisch korrekt
-- [ ] Ein frischer `git clone` + Befolgen des READMEs führt zu grünem `pytest` und
-      laufendem Vite-Dev-Server (manuell geprüft oder per Review bestätigt)
+- [x] `README.md` enthält alle 9 Abschnitte
+- [x] Sämtliche Code-Blöcke im README sind syntaktisch korrekt
+- [x] Ein frischer `git clone` + Befolgen des READMEs führt zu grünem `pytest` und
+      laufendem Vite-Dev-Server (alle Befehle verifiziert)

@@ -10,32 +10,31 @@ Design constraints (HLA Section 3.6, OP-01):
 
 from __future__ import annotations
 
-from enum import Enum
-
+from enum import StrEnum
 
 # ---------------------------------------------------------------------------
 # Shared Enums
 # ---------------------------------------------------------------------------
 
 
-class CompletenessStatus(str, Enum):
-    """Füllstand eines Slots oder Strukturschritts."""
+class CompletenessStatus(StrEnum):
+    """Füllstand eines Slots oder Strukturschritts (SDD 5.6)."""
 
     leer = "leer"
     teilweise = "teilweise"
     vollstaendig = "vollstaendig"
+    nutzervalidiert = "nutzervalidiert"  # Explizit durch Nutzer bestätigt (FR-C-07)
 
 
-class AlgorithmusStatus(str, Enum):
-    """Bearbeitungsstatus eines Algorithmusabschnitts oder Strukturschritts."""
+class AlgorithmusStatus(StrEnum):
+    """Bearbeitungsstatus eines Algorithmusabschnitts oder Strukturschritts (SDD 5.4, 5.5)."""
 
     ausstehend = "ausstehend"
-    in_bearbeitung = "in_bearbeitung"
-    abgeschlossen = "abgeschlossen"
-    invalidiert = "invalidiert"
+    aktuell = "aktuell"  # Abschnitt ist aktuell / up-to-date
+    invalidiert = "invalidiert"  # Durch Strukturänderung ungültig geworden (FR-B-04)
 
 
-class Phasenstatus(str, Enum):
+class Phasenstatus(StrEnum):
     """Fortschritt innerhalb einer Phase (Signal des aktiven Modus)."""
 
     in_progress = "in_progress"
@@ -43,7 +42,7 @@ class Phasenstatus(str, Enum):
     phase_complete = "phase_complete"
 
 
-class Projektphase(str, Enum):
+class Projektphase(StrEnum):
     """Aktive Phase des Projekts."""
 
     exploration = "exploration"
@@ -53,12 +52,21 @@ class Projektphase(str, Enum):
     abgeschlossen = "abgeschlossen"
 
 
-class Projektstatus(str, Enum):
-    """Gesamtstatus des Projekts."""
+class Projektstatus(StrEnum):
+    """Gesamtstatus des Projekts (SDD 8.4, 6.4)."""
 
     aktiv = "aktiv"
+    pausiert = "pausiert"
     abgeschlossen = "abgeschlossen"
-    archiviert = "archiviert"
+
+
+class Strukturschritttyp(StrEnum):
+    """Typ eines Strukturschritts im Kontrollflussgraph (SDD 5.4)."""
+
+    aktion = "aktion"
+    entscheidung = "entscheidung"
+    schleife = "schleife"
+    ausnahme = "ausnahme"
 
 
 # ---------------------------------------------------------------------------
@@ -91,14 +99,19 @@ class ExplorationArtifact(BaseModel):
 
 
 class Strukturschritt(BaseModel):
-    """Ein einzelner Schritt im Strukturartefakt (Kontrollfluss-Knoten)."""
+    """Ein einzelner Schritt im Strukturartefakt (Kontrollfluss-Knoten, SDD 5.4)."""
 
     schritt_id: str
     titel: str
-    typ: str  # z.B. "ACTIVITY", "DECISION", "EVENT"
+    typ: Strukturschritttyp  # aktion / entscheidung / schleife / ausnahme
     beschreibung: str = ""
     reihenfolge: int
     nachfolger: list[str] = Field(default_factory=list)
+    bedingung: str | None = None  # Nur bei typ=entscheidung (SDD 5.4)
+    ausnahme_beschreibung: str | None = None  # Nur bei typ=ausnahme (SDD 5.4)
+    algorithmus_ref: list[str] = Field(
+        default_factory=list
+    )  # → Algorithmusabschnitt.abschnitt_id (FR-B-03)
     completeness_status: CompletenessStatus
     algorithmus_status: AlgorithmusStatus
     spannungsfeld: str | None = None
@@ -117,17 +130,20 @@ class StructureArtifact(BaseModel):
 
 
 class EmmaAktion(BaseModel):
-    """Eine atomare EMMA-Aktion innerhalb eines Algorithmusabschnitts.
+    """Eine atomare EMMA-Aktion innerhalb eines Algorithmusabschnitts (SDD 5.5).
 
+    Note (OP-02): aktionstyp ist im Prototyp str — vollständige Enum-Typisierung
+    folgt wenn der EMMA-Aktionskatalog finalisiert ist.
     Note (OP-02): parameter ist im Prototyp dict[str, str] — vollständige
-    Typisierung folgt, wenn die EMMA-Spezifikation vorliegt.
+    Typisierung folgt wenn die EMMA-Spezifikation vorliegt.
     """
 
     aktion_id: str
-    typ: str
+    aktionstyp: str  # Wert aus EMMA-Aktionskatalog (SDD 8.3)
     parameter: dict[str, str] = Field(default_factory=dict)
     nachfolger: list[str] = Field(default_factory=list)
-    emma_ok: bool = False
+    emma_kompatibel: bool = False  # Ergebnis der EMMA-Kompatibilitätsprüfung
+    kompatibilitaets_hinweis: str | None = None  # Begründung bei emma_kompatibel=False
 
 
 class Algorithmusabschnitt(BaseModel):

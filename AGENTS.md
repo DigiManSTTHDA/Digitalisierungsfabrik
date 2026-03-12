@@ -39,11 +39,20 @@ The canonical architecture is defined in `hla_architecture.md`. Follow it.
 binding addition: `frontend/src/types/api.ts` (referenced in HLA Section 6) does **not**
 exist. It is replaced by the generated file `frontend/src/generated/api.d.ts` per ADR-001.
 
+**New directories or structural changes** (files placed outside the paths defined in HLA
+Section 6) require an ADR **before** any implementation work begins. No new directory
+may be created speculatively.
+
+**New dependencies** (Python packages or npm packages not listed in the Tech Stack above)
+may not be added without an ADR. This applies to transitive additions too — do not quietly
+expand `requirements.txt` or `package.json` with unlisted libraries.
+
 ### Deviations from Architecture
 
-Any deviation from `hla_architecture.md` **must** be documented before implementation in
-`agent-docs/decisions/` using the ADR template (see below). Reference the ADR in commit
-messages and inline comments where the deviation occurs.
+Any deviation from `hla_architecture.md` **must** be documented in an ADR **before**
+implementation starts. Implementation must stop until the ADR is written and its status
+is set to `accepted`. Reference the ADR in commit messages and inline comments where the
+deviation occurs.
 
 ---
 
@@ -93,6 +102,95 @@ Which section does this affect?
 
 ---
 
+## Definition of Done — NON-NEGOTIABLE
+
+**Every story and every epic has a Definition of Done (DoD) checklist in its epic document.**
+
+The following rules are absolute. No exceptions. No commits without compliance.
+
+### Rule 1 — Run every DoD command, verify exit code 0
+
+Before committing any story as done, **every single DoD command listed in the epic doc MUST be
+executed and return exit code 0**. "It should work" is not sufficient. Run it. Check the output.
+
+### Rule 2 — Every acceptance criterion needs a DoD checkbox
+
+**Every acceptance criterion that mentions a specific file, directory, configuration value,
+or structural requirement MUST have its own DoD checkbox** — not just the tool command that
+runs on top of it.
+
+Examples of what needs its own checkbox:
+- `frontend/eslint.config.js` existiert → `- [ ] frontend/eslint.config.js existiert`
+- `pyproject.toml` konfiguriert `[tool.mypy]` → `- [ ] pyproject.toml enthält [tool.mypy] strict=true`
+- `src/components/` Verzeichnis existiert → `- [ ] frontend/src/components/ existiert`
+
+A passing `npm run lint` does NOT implicitly verify that `eslint.config.js` has correct
+content. Structural requirements must be checked explicitly.
+
+### Rule 3 — Mark the checklist in the epic document
+
+After verifying each DoD item:
+- Mark it `- [x]` (green) if the command passes or file exists as specified
+- Mark it `- [~] FAILED: <error summary>` (red) if it fails — then fix it before committing
+
+**A story is only done when all its checkboxes are `[x]`.**
+
+### Rule 4 — Never mark an epic done unless all its stories are done
+
+An epic is complete when every story in it has all DoD checkboxes checked `[x]`.
+Update the epic's **Status** section with date, test count, and commit references.
+
+### Rule 5 — Key Deliverables must use exact HLA paths
+
+Every **Key Deliverables** section in an epic document MUST reference the exact file paths
+defined in `hla_architecture.md` Section 6. Invented or approximate paths are not allowed.
+
+If an implementation deviates from HLA Section 6 paths, an ADR is required **before** writing
+the epic document. The Key Deliverables section then references both the ADR and the actual path.
+
+### Rule 6 — Pydantic model fields must be complete against the SDD field tables
+
+When an epic story specifies Pydantic models, the acceptance criteria **must list every field**
+from the corresponding SDD field table — not a subset.
+
+Before writing or reviewing a story that defines a data model:
+1. Locate the SDD field table for that model (e.g. SDD Section 5.3 for `Strukturschritt`).
+2. Copy every row from that table into the story's acceptance criteria field list.
+3. Cross-check: no SDD field may be absent from the story AC without explicit justification
+   (e.g. "deferred to Epic N because it requires the Executor").
+
+A passing `mypy` or `pytest` does NOT verify field completeness. Field coverage must be
+checked manually against the SDD before marking a model story as done.
+
+### Rule 7 — Backend stories that change logic must include tests
+
+Any backend story that introduces or modifies logic **must** include or extend tests for
+that logic. A story that changes backend code but adds no tests is **incomplete** —
+regardless of whether existing tests still pass.
+
+### The full DoD checklist for backend stories
+
+These commands apply to **every backend story**. Run them from `backend/` with the venv activated:
+
+```bash
+ruff check .                               # exit 0
+ruff format --check .                      # exit 0
+python -m mypy . --explicit-package-bases  # exit 0
+pytest --tb=short -q                       # exit 0, 0 failures
+```
+
+### The full DoD checklist for frontend stories
+
+Run these from `frontend/`:
+
+```bash
+npm run lint          # exit 0
+npm run format:check  # exit 0
+npm run typecheck     # exit 0
+```
+
+---
+
 ## Development Workflow
 
 ### Implementation Order
@@ -116,9 +214,16 @@ Follow `hla_architecture.md` Section 8 strictly:
 Each step is a self-contained, testable increment. Do not start step N+1 before step N
 passes its tests.
 
+**Story isolation:** A story may only modify files that belong to its defined scope.
+Unrelated changes — including "opportunistic" refactors, comment cleanup, or dependency
+updates — are not allowed within a story commit. If an unrelated change is necessary,
+it goes in a separate commit with its own justification.
+
 Document each step in `agent-docs/tasks/step-NN-*.md` before starting.
 
 ### Commits
+
+**See "Definition of Done — NON-NEGOTIABLE" above. All DoD commands must pass before any commit.**
 
 Commit **frequently** — after every logical unit of work:
 
@@ -150,8 +255,11 @@ fix(orchestrator): correct mode transition on phase_complete flag
 
 ## Test-Driven Development
 
-Apply TDD wherever the component has deterministic, testable behavior. This covers
-the entire backend. The frontend is excluded from strict TDD but should have smoke tests.
+The entire backend is subject to TDD. Any backend story that introduces or modifies logic
+requires tests. "I'll add tests later" is not acceptable — a story without tests for its
+new logic is not done, regardless of whether the DoD tool commands pass.
+
+The frontend is excluded from strict TDD but should have smoke tests.
 
 ### TDD Cycle
 
@@ -184,6 +292,37 @@ All backend tests live in `backend/tests/`. Mirror the source structure:
 
 Use `pytest`. Use `pytest-asyncio` for async tests. Use in-memory SQLite (`:memory:`) for
 persistence tests.
+
+### Test quality rules — non-negotiable
+
+These rules exist to prevent tests that pass trivially without proving anything.
+
+**Rule T-1 — Every test must be falsifiable.**
+Before committing a test, ask: "What code change would make this test fail?" If the answer
+is "nothing reasonable", the test is not a test — it is noise. Replace it or delete it.
+
+Tautological tests that must never be written:
+- Tests that verify a property guaranteed by the language or framework (e.g. that a `StrEnum`
+  member is a `str`, that Pydantic rejects a wrong type)
+- Tests that call a function and only assert it does not raise, without checking the result
+- Tests whose docstring describes behaviour X but whose assertions do not actually verify X
+
+**Rule T-2 — Test the contract in both directions.**
+Every component that accepts or rejects input needs both a happy-path test and a negative
+test. A validator without an invalid-input test, a range check without an out-of-range test,
+or a required field without a missing-field test, leaves half the contract untested.
+
+**Rule T-3 — Assertions must be as tight as the requirement.**
+Weak assertions hide bugs:
+- Use `==` not `in` when the exact value is known
+- Use `>` not `>=` when the requirement is "strictly after"
+- When testing persistence, assert on data retrieved from the store — not on the in-memory
+  object that was just written, which may reflect the write regardless of whether it persisted
+
+**Rule T-4 — Coverage must match the acceptance criteria.**
+If a story's AC lists N fields, scenarios, or cases, the tests must cover all N. A passing
+test suite that covers only a subset of the AC is an incomplete test suite. Cross-check
+the AC line by line before marking a story done.
 
 ---
 
@@ -229,6 +368,11 @@ for the full rationale.
    - Export an updated snapshot: `GET http://localhost:8000/openapi.json > api-contract/openapi.json`
    - Regenerate types: `npm run generate-api:file` in `frontend/`
    - Commit `api-contract/openapi.json` and `frontend/src/generated/api.d.ts` together
+
+8. **Co-update rule (non-negotiable):** Whenever `api-contract/openapi.json` changes,
+   `frontend/src/generated/api.d.ts` **must** be regenerated and committed in the same
+   commit. A commit that updates the spec without regenerating the types is invalid.
+   A commit that updates the generated types without updating the spec is invalid.
 
 ### File locations
 

@@ -21,7 +21,7 @@ save, load, and list projects.
   2. Save it to SQLite
   3. Reload it from SQLite
   4. Assert that all fields round-trip correctly (including nested artifact schemas)
-- `pytest backend/tests/test_repository.py` → all tests pass
+- `pytest backend/tests/test_persistence.py` → all tests pass
 - No LLM calls or HTTP server required
 
 ## Dependencies
@@ -30,16 +30,19 @@ save, load, and list projects.
 
 ## Key Deliverables
 
-- `backend/core/models.py` – Pydantic v2 models for:
-  - `ExplorationArtifact`
-  - `StructureArtifact`
-  - `AlgorithmArtifact`
-  - `WorkingMemory`
-  - `Project`
-- `backend/core/schema.sql` (or inline in repository) – SQLite DDL
-- `backend/core/repository.py` – `ProjectRepository` with create / save / load / list
+> **Hinweis:** Die ursprünglichen Key Deliverables nannten fälschlicherweise `backend/core/` für
+> alle Dateien. Die korrekte Verzeichnisstruktur folgt HLA Section 6 — korrigiert unten.
+
+- `backend/artifacts/models.py` – Pydantic v2 models for:
+  - `ExplorationArtifact`, `StructureArtifact`, `AlgorithmArtifact` (+ Untermodelle)
+  - Gemeinsame Enums: `CompletenessStatus`, `AlgorithmusStatus`, `Phasenstatus`, `Projektphase`, `Projektstatus`
+- `backend/core/working_memory.py` – `WorkingMemory` model
+- `backend/core/models.py` – `Project` model
+- `backend/persistence/schema.sql` – SQLite DDL (5 Tabellen)
+- `backend/persistence/database.py` – `Database` Klasse mit `transaction()` Kontextmanager
+- `backend/persistence/project_repository.py` – `ProjectRepository` with create / save / load / list_projects
 - `backend/tests/test_models.py` – model validation tests
-- `backend/tests/test_repository.py` – persistence round-trip tests (in-memory SQLite)
+- `backend/tests/test_persistence.py` – persistence round-trip tests (in-memory SQLite)
 
 ## OpenAPI Contract Note
 
@@ -55,7 +58,10 @@ layer (Epic 05) will reference. Design them for clean JSON serialisation:
 
 ## Status
 
-**Implementiert** — 2026-03-12 · 49/49 Tests grün · 5 Commits
+**Implementiert** — 2026-03-12 · 49/49 Tests grün · 5 Commits · alle DoD-Checkboxen verifiziert 2026-03-12
+**Nachkorrektur** — 2026-03-12 · `save()` versioniert nur geänderte Artefakte (vorher: immer alle drei)
+**Nachkorrektur** — 2026-03-12 · `Strukturschritt.algorithmus_ref` ergänzt (FR-B-03, SDD 5.4) — 51/51 Tests grün
+**Nachkorrektur** — 2026-03-12 · SDD-Compliance-Audit: Enums, Felder, WorkingMemory vollständig angeglichen — 51/51 Tests grün
 
 | Story | Status | Commit |
 |---|---|---|
@@ -78,11 +84,12 @@ Inkonsistenzen durch doppelte Definitionen ausgeschlossen sind.
 **Akzeptanzkriterien:**
 
 - `backend/artifacts/models.py` wird angelegt und enthält mindestens folgende Enums:
-  - `CompletenessStatus` — Werte: `leer`, `teilweise`, `vollstaendig`
-  - `AlgorithmusStatus` — Werte: `ausstehend`, `in_bearbeitung`, `abgeschlossen`, `invalidiert`
+  - `CompletenessStatus` — Werte: `leer`, `teilweise`, `vollstaendig`, `nutzervalidiert` (SDD 5.6, FR-C-07)
+  - `AlgorithmusStatus` — Werte: `ausstehend`, `aktuell`, `invalidiert` (SDD 5.4, 5.5)
   - `Phasenstatus` — Werte: `in_progress`, `nearing_completion`, `phase_complete`
   - `Projektphase` — Werte: `exploration`, `strukturierung`, `spezifikation`, `validierung`, `abgeschlossen`
-  - `Projektstatus` — Werte: `aktiv`, `abgeschlossen`, `archiviert`
+  - `Projektstatus` — Werte: `aktiv`, `pausiert`, `abgeschlossen` (SDD 8.4, 6.4)
+  - `Strukturschritttyp` — Werte: `aktion`, `entscheidung`, `schleife`, `ausnahme` (SDD 5.4)
 - Alle Enums sind `str`-basiert (`class Foo(str, Enum)`) für saubere JSON-Serialisierung
 - `python -c "from artifacts.models import CompletenessStatus; print(CompletenessStatus.vollstaendig)"` läuft fehlerfrei
 - `mypy backend/artifacts/models.py` → 0 Fehler (strict mode)
@@ -90,10 +97,11 @@ Inkonsistenzen durch doppelte Definitionen ausgeschlossen sind.
 
 **Definition of Done:**
 
-- [ ] `backend/artifacts/__init__.py` (leer) ist vorhanden
-- [ ] `backend/artifacts/models.py` enthält alle oben gelisteten Enums
-- [ ] Enums sind mit `model_json_schema`-kompatiblen Typen annotiert
-- [ ] `mypy` und `ruff` laufen grün
+- [x] `backend/artifacts/__init__.py` (leer) ist vorhanden
+- [x] `backend/artifacts/models.py` enthält alle oben gelisteten Enums
+- [x] Enums sind mit `model_json_schema`-kompatiblen Typen annotiert
+- [x] `python -c "from artifacts.models import CompletenessStatus; print(CompletenessStatus.vollstaendig)"` → exit 0
+- [x] `mypy` und `ruff` laufen grün
 
 ---
 
@@ -122,10 +130,13 @@ Datenvertrag arbeiten.
   **`Strukturschritt`** (Untermodell):
   - `schritt_id: str`
   - `titel: str`
-  - `typ: str` — z. B. `"ACTIVITY"`, `"DECISION"`, `"EVENT"`
+  - `typ: Strukturschritttyp` — `aktion` / `entscheidung` / `schleife` / `ausnahme` (SDD 5.4)
   - `beschreibung: str` (Standardwert `""`)
   - `reihenfolge: int`
   - `nachfolger: list[str]` (Standardwert `[]`)
+  - `bedingung: str | None` (Standardwert `None`) — nur bei `typ=entscheidung` (SDD 5.4)
+  - `ausnahme_beschreibung: str | None` (Standardwert `None`) — nur bei `typ=ausnahme` (SDD 5.4)
+  - `algorithmus_ref: list[str]` (Standardwert `[]`) — Referenzen auf `Algorithmusabschnitt.abschnitt_id` (FR-B-03, SDD 5.4)
   - `completeness_status: CompletenessStatus`
   - `algorithmus_status: AlgorithmusStatus`
   - `spannungsfeld: str | None` (Standardwert `None`)
@@ -136,10 +147,11 @@ Datenvertrag arbeiten.
 
   **`EmmaAktion`** (Untermodell):
   - `aktion_id: str`
-  - `typ: str`
+  - `aktionstyp: str` — Wert aus EMMA-Aktionskatalog (SDD 5.5, 8.3); `str` weil Katalog noch nicht finalisiert (OP-02)
   - `parameter: dict[str, str]` (Standardwert `{}`)
   - `nachfolger: list[str]` (Standardwert `[]`)
-  - `emma_ok: bool` (Standardwert `False`)
+  - `emma_kompatibel: bool` (Standardwert `False`) — Ergebnis der EMMA-Kompatibilitätsprüfung (SDD 5.5)
+  - `kompatibilitaets_hinweis: str | None` (Standardwert `None`) — Begründung bei `emma_kompatibel=False` (SDD 5.5)
 
   **`Algorithmusabschnitt`** (Untermodell):
   - `abschnitt_id: str`
@@ -161,10 +173,11 @@ Datenvertrag arbeiten.
 
 **Definition of Done:**
 
-- [ ] Alle drei Artefakt-Modelle + Untermodelle in `backend/artifacts/models.py`
-- [ ] `model_json_schema()` für alle drei Hauptmodelle liefert valides JSON-Schema
-- [ ] `mypy backend/artifacts/models.py` → 0 Fehler
-- [ ] `ruff check backend/artifacts/models.py` → 0 Fehler
+- [x] Alle drei Artefakt-Modelle + Untermodelle in `backend/artifacts/models.py`
+- [x] `model_json_schema()` für alle drei Hauptmodelle liefert valides JSON-Schema
+- [x] `ExplorationArtifact()`, `StructureArtifact()`, `AlgorithmArtifact()` sind mit reinen Defaults instanziierbar
+- [x] `mypy backend/artifacts/models.py` → 0 Fehler
+- [x] `ruff check backend/artifacts/models.py` → 0 Fehler
 
 ---
 
@@ -177,15 +190,21 @@ Datenvertrag arbeiten.
 
 **Akzeptanzkriterien:**
 
-- `backend/core/working_memory.py` enthält das Modell **`WorkingMemory`**:
+- `backend/core/working_memory.py` enthält das Modell **`WorkingMemory`** (vollständig nach SDD 6.4):
   - `projekt_id: str`
   - `aktive_phase: Projektphase`
   - `aktiver_modus: str` — z. B. `"exploration"`, `"moderator"`
+  - `vorheriger_modus: str | None` (Standardwert `None`) — für Rückgabe nach Moderator
   - `phasenstatus: Phasenstatus`
   - `befuellte_slots: int` (Standardwert `0`)
   - `bekannte_slots: int` (Standardwert `0`)
-  - `completeness_state: dict[str, CompletenessStatus]` (Standardwert `{}`) —
-    Map `slot_id → status`
+  - `explorationsartefakt_ref: str | None` (Standardwert `None`)
+  - `strukturartefakt_ref: str | None` (Standardwert `None`)
+  - `algorithmusartefakt_ref: str | None` (Standardwert `None`)
+  - `completeness_state: dict[str, CompletenessStatus]` (Standardwert `{}`) — Map `slot_id → status`
+  - `spannungsfelder: list[str]` (Standardwert `[]`) — dokumentierte Spannungsfelder
+  - `letzter_dialogturn: int` (Standardwert `0`)
+  - `projektstatus: Projektstatus` (Standardwert `aktiv`)
   - `flags: list[str]` (Standardwert `[]`) — aktive Steuerungsflags
   - `letzte_aenderung: datetime`
 
@@ -210,10 +229,12 @@ Datenvertrag arbeiten.
 
 **Definition of Done:**
 
-- [ ] `backend/core/working_memory.py` mit `WorkingMemory`-Modell
-- [ ] `backend/core/models.py` mit `Project`-Modell
-- [ ] Beide Module bestehen `mypy` und `ruff` ohne Fehler
-- [ ] `Project(projekt_id="x", name="Test", working_memory=...).model_dump()` serialisiert
+- [x] `backend/core/__init__.py` (leer) ist vorhanden
+- [x] `backend/core/working_memory.py` mit `WorkingMemory`-Modell
+- [x] `backend/core/models.py` mit `Project`-Modell
+- [x] `Project.model_json_schema()` liefert valides JSON-Schema
+- [x] Beide Module bestehen `mypy` und `ruff` ohne Fehler
+- [x] `Project(projekt_id="x", name="Test", working_memory=...).model_dump()` serialisiert
       vollständig zu einem JSON-kompatiblen Dict
 
 ---
@@ -249,11 +270,13 @@ Transaktions-Unterstützung,
 
 **Definition of Done:**
 
-- [ ] `backend/persistence/schema.sql` mit allen 5 Tabellen
-- [ ] `backend/persistence/database.py` mit `Database`-Klasse + `transaction()`-Kontextmanager
-- [ ] `Database(":memory:")` instanziierbar ohne Fehler
-- [ ] `mypy backend/persistence/database.py` → 0 Fehler
-- [ ] `ruff check backend/persistence/` → 0 Fehler
+- [x] `backend/persistence/__init__.py` (leer) ist vorhanden
+- [x] `backend/persistence/schema.sql` mit allen 5 Tabellen (`projects`, `artifact_versions`, `working_memory`, `dialog_history`, `validation_reports`)
+- [x] `backend/persistence/database.py` mit `Database`-Klasse + `transaction()`-Kontextmanager
+- [x] `Database(":memory:")` instanziierbar ohne Fehler
+- [x] WAL-Modus und Foreign-Key-Enforcement verifiziert (`PRAGMA foreign_keys=1`)
+- [x] `mypy backend/persistence/database.py` → 0 Fehler
+- [x] `ruff check backend/persistence/` → 0 Fehler
 
 ---
 
@@ -277,8 +300,10 @@ wiederherstellen kann.
   **`save(self, project: Project) -> None`**
   - Schreibt den vollständigen Projektzustand in einer einzigen SQLite-Transaktion:
     1. `projects`-Zeile anlegen oder aktualisieren (Metadaten)
-    2. Neue Zeile in `artifact_versions` für jedes geänderte Artefakt
-       (Typ, Version, Timestamp, Inhalt als JSON-String)
+    2. Neue Zeile in `artifact_versions` **nur für Artefakte, deren `version` noch nicht
+       in der Tabelle gespeichert ist** — d.h. nur wenn der Executor die Version nach
+       einem Patch hochgezählt hat. Unveränderte Artefakte (gleiche `version_id` bereits
+       vorhanden) erzeugen keine Duplikat-Zeilen.
     3. `working_memory`-Zeile anlegen oder ersetzen
   - Bei Fehler: vollständiger `ROLLBACK`, `Project`-Objekt bleibt unverändert
   - Aktualisiert `project.zuletzt_geaendert` auf den Zeitpunkt des Saves
@@ -301,11 +326,11 @@ wiederherstellen kann.
 
 **Definition of Done:**
 
-- [ ] `ProjectRepository.create()`, `save()`, `load()`, `list_projects()` implementiert
-- [ ] Keine direkte SQL-String-Konkatenation mit User-Input (SQL-Injection-sicher via
+- [x] `ProjectRepository.create()`, `save()`, `load()`, `list_projects()` implementiert
+- [x] Keine direkte SQL-String-Konkatenation mit User-Input (SQL-Injection-sicher via
       parametrisierte Queries mit `?`-Platzhaltern)
-- [ ] `mypy` und `ruff` laufen grün
-- [ ] Wird von den Tests in Story 01-06 vollständig abgedeckt
+- [x] `mypy` und `ruff` laufen grün
+- [x] Wird von den Tests in Story 01-06 vollständig abgedeckt
 
 ---
 
@@ -340,6 +365,8 @@ Regressionen sofort auffallen.
   (vollständiger Round-Trip mit befülltem `ExplorationSlot`)
 - Test: `save()` mit modifiziertem `StructureArtifact` (ein `Strukturschritt`) → `load()`
   liefert denselben Schritt mit identischem `schritt_id` und `beschreibung`
+- Test: `save()` ohne Versionsänderung schreibt **keine** neuen Zeilen in `artifact_versions`;
+  nur das gepatchte Artefakt (mit erhöhter `version`) erzeugt eine neue Zeile
 - Test: `list_projects()` auf leerer DB → `[]`
 - Test: Zwei `create()`-Aufrufe → `list_projects()` gibt Liste mit Länge 2 zurück
 - Test: `load()` mit unbekannter `projekt_id` → wirft `ValueError`
@@ -349,7 +376,7 @@ Regressionen sofort auffallen.
 
 **Definition of Done:**
 
-- [ ] `backend/tests/test_models.py` mit ≥ 6 Testfällen, alle grün
-- [ ] `backend/tests/test_repository.py` mit ≥ 8 Testfällen, alle grün
-- [ ] `pytest --tb=short -q` zeigt 0 Fehler, 0 blockierende Warnings
-- [ ] `mypy tests/test_models.py tests/test_repository.py` → 0 Fehler
+- [x] `backend/tests/test_models.py` mit ≥ 6 Testfällen, alle grün (28 Tests)
+- [x] `backend/tests/test_persistence.py` mit ≥ 8 Testfällen, alle grün (23 Tests)
+- [x] `pytest --tb=short -q` zeigt 0 Fehler, 0 blockierende Warnings
+- [x] `mypy tests/test_models.py tests/test_repository.py` → 0 Fehler
