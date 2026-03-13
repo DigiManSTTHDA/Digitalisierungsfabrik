@@ -7,6 +7,7 @@ dialog history, and OutputValidator rejection of invalid paths.
 
 from __future__ import annotations
 
+from datetime import UTC
 from unittest.mock import AsyncMock
 
 from core.orchestrator import Orchestrator, TurnInput
@@ -71,12 +72,12 @@ def _make_orchestrator(repo: ProjectRepository, llm_client: LLMClient) -> Orches
 
 
 # ---------------------------------------------------------------------------
-# Test: first turn initializes 8 Pflicht-Slots
+# Test: first turn initializes 9 Pflicht-Slots
 # ---------------------------------------------------------------------------
 
 
 async def test_first_turn_initializes_pflicht_slots() -> None:
-    """After the first turn, all 8 Pflicht-Slot IDs must be present."""
+    """After the first turn, all 9 Pflicht-Slot IDs must be present."""
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
@@ -92,6 +93,7 @@ async def test_first_turn_initializes_pflicht_slots() -> None:
     expected_ids = {
         "prozessausloeser",
         "prozessziel",
+        "prozessbeschreibung",
         "scope",
         "beteiligte_systeme",
         "umgebung",
@@ -171,12 +173,12 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
     llm = _make_mock_llm()
     orchestrator = _make_orchestrator(repo, llm)
 
-    # First turn: initializes 8 slots
+    # First turn: initializes 9 slots
     result1 = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Erster Turn"))
     assert result1.error is None
 
     reloaded_after_first = repo.load(project.projekt_id)
-    assert len(reloaded_after_first.exploration_artifact.slots) == 8
+    assert len(reloaded_after_first.exploration_artifact.slots) == 9
 
     # Second turn: LLM returns an empty patches list (no new slot writes)
     llm2 = _make_mock_llm(patches=[])
@@ -186,13 +188,14 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
     assert result2.error is None
 
     reloaded_after_second = repo.load(project.projekt_id)
-    # Still exactly 8 slots — no duplicate add patches
-    assert len(reloaded_after_second.exploration_artifact.slots) == 8
+    # Still exactly 9 slots — no duplicate add patches
+    assert len(reloaded_after_second.exploration_artifact.slots) == 9
 
-    # The 8 slot IDs must be unchanged (no new slots added, none removed)
+    # The 9 slot IDs must be unchanged (no new slots added, none removed)
     expected_ids = {
         "prozessausloeser",
         "prozessziel",
+        "prozessbeschreibung",
         "scope",
         "beteiligte_systeme",
         "umgebung",
@@ -205,13 +208,13 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Test: phasenstatus=nearing_completion when all 8 Pflicht-Slots are non-leer
+# Test: phasenstatus=nearing_completion when all 9 Pflicht-Slots are non-leer
 # (AC #8, Story 04-06)
 # ---------------------------------------------------------------------------
 
 
 async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
-    """phasenstatus is nearing_completion when all 8 Pflicht-Slots are non-leer."""
+    """phasenstatus is nearing_completion when all 9 Pflicht-Slots are non-leer."""
     from datetime import UTC, datetime
 
     from artifacts.models import (
@@ -228,7 +231,7 @@ async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
     from modes.base import ModeContext
     from modes.exploration import PFLICHT_SLOTS, ExplorationMode
 
-    # Build a context where all 8 Pflicht-Slots exist and are non-leer
+    # Build a context where all 9 Pflicht-Slots exist and are non-leer
     slots = {
         slot_id: ExplorationSlot(
             slot_id=slot_id,
@@ -311,9 +314,15 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
     ensures the LLM does not see a contradiction when the prompt says
     'use replace on all sub-fields' but slots appear non-existent.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    from artifacts.models import AlgorithmArtifact, ExplorationArtifact, Phasenstatus, Projektphase, StructureArtifact
+    from artifacts.models import (
+        AlgorithmArtifact,
+        ExplorationArtifact,
+        Phasenstatus,
+        Projektphase,
+        StructureArtifact,
+    )
     from artifacts.template_schema import EXPLORATION_TEMPLATE
     from core.working_memory import WorkingMemory
     from modes.base import ModeContext
@@ -324,7 +333,7 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
         aktive_phase=Projektphase.exploration,
         aktiver_modus="exploration",
         phasenstatus=Phasenstatus.in_progress,
-        letzte_aenderung=datetime.now(tz=timezone.utc),
+        letzte_aenderung=datetime.now(tz=UTC),
     )
     context = ModeContext(
         projekt_id="test",
@@ -345,13 +354,22 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
     assert "leer" in status, (
         "Uninitialized Pflicht-Slots must appear as 'leer' in the slot status string"
     )
-    # All 8 Pflicht-Slots must be listed
-    for slot_id in ("prozessausloeser", "prozessziel", "scope", "beteiligte_systeme",
-                    "umgebung", "randbedingungen", "ausnahmen", "prozesszusammenfassung"):
+    # All 9 Pflicht-Slots must be listed
+    for slot_id in (
+        "prozessausloeser",
+        "prozessziel",
+        "prozessbeschreibung",
+        "scope",
+        "beteiligte_systeme",
+        "umgebung",
+        "randbedingungen",
+        "ausnahmen",
+        "prozesszusammenfassung",
+    ):
         assert slot_id not in status or True  # slot_id may not be in output, titel is
-    # Verify count: 8 lines expected
-    lines = [l for l in status.splitlines() if l.strip()]
-    assert len(lines) == 8, f"Expected 8 slot lines, got {len(lines)}"
+    # Verify count: 9 lines expected
+    lines = [line for line in status.splitlines() if line.strip()]
+    assert len(lines) == 9, f"Expected 9 slot lines, got {len(lines)}"
 
 
 async def test_output_validator_rejects_invalid_path() -> None:
@@ -364,7 +382,7 @@ async def test_output_validator_rejects_invalid_path() -> None:
 
     result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
 
-    # The init patches (8 Pflicht-Slots) are combined with the invalid LLM patch.
+    # The init patches (9 Pflicht-Slots) are combined with the invalid LLM patch.
     # The validator should reject the combined patches because of the invalid path.
     assert result.error is not None
     assert "Kontrakt" in result.error or "ungültig" in result.error.lower()

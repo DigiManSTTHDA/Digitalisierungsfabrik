@@ -21,6 +21,7 @@ from modes.base import BaseMode, ModeContext, ModeOutput
 PFLICHT_SLOTS: dict[str, str] = {
     "prozessausloeser": "Prozessauslöser",
     "prozessziel": "Prozessziel",
+    "prozessbeschreibung": "Prozessbeschreibung",
     "scope": "Scope",
     "beteiligte_systeme": "Beteiligte Systeme",
     "umgebung": "Umgebung",

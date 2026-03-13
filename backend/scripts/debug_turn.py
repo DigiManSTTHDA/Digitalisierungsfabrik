@@ -1,13 +1,17 @@
 """Debug-Script: führt einen Turn aus und zeigt alle Details."""
+
 import asyncio
+import pathlib
+import sys
+
 from config import Settings
-from persistence.database import Database
-from persistence.project_repository import ProjectRepository
+from core.orchestrator import Orchestrator, TurnInput
 from llm.factory import create_llm_client
 from modes.base import BaseMode
 from modes.exploration import ExplorationMode
-from core.orchestrator import Orchestrator, TurnInput
-import sys, pathlib
+from persistence.database import Database
+from persistence.project_repository import ProjectRepository
+
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 

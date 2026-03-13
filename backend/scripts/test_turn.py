@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import sys
 from pathlib import Path
 
@@ -22,9 +21,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import Settings
+from core.models import Project
 from core.orchestrator import Orchestrator, TurnInput
 from llm.factory import create_llm_client
-from core.models import Project
 from modes.base import BaseMode
 from modes.exploration import ExplorationMode
 from persistence.database import Database
@@ -46,7 +45,7 @@ def _print_artifact(project: Project) -> None:
     print(f"  ExplorationArtifact - {len(filled)}/{len(slots)} Slots befuellt")
     for slot_id, slot in slots.items():
         status = "[x]" if slot.inhalt and slot.inhalt.strip() else "[ ]"
-        inhalt = (slot.inhalt[:60] + "...") if slot.inhalt and len(slot.inhalt) > 60 else (slot.inhalt or "")
+        inhalt = slot.inhalt or ""
         print(f"    {status} {slot_id}: {inhalt}")
 
 
