@@ -50,7 +50,7 @@ def repo(_app_with_memory_db):
 
 
 def test_create_project(client: TestClient) -> None:
-    """POST /api/projects creates a project and returns 201."""
+    """POST /api/projects creates a project and returns 201 with all SDD 7.2.1 fields."""
     resp = client.post("/api/projects", json={"name": "Test", "beschreibung": "Desc"})
     assert resp.status_code == 201
     data = resp.json()
@@ -58,7 +58,13 @@ def test_create_project(client: TestClient) -> None:
     assert data["name"] == "Test"
     assert data["beschreibung"] == "Desc"
     assert data["aktive_phase"] == "exploration"
+    assert data["aktiver_modus"] == "exploration"
     assert data["projektstatus"] == "aktiv"
+    # Verify timestamps are valid ISO 8601 strings
+    from datetime import datetime
+
+    datetime.fromisoformat(data["erstellt_am"])
+    datetime.fromisoformat(data["zuletzt_geaendert"])
 
 
 def test_create_project_without_beschreibung(client: TestClient) -> None:
@@ -66,6 +72,12 @@ def test_create_project_without_beschreibung(client: TestClient) -> None:
     resp = client.post("/api/projects", json={"name": "Minimal"})
     assert resp.status_code == 201
     assert resp.json()["beschreibung"] == ""
+
+
+def test_create_project_missing_name(client: TestClient) -> None:
+    """POST /api/projects without name returns 422."""
+    resp = client.post("/api/projects", json={"beschreibung": "no name"})
+    assert resp.status_code == 422
 
 
 def test_list_projects_empty(client: TestClient) -> None:
@@ -97,8 +109,14 @@ def test_get_project(client: TestClient) -> None:
     assert data["projekt_id"] == pid
     assert data["name"] == "Proj"
     assert data["beschreibung"] == "D"
-    assert "erstellt_am" in data
-    assert "zuletzt_geaendert" in data
+    assert data["aktive_phase"] == "exploration"
+    assert data["aktiver_modus"] == "exploration"
+    assert data["projektstatus"] == "aktiv"
+    # Verify timestamps are parseable ISO strings
+    from datetime import datetime
+
+    datetime.fromisoformat(data["erstellt_am"])
+    datetime.fromisoformat(data["zuletzt_geaendert"])
 
 
 def test_get_project_not_found(client: TestClient) -> None:
@@ -238,3 +256,50 @@ def test_import_artifact_invalid(client: TestClient) -> None:
         json={"typ": "exploration", "artefakt": {"slots": "not-a-dict"}},
     )
     assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Additional gap-filling tests (validate-tests)
+# ---------------------------------------------------------------------------
+
+
+def test_download_not_found(client: TestClient) -> None:
+    """GET /api/projects/{id}/download returns 404 for non-existent project."""
+    resp = client.get("/api/projects/no-such-id/download")
+    assert resp.status_code == 404
+
+
+def test_list_versions_version_metadata_complete(client: TestClient) -> None:
+    """GET versions returns all ArtifactVersionInfo fields."""
+    pid = client.post("/api/projects", json={"name": "VM"}).json()["projekt_id"]
+    resp = client.get(f"/api/projects/{pid}/artifacts/exploration/versions")
+    v = resp.json()["versions"][0]
+    assert v["version"] == 0
+    assert isinstance(v["erstellt_am"], str)
+    assert len(v["erstellt_am"]) > 0
+    assert v["created_by"] == "system"
+
+
+def test_restore_struktur_artifact_type_mapping(client: TestClient) -> None:
+    """POST restore works for 'struktur' typ (maps to DB 'structure')."""
+    pid = client.post("/api/projects", json={"name": "S"}).json()["projekt_id"]
+    resp = client.post(
+        f"/api/projects/{pid}/artifacts/struktur/restore",
+        json={"version": 0},
+    )
+    assert resp.status_code == 200
+    assert "artefakt" in resp.json()
+    versions = client.get(f"/api/projects/{pid}/artifacts/struktur/versions").json()["versions"]
+    assert len(versions) == 2
+
+
+def test_import_artifact_persisted(client: TestClient) -> None:
+    """POST import persists the imported artifact — verified by reload."""
+    pid = client.post("/api/projects", json={"name": "IP"}).json()["projekt_id"]
+    client.post(
+        f"/api/projects/{pid}/import",
+        json={"typ": "exploration", "artefakt": {"slots": {}, "version": 0}},
+    )
+    # Reload and verify the artifact version incremented
+    artifacts = client.get(f"/api/projects/{pid}/artifacts").json()
+    assert artifacts["exploration"]["version"] == 1

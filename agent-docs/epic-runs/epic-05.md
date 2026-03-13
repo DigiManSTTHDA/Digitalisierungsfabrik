@@ -183,3 +183,45 @@ All stories: **No issues found.** Each Critic review confirmed correct implement
 - `project_repository.py`: Reached 327 lines. Compacted docstrings. Final: 290 lines.
 
 ---
+
+## STEP 4 — Test Validation
+
+**Date:** 2026-03-13
+**Validator:** Claude Opus 4.6
+
+### Gaps Discovered
+
+| # | File | Gap | Severity |
+|---|---|---|---|
+| 1 | test_api.py | `test_create_project` didn't verify `aktiver_modus` or timestamp validity | Medium |
+| 2 | test_api.py | No test for POST /api/projects without `name` (422 negative case) | High |
+| 3 | test_api.py | `test_get_project` used weak `"erstellt_am" in data` assertions (key presence only) | Medium |
+| 4 | test_api.py | No test for `download` 404 | Medium |
+| 5 | test_api.py | Version metadata fields (`erstellt_am`, `created_by`) not verified in version list | Low |
+| 6 | test_api.py | No test for `struktur` type mapping — all versioning tests used `exploration` only | High |
+| 7 | test_api.py | `test_import_artifact_valid` didn't verify persistence of imported artifact | High |
+| 8 | test_websocket.py | No test for valid JSON with unknown `type` field | Medium |
+| 9 | test_websocket.py | No test for `TurnOutput.error` code path (ErrorEvent instead of normal events) | High |
+
+### Tests Added
+
+| # | File | Test Name | Gap Fixed |
+|---|---|---|---|
+| 1 | test_api.py | Strengthened `test_create_project` | Added `aktiver_modus` assertion + ISO timestamp parsing |
+| 2 | test_api.py | `test_create_project_missing_name` | Missing name → 422 |
+| 3 | test_api.py | Strengthened `test_get_project` | All SDD 7.2.1 fields + timestamp parsing |
+| 4 | test_api.py | `test_download_not_found` | Download 404 |
+| 5 | test_api.py | `test_list_versions_version_metadata_complete` | All ArtifactVersionInfo fields |
+| 6 | test_api.py | `test_restore_struktur_artifact_type_mapping` | `struktur` → DB `structure` mapping |
+| 7 | test_api.py | `test_import_artifact_persisted` | Verifies import persisted via reload |
+| 8 | test_websocket.py | `test_websocket_unknown_message_type` | Unknown type → error event |
+| 9 | test_websocket.py | `test_websocket_turn_output_error_field` | TurnOutput.error → ErrorEvent |
+
+### Summary
+
+- **Tests before validation:** 218
+- **Tests after validation:** 225 (+7 new)
+- **Existing tests strengthened:** 2 (tighter assertions in create/get project)
+- **Critical gaps closed:** Missing name 422, `struktur` type mapping, import persistence, TurnOutput.error path
+
+---

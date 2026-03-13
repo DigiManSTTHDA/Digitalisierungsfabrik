@@ -175,3 +175,53 @@ def test_websocket_multiple_turns(ws_setup) -> None:  # type: ignore[no-untyped-
     assert any(e["event"] == "chat_done" for e in events_1)
     assert any(e["event"] == "chat_done" for e in events_2)
     assert mock_orch.process_turn.call_count == 2
+
+
+def test_websocket_unknown_message_type(ws_setup) -> None:  # type: ignore[no-untyped-def]
+    """Valid JSON with unknown 'type' sends error event with descriptive message."""
+    app, db, repo, pid = ws_setup
+
+    with patch("api.websocket.Database", return_value=db):
+        with patch("api.websocket.ProjectRepository", return_value=repo):
+            with patch("api.websocket._build_orchestrator"):
+                client = TestClient(app)
+                with client.websocket_connect(f"/ws/session/{pid}") as ws:
+                    ws.send_text(json.dumps({"type": "unknown_type"}))
+                    event = ws.receive_json()
+    assert event["event"] == "error"
+    assert "unknown_type" in event["message"]
+    assert event["recoverable"] is True
+
+
+def test_websocket_turn_output_error_field(ws_setup) -> None:  # type: ignore[no-untyped-def]
+    """When TurnOutput.error is set, an ErrorEvent is sent instead of normal events."""
+    app, db, repo, pid = ws_setup
+    wm = WorkingMemory(
+        projekt_id=pid,
+        aktive_phase="exploration",  # type: ignore[arg-type]
+        aktiver_modus="exploration",
+        phasenstatus=Phasenstatus.in_progress,
+        letzte_aenderung=datetime.now(tz=UTC),
+    )
+    error_output = TurnOutput(
+        nutzeraeusserung="",
+        phasenstatus=Phasenstatus.in_progress,
+        flags=[],
+        working_memory=wm,
+        error="LLM Output-Kontrakt-Verletzung",
+    )
+
+    with patch("api.websocket._build_orchestrator") as mock_build:
+        mock_orch = AsyncMock()
+        mock_orch.process_turn.return_value = error_output
+        mock_build.return_value = mock_orch
+
+        with patch("api.websocket.Database", return_value=db):
+            with patch("api.websocket.ProjectRepository", return_value=repo):
+                client = TestClient(app)
+                with client.websocket_connect(f"/ws/session/{pid}") as ws:
+                    ws.send_text(json.dumps({"type": "turn", "text": "Hallo"}))
+                    event = ws.receive_json()
+    assert event["event"] == "error"
+    assert event["message"] == "LLM Output-Kontrakt-Verletzung"
+    assert event["recoverable"] is True
