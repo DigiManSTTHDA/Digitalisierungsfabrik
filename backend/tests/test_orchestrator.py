@@ -596,6 +596,43 @@ async def test_mode_fallback_to_exploration_when_modus_unknown() -> None:
     assert called == ["exploration"]
 
 
+# ---------------------------------------------------------------------------
+# FR-E-07 — Dialog history persisted after process_turn()
+# ---------------------------------------------------------------------------
+
+
+async def test_dialog_history_written_after_turn() -> None:
+    """Nach process_turn() enthält dialog_history einen User- und einen Assistant-Turn."""
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Dialog Test")
+    orchestrator = _make_orchestrator(repo)
+
+    await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo Welt"))
+
+    history = repo.load_dialog_history(project.projekt_id)
+    assert len(history) == 2
+    user_turns = [h for h in history if h["role"] == "user"]
+    assistant_turns = [h for h in history if h["role"] == "assistant"]
+    assert len(user_turns) == 1
+    assert len(assistant_turns) == 1
+    assert user_turns[0]["inhalt"] == "Hallo Welt"
+
+
+async def test_dialog_history_grows_across_turns() -> None:
+    """Jeder weitere Turn fügt User + Assistant Einträge in die Dialoghistorie."""
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Dialog Growth Test")
+    orchestrator = _make_orchestrator(repo)
+
+    await orchestrator.process_turn(project.projekt_id, TurnInput(text="Turn 1"))
+    await orchestrator.process_turn(project.projekt_id, TurnInput(text="Turn 2"))
+
+    history = repo.load_dialog_history(project.projekt_id)
+    assert len(history) == 4  # 2 turns × (user + assistant)
+
+
 async def test_invalidation_write_applied_after_structure_patch() -> None:
     """When executor returns invalidated_abschnitt_ids, algorithm status is set to invalidiert."""
 

@@ -355,7 +355,7 @@ Regressionen sofort auffallen.
   round-tripped korrekt via `model_dump()` → `model_validate()`
 - Test: `Project.model_json_schema()` liefert valides Schema (kein Exception)
 
-**`backend/tests/test_repository.py` — Persistenz-Tests (In-Memory-SQLite):**
+**`backend/tests/test_persistence.py` — Persistenz-Tests (In-Memory-SQLite):**
 
 - Fixture: `repo` — `ProjectRepository` mit `Database(":memory:")`
 - Test: `create()` gibt ein `Project`-Objekt mit gesetzter `projekt_id` zurück
@@ -371,7 +371,7 @@ Regressionen sofort auffallen.
 - Test: Zwei `create()`-Aufrufe → `list_projects()` gibt Liste mit Länge 2 zurück
 - Test: `load()` mit unbekannter `projekt_id` → wirft `ValueError`
 
-- `cd backend && pytest tests/test_models.py tests/test_repository.py` → alle Tests grün
+- `cd backend && pytest tests/test_models.py tests/test_persistence.py` → alle Tests grün
 - Kein LLM-Aufruf, kein HTTP-Server, keine Datei-I/O nötig
 
 **Definition of Done:**
@@ -379,4 +379,4 @@ Regressionen sofort auffallen.
 - [x] `backend/tests/test_models.py` mit ≥ 6 Testfällen, alle grün (28 Tests)
 - [x] `backend/tests/test_persistence.py` mit ≥ 8 Testfällen, alle grün (23 Tests)
 - [x] `pytest --tb=short -q` zeigt 0 Fehler, 0 blockierende Warnings
-- [x] `mypy tests/test_models.py tests/test_repository.py` → 0 Fehler
+- [x] `mypy tests/test_models.py tests/test_persistence.py` → 0 Fehler

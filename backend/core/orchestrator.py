@@ -134,7 +134,7 @@ class Orchestrator:
             project.structure_artifact,
             project.algorithm_artifact,
         )
-        context = build_context(project, completeness_state)
+        context = build_context(project, completeness_state, repository=repo)
 
         # ------------------------------------------------------------------
         # Schritt 6: Modus aufrufen
@@ -209,6 +209,16 @@ class Orchestrator:
         # Schritt 11: Zustand persistieren
         # ------------------------------------------------------------------
         repo.save(project)
+
+        # Dialogturns persistieren (FR-E-07): Nutzereingabe + Modus-Antwort
+        repo.append_dialog_turn(project.projekt_id, wm.letzter_dialogturn, "user", input.text)
+        repo.append_dialog_turn(
+            project.projekt_id,
+            wm.letzter_dialogturn,
+            "assistant",
+            mode_output.nutzeraeusserung,
+        )
+
         log.info("orchestrator.process_turn.done", phasenstatus=wm.phasenstatus.value)
 
         return TurnOutput(

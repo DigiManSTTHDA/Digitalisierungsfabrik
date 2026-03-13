@@ -204,6 +204,54 @@ class ProjectRepository:
             return model_class()
         return model_class.model_validate_json(row["inhalt"])
 
+    def append_dialog_turn(
+        self,
+        projekt_id: str,
+        turn_id: int,
+        role: str,
+        inhalt: str,
+    ) -> None:
+        """Einen Dialogturn in dialog_history schreiben (FR-E-07).
+
+        Args:
+            projekt_id: Projekt-ID des aktiven Projekts.
+            turn_id: Sequenznummer des Turns (letzter_dialogturn aus WorkingMemory).
+            role: Rolle des Sprechers: 'user' oder 'assistant'.
+            inhalt: Textinhalt des Turns.
+        """
+        ts = datetime.now(tz=UTC).isoformat()
+        with self._db.transaction() as conn:
+            conn.execute(
+                """INSERT INTO dialog_history (projekt_id, turn_id, role, inhalt, timestamp)
+                   VALUES (?, ?, ?, ?, ?)
+                """,
+                (projekt_id, turn_id, role, inhalt, ts),
+            )
+
+    def load_dialog_history(
+        self,
+        projekt_id: str,
+        last_n: int = 20,
+    ) -> list[dict[str, str]]:
+        """Die letzten N Dialogturns eines Projekts laden.
+
+        Returns:
+            Liste von Dicts mit Schlüsseln 'role', 'inhalt', 'timestamp' (chronologisch).
+        """
+        conn = self._db.get_connection()
+        rows = conn.execute(
+            """SELECT role, inhalt, timestamp FROM dialog_history
+               WHERE projekt_id = ?
+               ORDER BY turn_id ASC, id ASC
+               LIMIT ?
+            """,
+            (projekt_id, last_n),
+        ).fetchall()
+        return [
+            {"role": row["role"], "inhalt": row["inhalt"], "timestamp": row["timestamp"]}
+            for row in rows
+        ]
+
     def _load_working_memory(self, conn: sqlite3.Connection, projekt_id: str) -> WorkingMemory:
         row = conn.execute(
             "SELECT inhalt FROM working_memory WHERE projekt_id = ?", (projekt_id,)

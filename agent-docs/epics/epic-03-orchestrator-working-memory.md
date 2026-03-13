@@ -107,17 +107,17 @@ So that the Orchestrator can call any mode interchangeably without knowing its i
 
 **Definition of Done:**
 
-- [ ] `backend/modes/base.py` exists
-- [ ] `Flag` StrEnum has exactly 6 values as listed in SDD 6.4.1
-- [ ] `ModeContext` Pydantic model has all 9 fields with correct types
-- [ ] `ModeOutput` Pydantic model has `nutzeraeusserung`, `patches`, `phasenstatus`, `flags`
-- [ ] `BaseMode.call()` raises `NotImplementedError`
-- [ ] `backend/tests/test_orchestrator.py` covers: WorkingMemory field defaults,
+- [x] `backend/modes/base.py` exists
+- [x] `Flag` StrEnum has exactly 6 values as listed in SDD 6.4.1
+- [x] `ModeContext` Pydantic model has all 9 fields with correct types
+- [x] `ModeOutput` Pydantic model has `nutzeraeusserung`, `patches`, `phasenstatus`, `flags`
+- [x] `BaseMode.call()` raises `NotImplementedError`
+- [x] `backend/tests/test_orchestrator.py` covers: WorkingMemory field defaults,
       serialisation round-trip, Flag enum values, ModeOutput construction
-- [ ] `ruff check .` → exit 0
-- [ ] `ruff format --check .` → exit 0
-- [ ] `python -m mypy . --explicit-package-bases` → exit 0
-- [ ] `pytest --tb=short -q` → all tests pass
+- [x] `ruff check .` → exit 0
+- [x] `ruff format --check .` → exit 0
+- [x] `python -m mypy . --explicit-package-bases` → exit 0
+- [x] `pytest --tb=short -q` → all tests pass
 
 **Tests (added to `backend/tests/test_orchestrator.py`):**
 
@@ -164,19 +164,19 @@ So that the Orchestrator can complete a full turn cycle without an LLM in this e
 
 **Definition of Done:**
 
-- [ ] `backend/modes/exploration.py` exists with `ExplorationMode(BaseMode)`
-- [ ] `backend/modes/structuring.py` exists with `StructuringMode(BaseMode)`
-- [ ] `backend/modes/specification.py` exists with `SpecificationMode(BaseMode)`
-- [ ] `backend/modes/validation.py` exists with `ValidationMode(BaseMode)`
-- [ ] `backend/modes/moderator.py` exists with `Moderator(BaseMode)`
-- [ ] Each class implements `async call()` returning valid `ModeOutput`
-- [ ] All stubs return `patches=[]`, `flags=[]`, `phasenstatus=in_progress`
-- [ ] `nutzeraeusserung` is non-empty
-- [ ] Tests verify each mode can be called and returns expected ModeOutput shape
-- [ ] `ruff check .` → exit 0
-- [ ] `ruff format --check .` → exit 0
-- [ ] `python -m mypy . --explicit-package-bases` → exit 0
-- [ ] `pytest --tb=short -q` → all tests pass
+- [x] `backend/modes/exploration.py` exists with `ExplorationMode(BaseMode)`
+- [x] `backend/modes/structuring.py` exists with `StructuringMode(BaseMode)`
+- [x] `backend/modes/specification.py` exists with `SpecificationMode(BaseMode)`
+- [x] `backend/modes/validation.py` exists with `ValidationMode(BaseMode)`
+- [x] `backend/modes/moderator.py` exists with `Moderator(BaseMode)`
+- [x] Each class implements `async call()` returning valid `ModeOutput`
+- [x] All stubs return `patches=[]`, `flags=[]`, `phasenstatus=in_progress`
+- [x] `nutzeraeusserung` is non-empty
+- [x] Tests verify each mode can be called and returns expected ModeOutput shape
+- [x] `ruff check .` → exit 0
+- [x] `ruff format --check .` → exit 0
+- [x] `python -m mypy . --explicit-package-bases` → exit 0
+- [x] `pytest --tb=short -q` → all tests pass
 
 **Tests (added to `backend/tests/test_orchestrator.py`):**
 
@@ -227,16 +227,16 @@ So that the Orchestrator can update Working Memory after every turn (SDD 6.7)
 
 **Definition of Done:**
 
-- [ ] `backend/artifacts/completeness.py` exists with `CompletenessCalculator`
-- [ ] `calculate()` accepts all three artifact types and returns `(dict, int, int)`
-- [ ] `leer` status does NOT increment `befuellte_slots`
-- [ ] `teilweise`, `vollstaendig`, `nutzervalidiert` each increment `befuellte_slots`
-- [ ] `bekannte_slots` = sum of slot counts across all three artifacts
-- [ ] `completeness_state` contains one entry per slot across all three artifacts
-- [ ] `ruff check .` → exit 0
-- [ ] `ruff format --check .` → exit 0
-- [ ] `python -m mypy . --explicit-package-bases` → exit 0
-- [ ] `pytest --tb=short -q` → all tests pass
+- [x] `backend/artifacts/completeness.py` exists with `CompletenessCalculator`
+- [x] `calculate()` accepts all three artifact types and returns `(dict, int, int)`
+- [x] `leer` status does NOT increment `befuellte_slots`
+- [x] `teilweise`, `vollstaendig`, `nutzervalidiert` each increment `befuellte_slots`
+- [x] `bekannte_slots` = sum of slot counts across all three artifacts
+- [x] `completeness_state` contains one entry per slot across all three artifacts
+- [x] `ruff check .` → exit 0
+- [x] `ruff format --check .` → exit 0
+- [x] `python -m mypy . --explicit-package-bases` → exit 0
+- [x] `pytest --tb=short -q` → all tests pass
 
 **Tests (`backend/tests/test_completeness.py`):**
 
@@ -319,20 +319,20 @@ in a single atomic operation
 
 **Definition of Done:**
 
-- [ ] `backend/core/orchestrator.py` with `TurnInput`, `TurnOutput`, `Orchestrator`
-- [ ] `backend/core/context_assembler.py` (stub, builds ModeContext with empty history)
-- [ ] `backend/core/output_validator.py` (stub, always returns `True`)
-- [ ] `backend/core/progress_tracker.py` (functional, updates WM fields)
-- [ ] `process_turn()` executes all 11 steps in order
-- [ ] Executor called for non-empty patches; result applied to correct artifact in `project`
-- [ ] Invalidation writes applied when `invalidated_abschnitt_ids` is non-empty
-- [ ] Mode switch: `phase_complete` / `escalate` / `blocked` → `aktiver_modus = "moderator"`
-- [ ] On Executor failure: `TurnOutput.error` set, project NOT saved, artifact unchanged
-- [ ] After turn: `letzter_dialogturn` incremented in persisted WM
-- [ ] `ruff check .` → exit 0
-- [ ] `ruff format --check .` → exit 0
-- [ ] `python -m mypy . --explicit-package-bases` → exit 0
-- [ ] `pytest --tb=short -q` → all tests pass
+- [x] `backend/core/orchestrator.py` with `TurnInput`, `TurnOutput`, `Orchestrator`
+- [x] `backend/core/context_assembler.py` (stub, builds ModeContext with empty history)
+- [x] `backend/core/output_validator.py` (stub, always returns `True`)
+- [x] `backend/core/progress_tracker.py` (functional, updates WM fields)
+- [x] `process_turn()` executes all 11 steps in order
+- [x] Executor called for non-empty patches; result applied to correct artifact in `project`
+- [x] Invalidation writes applied when `invalidated_abschnitt_ids` is non-empty
+- [x] Mode switch: `phase_complete` / `escalate` / `blocked` → `aktiver_modus = "moderator"`
+- [x] On Executor failure: `TurnOutput.error` set, project NOT saved, artifact unchanged
+- [x] After turn: `letzter_dialogturn` incremented in persisted WM
+- [x] `ruff check .` → exit 0
+- [x] `ruff format --check .` → exit 0
+- [x] `python -m mypy . --explicit-package-bases` → exit 0
+- [x] `pytest --tb=short -q` → all tests pass
 
 **Tests (`backend/tests/test_orchestrator.py`):**
 
