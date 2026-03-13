@@ -75,6 +75,32 @@ fix them.
 Append validation results to the Epic log.
 
 ------------------------------------------------
+STEP 2.5 — ESCALATION CHECKPOINT
+------------------------------------------------
+
+Before implementation starts, scan all stories for genuine ambiguities:
+
+1. Is the SDD clear enough to implement each story unambiguously?
+2. Does any story require a significant design decision not covered by existing ADRs?
+3. Does any story require a new dependency that should be discussed first?
+
+If YES to any of the above:
+
+**STOP. Present the ambiguities to the user.**
+
+Structure the escalation clearly:
+- Which story is affected
+- What exactly is ambiguous
+- 2–3 concrete options with trade-offs
+- Your recommendation
+
+Wait for the user's decision, then record it as an ADR before proceeding.
+
+If all stories are clear: proceed immediately without asking.
+
+Append escalation outcome (or "no escalations needed") to the Epic log.
+
+------------------------------------------------
 STEP 3 — IMPLEMENT EPIC
 ------------------------------------------------
 
@@ -90,28 +116,26 @@ Append to Epic log:
 - key modules created
 - architecture components added
 
-------------------------------------------------
-STEP 4 — RUN TESTS
-------------------------------------------------
+------------------------------------------
+STEP 4 — VALIDATE TESTS
+------------------------------------------
+
+Run:
+
+/validate-tests
+
+Improve the test suite before execution.
+
+---------------------------------------------
+STEP 5 — RUN TESTS
+---------------------------------------------
 
 Run:
 
 /run-tests
 
-Rules:
-
-Tests must NOT be weakened.
-
-Fix implementation instead.
-
-Append to Epic log:
-
-- test results
-- failures encountered
-- fixes applied
-
 ------------------------------------------------
-STEP 5 — AUDIT IMPLEMENTATION
+STEP 6 — AUDIT IMPLEMENTATION
 ------------------------------------------------
 
 Run:
@@ -128,7 +152,7 @@ Verify:
 Append audit results to Epic log.
 
 ------------------------------------------------
-STEP 6 — FINAL VERIFICATION
+STEP 7 — FINAL VERIFICATION
 ------------------------------------------------
 
 Run DoD commands again.
@@ -144,7 +168,7 @@ frontend checks
 Append final verification results.
 
 ------------------------------------------------
-STEP 7 — MANAGEMENT SUMMARY
+STEP 8 — MANAGEMENT SUMMARY
 ------------------------------------------------
 
 Run:

@@ -28,6 +28,7 @@ Also inspect:
 - implemented code modules
 - test results
 - agent-docs/epic-runs/<epic-id>.md
+- agent-docs/decisions/ (ADRs written during or before this Epic)
 
 ------------------------------------------------
 SECTION 1 — EPIC SUMMARY
@@ -92,6 +93,24 @@ Include:
 - what types of behaviour are covered
 
 Explain what the tests guarantee about system correctness.
+
+------------------------------------------------
+SECTION 4a — KEY DECISIONS (ADRs)
+------------------------------------------------
+
+List every Architecture Decision Record written during or before this Epic.
+
+For each ADR:
+
+- What decision was made
+- Why (the key trade-off that made this non-trivial)
+- What the alternative(s) were
+- What risk or consequence the decision carries
+
+This section surfaces the intellectual work behind the implementation —
+the choices that shaped how the system was built and why it looks the way it does.
+
+If no ADRs were written: state "No new decisions recorded in this Epic."
 
 ------------------------------------------------
 SECTION 5 — PROBLEMS ENCOUNTERED

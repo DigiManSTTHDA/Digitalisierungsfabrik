@@ -65,6 +65,17 @@ A story must produce a working increment.
 
 Do not create oversized stories.
 
+**Story size guidance:**
+- A story should be implementable in one focused session.
+- If a story would produce a source file over 300 lines, split the story.
+- If a story bundles multiple distinct responsibilities, split it.
+
+**Library awareness:**
+- Before designing a story that requires non-trivial logic, check whether
+  a library in the tech stack already provides it.
+- If yes: reference the library in the story's acceptance criteria.
+- If a new library is needed: the story must include an ADR as a prerequisite.
+
 ------------------------------------------------
 STEP 4 — STORY STRUCTURE
 ------------------------------------------------
@@ -161,19 +172,6 @@ Each story must include:
 EPIC LOG UPDATE
 ------------------------------------------------
 
-Append a short summary to:
-
-agent-docs/epic-runs/<epic-id>.md
-
-Include:
-
-- generated stories
-- purpose of each story
-
-------------------------------------------------
-EPIC LOG UPDATE
-------------------------------------------------
-
 Append story generation summary to:
 
 agent-docs/epic-runs/<epic-id>.md
@@ -182,3 +180,5 @@ Include:
 
 - generated stories
 - purpose of each story
+- libraries identified for use
+- any escalation points flagged (SDD ambiguities requiring user decision)

@@ -326,6 +326,88 @@ the AC line by line before marking a story done.
 
 ---
 
+## Library-First Principle
+
+Before implementing any non-trivial logic, check whether a battle-tested library already solves the problem.
+
+**Rules:**
+
+1. Prefer stdlib and already-listed tech stack dependencies over writing custom code.
+2. If a library outside the tech stack would eliminate a meaningful chunk of custom code, write an ADR proposing it — do not add it silently.
+3. Minimize lines of code written from scratch. More code = more bugs = more maintenance.
+
+**Examples:**
+- JSON merge logic: use `jsonpatch` (via ADR) rather than implementing RFC 6902 manually
+- Async HTTP: use `httpx` rather than a hand-rolled client
+- Token counting: use the Anthropic SDK's built-in utilities, not manual estimators
+- Date/time handling: use `datetime` stdlib, not custom wrappers
+
+A story that re-implements something a library does is a design defect, not a feature.
+
+---
+
+## Escalation Protocol
+
+Autonomous execution is the goal — but not at the cost of building in the wrong direction.
+
+**Escalate to the user before starting implementation when:**
+
+1. The SDD is ambiguous or internally contradictory on a requirement the Epic must implement.
+2. Two equally valid approaches exist and the choice has long-term architectural impact.
+3. A required capability is not defined in the SDD and cannot be reasonably inferred.
+4. An Epic would require a new dependency or directory structure that seems significant but no ADR exists.
+
+**How to escalate:**
+- Stop before implementing the affected story.
+- Describe the ambiguity in one paragraph.
+- Present 2–3 concrete options with trade-offs.
+- Ask the user to choose.
+- Once answered, record the decision as an ADR before proceeding.
+
+**Do NOT escalate for:**
+- Trivial choices (variable names, minor internal structure)
+- Issues already resolved by existing ADRs
+- Questions answerable by reading the SDD carefully
+
+---
+
+## File Size and Modularity
+
+Keep files focused and readable. A human engineer would refactor proactively — so should an AI agent.
+
+**Rules:**
+
+1. **No source file should exceed 300 lines** (tests and generated files excluded).
+2. If a file approaches 300 lines during implementation, split it:
+   - Extract cohesive classes or functions into separate modules.
+   - Use existing HLA Section 6 paths. If none fit, write an ADR first.
+3. **One class = one responsibility.** Do not merge unrelated concerns into a single class.
+4. Test files may be longer than source files, but each individual test function must be short and self-contained.
+5. Refactoring commits must be **separate** from feature commits.
+
+**Proactive refactoring is required when:**
+- A file has grown beyond its original scope during an Epic.
+- Multiple unrelated concerns share a module.
+- Copy-paste patterns appear that signal a missing abstraction.
+
+---
+
+## Architecture Decision Records (ADRs) — When to Write One
+
+ADRs are required for **all** of the following — not just architecture deviations:
+
+| Trigger | Example |
+|---|---|
+| Deviation from `hla_architecture.md` | New directory, moved module |
+| New dependency | Adding a Python package not in requirements.txt |
+| Significant implementation design choice | Choice of algorithm, data structure, or pattern with long-term impact |
+| SDD ambiguity resolved by interpretation | "The SDD says X but we interpreted it as Y because Z" |
+| Explicit user decision (escalation outcome) | Any decision made after an escalation |
+
+ADR status must be `accepted` before the implementation it governs begins. Reference the ADR number in commit messages and inline comments where the deviation or decision is visible.
+
+---
+
 ## Key Design Constraints
 
 These are **non-negotiable** — they come directly from the SDD and HLA:
