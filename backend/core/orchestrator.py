@@ -102,7 +102,11 @@ class Orchestrator:
                 wm, f"Kein Modus '{mode_key}' registriert und kein Fallback 'exploration'"
             )
 
-        # Schritt 5: Kontext zusammenstellen
+        # Schritt 5: Nutzerturn vorab persistieren (FR-E-07) — damit die aktuelle
+        # Nutzereingabe im Dialogverlauf sichtbar ist, bevor der Modus aufgerufen wird.
+        repo.append_dialog_turn(project.projekt_id, wm.letzter_dialogturn, "user", input.text)
+
+        # Schritt 5b: Kontext zusammenstellen
         completeness_state, befuellte, bekannte = self._calculator.calculate(
             project.exploration_artifact,
             project.structure_artifact,
@@ -173,8 +177,7 @@ class Orchestrator:
         # Schritt 11: Zustand persistieren
         repo.save(project)
 
-        # Dialogturns persistieren (FR-E-07)
-        repo.append_dialog_turn(project.projekt_id, wm.letzter_dialogturn, "user", input.text)
+        # Assistenten-Antwortturn persistieren (FR-E-07)
         repo.append_dialog_turn(
             project.projekt_id, wm.letzter_dialogturn, "assistant", mode_output.nutzeraeusserung
         )

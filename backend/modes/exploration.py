@@ -60,12 +60,17 @@ def _build_init_patches(existing_slot_ids: set[str]) -> list[dict]:  # type: ign
 
 
 def _build_slot_status(context: ModeContext) -> str:
-    """Build a German slot status string for the system prompt."""
+    """Build a German slot status string for the system prompt.
+
+    Always shows all 8 Pflicht-Slots. Slots not yet in the artifact are
+    shown as 'leer' — they will be initialized before LLM patches are applied,
+    so the LLM can safely use 'replace' on all sub-fields.
+    """
     lines: list[str] = []
     for slot_id, titel in PFLICHT_SLOTS.items():
         slot = context.exploration_artifact.slots.get(slot_id)
         if slot is None:
-            lines.append(f"- {titel}: nicht initialisiert")
+            lines.append(f"- {titel} [leer]: (leer)")
         else:
             status = slot.completeness_status.value
             inhalt_preview = slot.inhalt[:80] + "..." if len(slot.inhalt) > 80 else slot.inhalt
