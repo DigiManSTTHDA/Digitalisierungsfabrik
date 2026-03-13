@@ -237,3 +237,95 @@ All libraries were already in `requirements.txt` — no new dependencies added:
 4. **Orchestrator test update** — `test_invalidation_write_applied_after_structure_patch` needed phase set to `strukturierung` since the OutputValidator now validates patch paths against the phase-specific template. Previously (stub validator returning True), the test worked with the default exploration phase despite sending structure patches.
 
 ---
+
+## STEP 4 — Test Validation
+
+**Date:** 2026-03-13
+**Validator:** Claude Sonnet 4.6
+
+### Test Validation Report
+
+#### `test_llm_client.py`
+
+- **Coverage of acceptance criteria:** GAPS (see below)
+- **Negative test coverage:** GAPS — the existing API-error negative test used `RuntimeError` instead of the `anthropic.APIStatusError` specified by AC10 Story 04-01. Mock did not reflect the real Anthropic SDK exception contract.
+- **Assertion quality:** WEAK in one area — logging not tested at all (AC9 Story 04-01).
+- **Mock quality:** ISSUES — RuntimeError is too broad; the real contract specifies `anthropic.APIStatusError`.
+
+Gaps found and fixed:
+1. `test_anthropic_client_api_error_propagated` — replaced `RuntimeError` mock with a real `anthropic.APIStatusError` constructed with `httpx.Request` + `httpx.Response`. Now verifies the specific exception type required by AC10.
+2. `test_anthropic_client_logs_when_enabled` (new) — verifies AC9: when `llm_log_enabled=True`, structlog `info()` is called for both request and response, with correct fields (`model`, `has_tool_use`).
+
+#### `test_output_validator.py`
+
+- **Coverage of acceptance criteria:** GAPS
+- **Negative test coverage:** COMPLETE for the 5 failure modes listed in scope.
+- **Assertion quality:** STRONG — all assertions use `is True` / `is False` exact boolean equality.
+- **Mock quality:** GOOD
+
+Gaps found and fixed:
+1. `test_valid_add_patch_for_new_slot_id_passes` (new) — explicitly verifies that an `add` patch to an arbitrary new slot path (e.g. `/slots/new_custom_slot`) is accepted, confirming the template uses `[^/]+` regex (any slot ID is valid).
+2. `test_patch_with_unknown_top_level_path_fails_validation` (new) — verifies that a patch targeting a non-`/slots/` top-level key (e.g. `/unknown_key/...`) is rejected by the template.
+
+#### `test_exploration_mode.py`
+
+- **Coverage of acceptance criteria:** GAPS
+- **Negative test coverage:** COMPLETE for what was tested.
+- **Assertion quality:** STRONG for existing tests (exact set comparison for slot IDs, exact string equality for inhalt).
+- **Mock quality:** GOOD — uses `AsyncMock(spec=LLMClient)`.
+
+Gaps found and fixed:
+1. `test_second_turn_does_not_reinitialize_slots` (new) — AC#4 Story 04-06: runs two orchestrator turns and asserts that exactly 8 slots exist after both (not 16), verifying the idempotency of Pflicht-Slot initialization.
+2. `test_nearing_completion_phasenstatus_when_all_slots_filled` (new) — AC#8 Story 04-06: constructs a context where all 8 Pflicht-Slots have `completeness_status=vollstaendig` and asserts `output.phasenstatus == Phasenstatus.nearing_completion`.
+
+#### `test_events.py`
+
+- **Coverage of acceptance criteria:** GAPS
+- **Negative test coverage:** GAPS — no test verified that the `WebSocketEvent` union type rejects unknown discriminator values.
+- **Assertion quality:** STRONG for the 6 round-trip tests.
+- **Mock quality:** N/A (no mocks needed — pure Pydantic model tests).
+
+Gaps found and fixed:
+1. `test_websocket_event_union_rejects_unknown_type` (new) — uses `pydantic.TypeAdapter(WebSocketEvent)` to verify that `{"event": "totally_unknown_type", ...}` raises `ValidationError`.
+
+#### `test_context_assembler.py`
+
+- **Coverage of acceptance criteria:** GAPS
+- **Negative test coverage:** N/A for this component.
+- **Assertion quality:** WEAK — `test_build_context_uses_settings_dialog_history_n` verified `len(context.dialog_history) == 3` but not that those 3 entries are the *last* 3 (chronologically most recent), not the *first* 3.
+- **Mock quality:** GOOD.
+
+Gaps found and fixed:
+1. `test_build_context_dialog_history_n_returns_last_n_turns` (new) — writes 5 turns (Turn 1–5), requests `dialog_history_n=3`, and asserts the returned entries contain Turn 3, Turn 4, Turn 5 — and that Turn 1 and Turn 2 are NOT present.
+
+**Bug discovered:** This new test revealed a real bug in `ProjectRepository.load_dialog_history()`. The SQL query used `ORDER BY turn_id ASC LIMIT ?` which returns the **first** N turns, not the last N. The docstring says "Die letzten N Dialogturns" (the last N turns). Fixed by using a DESC subquery to select the last N rows and an outer query to restore chronological order:
+```sql
+SELECT role, inhalt, timestamp FROM (
+    SELECT role, inhalt, timestamp, turn_id, id
+    FROM dialog_history
+    WHERE projekt_id = ?
+    ORDER BY turn_id DESC, id DESC
+    LIMIT ?
+) ORDER BY turn_id ASC, id ASC
+```
+
+### Summary
+
+| Test file | Tests before | Tests added | Total |
+|---|---|---|---|
+| `test_llm_client.py` | 8 | 2 | 10 |
+| `test_output_validator.py` | 7 | 2 | 9 |
+| `test_exploration_mode.py` | 4 | 2 | 6 |
+| `test_events.py` | 6 | 1 | 7 |
+| `test_context_assembler.py` | 7 | 1 | 8 |
+| **Total** | **183** | **7** | **190** |
+
+### Bug Fixed
+
+`backend/persistence/project_repository.py` — `load_dialog_history()` was returning the FIRST N turns instead of the LAST N turns. Fixed with a DESC subquery + outer ASC re-sort. The fix is covered by the new `test_build_context_dialog_history_n_returns_last_n_turns` test.
+
+### VALID: YES
+
+All 7 new tests added. Bug in `load_dialog_history` fixed. All 190 tests pass. All DoD commands pass (ruff check, ruff format --check, mypy --explicit-package-bases, pytest).
+
+**Commit:** `4eeeebd` — `test(epic-04): strengthen test suite per validate-tests`
