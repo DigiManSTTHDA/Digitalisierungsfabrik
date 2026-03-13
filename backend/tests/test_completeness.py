@@ -205,3 +205,46 @@ def test_completeness_state_maps_vollstaendig_correctly(calc: CompletenessCalcul
     )
     state, _, _ = calc.calculate(exploration, StructureArtifact(), AlgorithmArtifact())
     assert state["s1"] == CompletenessStatus.vollstaendig
+
+
+def test_completeness_state_maps_teilweise_correctly(calc: CompletenessCalculator) -> None:
+    exploration = ExplorationArtifact(slots={"s1": _make_slot("s1", CompletenessStatus.teilweise)})
+    state, _, _ = calc.calculate(exploration, StructureArtifact(), AlgorithmArtifact())
+    assert state["s1"] == CompletenessStatus.teilweise
+
+
+def test_completeness_state_maps_nutzervalidiert_correctly(calc: CompletenessCalculator) -> None:
+    exploration = ExplorationArtifact(
+        slots={"s1": _make_slot("s1", CompletenessStatus.nutzervalidiert)}
+    )
+    state, _, _ = calc.calculate(exploration, StructureArtifact(), AlgorithmArtifact())
+    assert state["s1"] == CompletenessStatus.nutzervalidiert
+
+
+# ---------------------------------------------------------------------------
+# Overlapping slot IDs across artifacts
+# ---------------------------------------------------------------------------
+
+
+def test_overlapping_id_later_artifact_overwrites_earlier(calc: CompletenessCalculator) -> None:
+    """When exploration and structure share a slot ID, structure's status wins in the state map.
+
+    bekannte_slots counts raw slot totals (2), while completeness_state deduplicates to 1 key.
+    befuellte_slots is derived from completeness_state values — so the overwritten status
+    (structure = vollstaendig) is what determines whether the slot counts as filled.
+    """
+    exploration = ExplorationArtifact(slots={"x": _make_slot("x", CompletenessStatus.leer)})
+    structure = StructureArtifact(
+        schritte={"x": _make_schritt("x", CompletenessStatus.vollstaendig)}
+    )
+    state, befuellte, bekannte = calc.calculate(exploration, structure, AlgorithmArtifact())
+
+    # completeness_state has one entry — structure's value wins
+    assert len(state) == 1
+    assert state["x"] == CompletenessStatus.vollstaendig
+
+    # bekannte_slots sums raw lengths including the duplicate
+    assert bekannte == 2
+
+    # befuellte_slots is based on state values (1 entry = vollstaendig → counts)
+    assert befuellte == 1

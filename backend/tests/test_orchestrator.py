@@ -510,6 +510,92 @@ async def test_executor_error_returns_error_output_without_save() -> None:
 # ---------------------------------------------------------------------------
 
 
+async def test_mode_switch_on_blocked_flag() -> None:
+    """aktiver_modus switches to 'moderator' when blocked flag is set."""
+
+    class BlockedMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            return ModeOutput(
+                nutzeraeusserung="Blockiert",
+                patches=[],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[Flag.blocked],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Test-Projekt")
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"exploration": BlockedMode(), "moderator": Moderator()},
+    )
+
+    await orchestrator.process_turn(project.projekt_id, TurnInput(text="Problem"))
+    reloaded = repo.load(project.projekt_id)
+
+    assert reloaded.working_memory.aktiver_modus == "moderator"
+    assert reloaded.working_memory.vorheriger_modus == "exploration"
+
+
+async def test_wm_flags_stored_after_turn_with_flags() -> None:
+    """wm.flags reflects the flags emitted by the mode — persisted for observability (SDD 6.4.1)."""
+
+    class FlagEmittingMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            return ModeOutput(
+                nutzeraeusserung="Fertig",
+                patches=[],
+                phasenstatus=Phasenstatus.phase_complete,
+                flags=[Flag.phase_complete],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Test-Projekt")
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"exploration": FlagEmittingMode(), "moderator": Moderator()},
+    )
+
+    await orchestrator.process_turn(project.projekt_id, TurnInput(text="Fertig"))
+    reloaded = repo.load(project.projekt_id)
+
+    assert reloaded.working_memory.flags == ["phase_complete"]
+
+
+async def test_mode_fallback_to_exploration_when_modus_unknown() -> None:
+    """Falls aktiver_modus nicht in modes registriert, wird 'exploration' als Fallback verwendet."""
+    called: list[str] = []
+
+    class TrackedFallback(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            called.append("exploration")
+            return ModeOutput(
+                nutzeraeusserung="Fallback",
+                patches=[],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Test-Projekt")
+
+    # Force an unregistered mode key into the persisted working memory
+    project.working_memory.aktiver_modus = "nonexistent_mode"
+    repo.save(project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"exploration": TrackedFallback(), "moderator": Moderator()},
+    )
+
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+
+    assert result.error is None
+    assert called == ["exploration"]
+
+
 async def test_invalidation_write_applied_after_structure_patch() -> None:
     """When executor returns invalidated_abschnitt_ids, algorithm status is set to invalidiert."""
 
