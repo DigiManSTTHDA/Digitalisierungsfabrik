@@ -52,5 +52,11 @@ Thumbs.db
 *.swo
 *~
 
+# Claude Code
+.claude/settings.local.json
+
+# Debug output
+backend/output.txt
+
 # Data files (runtime)
 backend/data/
