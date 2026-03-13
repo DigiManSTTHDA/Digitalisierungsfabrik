@@ -187,3 +187,53 @@ async def test_anthropic_client_default_tool_choice() -> None:
     # Verify tool_choice was passed in the create() call
     call_kwargs = mock_messages.create.call_args
     assert call_kwargs.kwargs["tool_choice"] == {"type": "tool", "name": "apply_patches"}
+
+
+# ---------------------------------------------------------------------------
+# Story 04-02 — OllamaClient stub raises NotImplementedError
+# ---------------------------------------------------------------------------
+
+
+async def test_ollama_client_raises_not_implemented() -> None:
+    from llm.ollama_client import OllamaClient
+
+    settings = Settings(llm_provider="ollama", llm_api_key="", llm_model="llama3")
+    client = OllamaClient(settings)
+
+    with pytest.raises(NotImplementedError, match="OllamaClient"):
+        await client.complete(system="test", messages=[])
+
+
+# ---------------------------------------------------------------------------
+# Story 04-02 — Factory: create_llm_client
+# ---------------------------------------------------------------------------
+
+
+def test_factory_returns_anthropic_client() -> None:
+    from llm.anthropic_client import AnthropicClient
+    from llm.factory import create_llm_client
+
+    settings = Settings(llm_provider="anthropic", llm_api_key="sk-test", llm_model="claude-test")
+    client = create_llm_client(settings)
+    assert isinstance(client, AnthropicClient)
+
+
+def test_factory_returns_ollama_client() -> None:
+    from llm.factory import create_llm_client
+    from llm.ollama_client import OllamaClient
+
+    settings = Settings(llm_provider="ollama", llm_api_key="", llm_model="llama3")
+    client = create_llm_client(settings)
+    assert isinstance(client, OllamaClient)
+
+
+def test_factory_raises_for_unknown_provider() -> None:
+    from llm.factory import create_llm_client
+
+    # pydantic-settings validates the Literal["anthropic", "ollama"] field,
+    # so we construct Settings and override after creation
+    settings = Settings(llm_provider="anthropic", llm_api_key="", llm_model="test")
+    # Bypass pydantic validation to set an invalid provider for testing
+    object.__setattr__(settings, "llm_provider", "unknown")
+    with pytest.raises(ValueError, match="Unbekannter LLM-Provider"):
+        create_llm_client(settings)
