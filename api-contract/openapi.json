@@ -2,19 +2,502 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Digitalisierungsfabrik API",
-    "description": "AI-guided business process elicitation system. Placeholder spec — replaced at end of Epic 05.",
+    "description": "AI-guided business process elicitation system. Backend for the Digitalisierungsfabrik prototype.",
     "version": "0.1.0"
   },
   "paths": {
-    "/health": {
+    "/api/projects": {
       "get": {
-        "summary": "Health Check",
-        "description": "Liveness probe — returns ok when the server is running.",
-        "operationId": "health_check_health_get",
-        "tags": ["meta"],
+        "tags": [
+          "projects"
+        ],
+        "summary": "List Projects",
+        "description": "Alle Projekte auflisten (FR-G-02).",
+        "operationId": "list_projects_api_projects_get",
         "responses": {
           "200": {
-            "description": "Server is running",
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Create Project",
+        "description": "Neues Projekt anlegen (FR-G-01).",
+        "operationId": "create_project_api_projects_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projekt_id}": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Project",
+        "description": "Projektdetails laden (FR-E-02).",
+        "operationId": "get_project_api_projects__projekt_id__get",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projekt_id}/artifacts": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Get Artifacts",
+        "description": "Alle drei Artefakte eines Projekts laden (FR-B-06).",
+        "operationId": "get_artifacts_api_projects__projekt_id__artifacts_get",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projekt_id}/download": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Download Project",
+        "description": "Alle drei Artefakte als JSON herunterladen (FR-B-07).",
+        "operationId": "download_project_api_projects__projekt_id__download_get",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projekt_id}/complete": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Complete Project",
+        "description": "Projekt als abgeschlossen markieren (FR-G-04).",
+        "operationId": "complete_project_api_projects__projekt_id__complete_post",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCompleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projekt_id}/artifacts/{typ}/versions": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "List Artifact Versions",
+        "description": "Versionshistorie eines Artefakts (FR-B-10).",
+        "operationId": "list_artifact_versions_api_projects__projekt_id__artifacts__typ__versions_get",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          },
+          {
+            "name": "typ",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Typ"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactVersionsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/api/projects/{projekt_id}/artifacts/{typ}/restore": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Restore Artifact Version",
+        "description": "Version wiederherstellen \u2014 erzeugt neue Version (FR-B-10).",
+        "operationId": "restore_artifact_version_api_projects__projekt_id__artifacts__typ__restore_post",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          },
+          {
+            "name": "typ",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Typ"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactRestoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactRestoreResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/api/projects/{projekt_id}/import": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Import Artifact",
+        "description": "Artefakt importieren und validieren (FR-B-07, FR-C-04).",
+        "operationId": "import_artifact_api_projects__projekt_id__import_post",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactRestoreResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Health Check",
+        "description": "Liveness probe \u2014 returns ok when the server is running.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -29,16 +512,354 @@
   },
   "components": {
     "schemas": {
-      "HealthResponse": {
+      "ArtifactImportRequest": {
+        "properties": {
+          "typ": {
+            "type": "string",
+            "enum": [
+              "exploration",
+              "struktur",
+              "algorithmus"
+            ],
+            "title": "Typ"
+          },
+          "artefakt": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Artefakt"
+          }
+        },
         "type": "object",
-        "title": "HealthResponse",
+        "required": [
+          "typ",
+          "artefakt"
+        ],
+        "title": "ArtifactImportRequest",
+        "description": "Request body for POST /api/projects/{id}/import (FR-B-07, FR-C-04)."
+      },
+      "ArtifactRestoreRequest": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "ArtifactRestoreRequest",
+        "description": "Request body for POST /api/projects/{id}/artifacts/{typ}/restore."
+      },
+      "ArtifactRestoreResponse": {
+        "properties": {
+          "artefakt": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Artefakt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "artefakt"
+        ],
+        "title": "ArtifactRestoreResponse",
+        "description": "Response for POST restore and POST import."
+      },
+      "ArtifactVersionInfo": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "erstellt_am": {
+            "type": "string",
+            "title": "Erstellt Am"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "erstellt_am",
+          "created_by"
+        ],
+        "title": "ArtifactVersionInfo",
+        "description": "Single version entry in the version history list."
+      },
+      "ArtifactVersionsResponse": {
+        "properties": {
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionInfo"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "versions"
+        ],
+        "title": "ArtifactVersionsResponse",
+        "description": "Response for GET /api/projects/{id}/artifacts/{typ}/versions (FR-B-10)."
+      },
+      "ArtifactsResponse": {
+        "properties": {
+          "exploration": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Exploration"
+          },
+          "struktur": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Struktur"
+          },
+          "algorithmus": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Algorithmus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exploration",
+          "struktur",
+          "algorithmus"
+        ],
+        "title": "ArtifactsResponse",
+        "description": "Response for GET /api/projects/{id}/artifacts (FR-B-06)."
+      },
+      "DownloadResponse": {
+        "properties": {
+          "exploration": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Exploration"
+          },
+          "struktur": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Struktur"
+          },
+          "algorithmus": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Algorithmus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exploration",
+          "struktur",
+          "algorithmus"
+        ],
+        "title": "DownloadResponse",
+        "description": "Response for GET /api/projects/{id}/download (FR-B-07)."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse",
+        "description": "Standard error response body."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
         "properties": {
           "status": {
             "type": "string",
             "title": "Status"
           }
         },
-        "required": ["status"]
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse"
+      },
+      "ProjectCompleteResponse": {
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/ProjectResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project"
+        ],
+        "title": "ProjectCompleteResponse",
+        "description": "Response for POST /api/projects/{id}/complete (FR-G-04)."
+      },
+      "ProjectCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "beschreibung": {
+            "type": "string",
+            "title": "Beschreibung",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ProjectCreateRequest",
+        "description": "Request body for POST /api/projects (FR-G-01)."
+      },
+      "ProjectListResponse": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectResponse"
+            },
+            "type": "array",
+            "title": "Projects"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projects"
+        ],
+        "title": "ProjectListResponse",
+        "description": "Response for GET /api/projects (FR-G-02)."
+      },
+      "ProjectResponse": {
+        "properties": {
+          "projekt_id": {
+            "type": "string",
+            "title": "Projekt Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "beschreibung": {
+            "type": "string",
+            "title": "Beschreibung"
+          },
+          "erstellt_am": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Erstellt Am"
+          },
+          "zuletzt_geaendert": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Zuletzt Geaendert"
+          },
+          "aktive_phase": {
+            "$ref": "#/components/schemas/Projektphase"
+          },
+          "aktiver_modus": {
+            "type": "string",
+            "title": "Aktiver Modus"
+          },
+          "projektstatus": {
+            "$ref": "#/components/schemas/Projektstatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projekt_id",
+          "name",
+          "beschreibung",
+          "erstellt_am",
+          "zuletzt_geaendert",
+          "aktive_phase",
+          "aktiver_modus",
+          "projektstatus"
+        ],
+        "title": "ProjectResponse",
+        "description": "Project metadata \u2014 all SDD 7.2.1 fields."
+      },
+      "Projektphase": {
+        "type": "string",
+        "enum": [
+          "exploration",
+          "strukturierung",
+          "spezifikation",
+          "validierung",
+          "abgeschlossen"
+        ],
+        "title": "Projektphase",
+        "description": "Aktive Phase des Projekts."
+      },
+      "Projektstatus": {
+        "type": "string",
+        "enum": [
+          "aktiv",
+          "pausiert",
+          "abgeschlossen"
+        ],
+        "title": "Projektstatus",
+        "description": "Gesamtstatus des Projekts (SDD 8.4, 6.4)."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }
