@@ -11,13 +11,12 @@ You must create them.
 MANDATORY REFERENCES
 ------------------------------------------------
 
-Read and follow:
-
+Read in full (small, always relevant):
 - AGENTS.md
-- hla_architecture.md
-- digitalisierungsfabrik_systemdefinition.md (SDD)
+- HLA Section 6 only (file structure, ~150 lines) — use offset/limit
 
-Stories must comply with all rules defined there.
+Do NOT read full SDD or full HLA upfront. Both are large (SDD ~1600 lines,
+HLA ~740 lines). Load sections on demand as described below.
 
 ------------------------------------------------
 STEP 1 — READ THE EPIC
@@ -37,15 +36,18 @@ Extract:
 STEP 2 — MAP TO SDD
 ------------------------------------------------
 
-Identify the SDD sections that the Epic implements.
+1. Read only the SDD table of contents (first ~60 lines) to identify
+   section numbers relevant to this Epic.
+2. Read only those specific SDD sections using offset/limit.
+   Do not read sections unrelated to this Epic.
 
-For each component:
+For each relevant section:
 
 - find the SDD field tables
 - identify required behaviour
 - identify constraints
 
-No SDD requirement may be omitted.
+No SDD requirement from the relevant sections may be omitted.
 
 ------------------------------------------------
 STEP 3 — DESIGN STORY BREAKDOWN

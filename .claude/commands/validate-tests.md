@@ -14,13 +14,13 @@ Never weaken tests.
 MANDATORY CONTEXT
 ------------------------------------------------
 
-Read and understand:
-
+Read in full (small, always relevant):
 - AGENTS.md
-- hla_architecture.md
-- digitalisierungsfabrik_systemdefinition.md (SDD)
-- the current Epic
-- the Epic stories and acceptance criteria
+- the current Epic and its acceptance criteria
+
+Read selectively (large documents — use offset/limit):
+- HLA Section 6 only (to verify test file locations mirror source structure)
+- SDD: read only the sections referenced in the Epic stories
 
 Tests must validate the behaviour defined in these documents.
 

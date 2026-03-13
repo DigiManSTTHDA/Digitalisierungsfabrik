@@ -500,6 +500,21 @@ DATABASE_PATH=./data/digitalisierungsfabrik.db
 
 ---
 
+## Reading Large Documents
+
+The SDD (~1600 lines) and HLA (~740 lines) are large. Never load them fully into
+context unless there is a specific reason. Follow this protocol:
+
+| Document | How to read |
+|---|---|
+| AGENTS.md | Always read in full — it is the rule set |
+| `hla_architecture.md` | Read Section 6 (file structure) by default; read other sections on demand |
+| `digitalisierungsfabrik_systemdefinition.md` | Read table of contents first (~60 lines); then read only the sections relevant to the current story or task |
+
+Use `offset` and `limit` parameters when reading files to fetch specific line ranges.
+
+---
+
 ## References
 
 - `digitalisierungsfabrik_systemdefinition.md` — Full system requirements (SDD)

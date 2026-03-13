@@ -15,11 +15,16 @@ The summary must explain clearly:
 INPUT SOURCES
 ------------------------------------------------
 
-Read and analyze:
+Read in full (small, always relevant):
+- AGENTS.md
+- the Epic document
 
-AGENTS.md  
-hla_architecture.md  
-digitalisierungsfabrik_systemdefinition.md (SDD)
+Read selectively (large documents — use offset/limit):
+- HLA: read section headings and Section 6 only
+- SDD: read the table of contents (~60 lines) for section numbers and titles;
+  read content of sections referenced in this Epic only.
+  For Section 10 (SDD Coverage), the ToC alone is sufficient to list
+  all sections and mark their implementation status.
 
 Also inspect:
 

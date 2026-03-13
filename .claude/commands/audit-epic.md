@@ -36,20 +36,22 @@ you must fix it.
 PHASE 1 — CONTEXT COLLECTION
 ------------------------------------------------
 
-Read and understand:
+Read in full (small, always relevant):
+- AGENTS.md
 
-AGENTS.md  
-hla_architecture.md  
-digitalisierungsfabrik_systemdefinition.md  
+Read selectively (large documents — use offset/limit):
+- HLA Section 6 only (file structure and module paths)
+- SDD: first read the Epic document to identify referenced SDD sections,
+  then read only those sections. Do not read the full SDD.
 
-Then locate the epic document that was just implemented.
+Locate the epic document that was just implemented.
 
 Extract:
 
 - acceptance criteria
 - Definition of Done checklist
 - expected files and directories
-- referenced SDD sections
+- referenced SDD sections (these determine which SDD sections to read)
 
 ------------------------------------------------
 PHASE 2 — ARCHITECTURE COMPLIANCE

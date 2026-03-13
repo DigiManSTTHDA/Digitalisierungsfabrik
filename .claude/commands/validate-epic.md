@@ -18,11 +18,13 @@ Assume the Epic may contain mistakes.
 PHASE 1 — DOCUMENT COLLECTION
 ------------------------------------------------
 
-Read the following documents:
+Read in full (small, always relevant):
+- AGENTS.md
 
-AGENTS.md
-hla_architecture.md
-digitalisierungsfabrik_systemdefinition.md
+Read selectively (large documents — use offset/limit):
+- HLA Section 6 only (file paths and module structure)
+- SDD: first read only the table of contents (~60 lines) to identify
+  relevant section numbers, then read only those sections
 
 Then read the Epic document provided by the user.
 

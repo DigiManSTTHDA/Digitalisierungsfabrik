@@ -17,9 +17,10 @@ GLOBAL RULES
 
 Follow these documents:
 
-- AGENTS.md
-- hla_architecture.md
-- digitalisierungsfabrik_systemdefinition.md (SDD)
+- AGENTS.md — always read in full (manageable size)
+- hla_architecture.md — read Section 6 on demand, not upfront
+- digitalisierungsfabrik_systemdefinition.md — never read in full;
+  each sub-command reads only its relevant sections
 
 Never assume correctness.
 

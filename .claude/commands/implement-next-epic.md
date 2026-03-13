@@ -9,10 +9,13 @@ The rules in AGENTS.md are authoritative and non-negotiable.
 
 You must read and follow:
 
-- AGENTS.md
-- hla_architecture.md
-- digitalisierungsfabrik_systemdefinition.md (SDD)
-- the Epic document to implement
+- AGENTS.md — read in full (always relevant, manageable size)
+- hla_architecture.md — read Section 6 only (file structure); read other
+  sections on demand if a specific architectural question arises
+- digitalisierungsfabrik_systemdefinition.md — do NOT read in full;
+  read table of contents first (~60 lines), then only the sections
+  referenced by each story being implemented
+- the Epic document — read in full
 
 Never assume compliance — always verify.
 
@@ -84,7 +87,8 @@ STEP 3 — IMPLEMENT STORIES ONE BY ONE
 For each Story in order:
 
 1. Read the acceptance criteria completely.
-2. Identify the SDD section it implements.
+2. Identify the SDD section it implements — read only that section
+   (use offset/limit on the SDD file, not the full document).
 3. Run the library search (Step 2) for this story's logic.
 4. Write failing tests first (TDD — red phase).
 5. Write the minimum implementation to make tests pass (green phase).
