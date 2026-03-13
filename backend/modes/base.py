@@ -22,6 +22,7 @@ from artifacts.models import (
     Projektphase,
     StructureArtifact,
 )
+from artifacts.template_schema import ArtifactTemplate
 from core.working_memory import WorkingMemory
 
 
@@ -53,6 +54,7 @@ class ModeContext(BaseModel):
     working_memory: WorkingMemory
     dialog_history: list[dict]  # type: ignore[type-arg]  # [{role, inhalt, timestamp}]
     completeness_state: dict[str, CompletenessStatus] = Field(default_factory=dict)
+    artifact_template: ArtifactTemplate | None = None
 
 
 class ModeOutput(BaseModel):
