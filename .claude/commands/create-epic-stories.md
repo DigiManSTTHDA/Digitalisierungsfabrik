@@ -36,7 +36,8 @@ Extract:
 STEP 2 — MAP TO SDD
 ------------------------------------------------
 
-1. Read only the SDD table of contents (first ~60 lines) to identify
+1. Run: grep -n "^# " docs/digitalisierungsfabrik_systemdefinition.md
+   to get all section headings with line numbers. Then identify
    section numbers relevant to this Epic.
 2. Read only those specific SDD sections using offset/limit.
    Do not read sections unrelated to this Epic.

@@ -23,8 +23,9 @@ Read in full (small, always relevant):
 
 Read selectively (large documents — use offset/limit):
 - HLA Section 6 only (file paths and module structure)
-- SDD: first read only the table of contents (~60 lines) to identify
-  relevant section numbers, then read only those sections
+- SDD: run grep -n "^# " docs/digitalisierungsfabrik_systemdefinition.md
+  to get section headings with line numbers, then read only the sections
+  referenced in the Epic stories
 
 Then read the Epic document provided by the user.
 

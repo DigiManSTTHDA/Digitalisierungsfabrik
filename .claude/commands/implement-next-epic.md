@@ -13,7 +13,8 @@ You must read and follow:
 - hla_architecture.md — read Section 6 only (file structure); read other
   sections on demand if a specific architectural question arises
 - digitalisierungsfabrik_systemdefinition.md — do NOT read in full;
-  read table of contents first (~60 lines), then only the sections
+  run grep -n "^# " docs/digitalisierungsfabrik_systemdefinition.md
+  to get section headings with line numbers, then read only the sections
   referenced by each story being implemented
 - the Epic document — read in full
 

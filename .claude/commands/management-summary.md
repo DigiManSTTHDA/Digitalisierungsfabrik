@@ -21,10 +21,10 @@ Read in full (small, always relevant):
 
 Read selectively (large documents — use offset/limit):
 - HLA: read section headings and Section 6 only
-- SDD: read the table of contents (~60 lines) for section numbers and titles;
-  read content of sections referenced in this Epic only.
-  For Section 10 (SDD Coverage), the ToC alone is sufficient to list
-  all sections and mark their implementation status.
+- SDD: run grep -n "^# " docs/digitalisierungsfabrik_systemdefinition.md
+  to get all section headings with line numbers; read content only for
+  sections referenced in this Epic. The grep output alone is sufficient
+  for Section 10 (SDD Coverage overview).
 
 Also inspect:
 
