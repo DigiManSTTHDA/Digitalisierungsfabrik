@@ -1,12 +1,4 @@
-"""ProjectRepository — CRUD operations for Project aggregates.
-
-All writes are atomic: one save() call runs inside a single SQLite transaction.
-A crash or error mid-transaction leaves the database in the state before BEGIN.
-This fulfils FR-E-01 (no partial state).
-
-SQL uses parameterised queries exclusively — no string concatenation with
-user-supplied data (prevents SQL injection).
-"""
+"""ProjectRepository — CRUD for Project aggregates (FR-E-01: atomic writes)."""
 
 from __future__ import annotations
 
@@ -35,10 +27,6 @@ class ProjectRepository:
 
     def __init__(self, db: Database) -> None:
         self._db = db
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def create(self, name: str, beschreibung: str = "") -> Project:
         """Create a new project with empty artifacts and persist it immediately."""
@@ -181,9 +169,56 @@ class ProjectRepository:
         ).fetchall()
         return [self.load(row["projekt_id"]) for row in rows]
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
+    def list_artifact_versions(
+        self,
+        projekt_id: str,
+        typ: str,
+    ) -> list[dict[str, str | int]]:
+        """Return version metadata (newest-first) for a given artifact type."""
+        conn = self._db.get_connection()
+        # Verify project exists
+        if (
+            conn.execute("SELECT 1 FROM projects WHERE projekt_id = ?", (projekt_id,)).fetchone()
+            is None
+        ):
+            raise ValueError(f"Projekt '{projekt_id}' nicht gefunden")
+
+        rows = conn.execute(
+            """SELECT version_id, timestamp, created_by
+               FROM artifact_versions
+               WHERE projekt_id = ? AND typ = ?
+               ORDER BY version_id DESC
+            """,
+            (projekt_id, typ),
+        ).fetchall()
+        return [
+            {
+                "version": row["version_id"],
+                "erstellt_am": row["timestamp"],
+                "created_by": row["created_by"],
+            }
+            for row in rows
+        ]
+
+    def load_artifact_version(
+        self,
+        projekt_id: str,
+        typ: str,
+        version_id: int,
+    ) -> str:
+        """Load raw JSON of a specific artifact version. Raises ValueError if not found."""
+        conn = self._db.get_connection()
+        row = conn.execute(
+            """SELECT inhalt FROM artifact_versions
+               WHERE projekt_id = ? AND typ = ? AND version_id = ?
+            """,
+            (projekt_id, typ, version_id),
+        ).fetchone()
+        if row is None:
+            raise ValueError(
+                f"Version {version_id} für Artefakt '{typ}' in Projekt '{projekt_id}' nicht gefunden"
+            )
+        return row["inhalt"]
 
     def _load_latest_artifact(
         self,
@@ -211,14 +246,7 @@ class ProjectRepository:
         role: str,
         inhalt: str,
     ) -> None:
-        """Einen Dialogturn in dialog_history schreiben (FR-E-07).
-
-        Args:
-            projekt_id: Projekt-ID des aktiven Projekts.
-            turn_id: Sequenznummer des Turns (letzter_dialogturn aus WorkingMemory).
-            role: Rolle des Sprechers: 'user' oder 'assistant'.
-            inhalt: Textinhalt des Turns.
-        """
+        """Einen Dialogturn in dialog_history schreiben (FR-E-07)."""
         ts = datetime.now(tz=UTC).isoformat()
         with self._db.transaction() as conn:
             conn.execute(
@@ -233,11 +261,7 @@ class ProjectRepository:
         projekt_id: str,
         last_n: int = 20,
     ) -> list[dict[str, str]]:
-        """Die letzten N Dialogturns eines Projekts laden.
-
-        Returns:
-            Liste von Dicts mit Schlüsseln 'role', 'inhalt', 'timestamp' (chronologisch).
-        """
+        """Die letzten N Dialogturns eines Projekts laden (chronologisch)."""
         conn = self._db.get_connection()
         # Subquery selects the last N rows by turn_id DESC, outer query
         # restores chronological (ASC) order for the LLM message list.

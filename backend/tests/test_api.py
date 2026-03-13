@@ -169,3 +169,72 @@ def test_complete_project_not_found(client: TestClient) -> None:
     """POST /api/projects/{id}/complete returns 404 for non-existent project."""
     resp = client.post("/api/projects/no-such-id/complete")
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Story 05-04: Artifact Versioning & Import
+# ---------------------------------------------------------------------------
+
+
+def test_list_artifact_versions(client: TestClient) -> None:
+    """GET versions returns version 0 after project creation."""
+    pid = client.post("/api/projects", json={"name": "V"}).json()["projekt_id"]
+    resp = client.get(f"/api/projects/{pid}/artifacts/exploration/versions")
+    assert resp.status_code == 200
+    versions = resp.json()["versions"]
+    assert len(versions) == 1
+    assert versions[0]["version"] == 0
+
+
+def test_list_artifact_versions_invalid_typ(client: TestClient) -> None:
+    """GET versions returns 422 for invalid artifact type."""
+    pid = client.post("/api/projects", json={"name": "V2"}).json()["projekt_id"]
+    resp = client.get(f"/api/projects/{pid}/artifacts/invalid/versions")
+    assert resp.status_code == 422
+
+
+def test_restore_artifact_version(client: TestClient) -> None:
+    """POST restore creates a new version from version 0."""
+    pid = client.post("/api/projects", json={"name": "R"}).json()["projekt_id"]
+    resp = client.post(
+        f"/api/projects/{pid}/artifacts/exploration/restore",
+        json={"version": 0},
+    )
+    assert resp.status_code == 200
+    assert "artefakt" in resp.json()
+    # Check that a new version was created
+    versions = client.get(f"/api/projects/{pid}/artifacts/exploration/versions").json()["versions"]
+    assert len(versions) == 2
+    assert versions[0]["version"] == 1  # newest first
+
+
+def test_restore_artifact_version_not_found(client: TestClient) -> None:
+    """POST restore returns 404 for non-existent version."""
+    pid = client.post("/api/projects", json={"name": "R2"}).json()["projekt_id"]
+    resp = client.post(
+        f"/api/projects/{pid}/artifacts/exploration/restore",
+        json={"version": 999},
+    )
+    assert resp.status_code == 404
+
+
+def test_import_artifact_valid(client: TestClient) -> None:
+    """POST import accepts valid artifact JSON."""
+    pid = client.post("/api/projects", json={"name": "I"}).json()["projekt_id"]
+    resp = client.post(
+        f"/api/projects/{pid}/import",
+        json={"typ": "exploration", "artefakt": {"slots": {}, "version": 0}},
+    )
+    assert resp.status_code == 200
+    assert "artefakt" in resp.json()
+
+
+def test_import_artifact_invalid(client: TestClient) -> None:
+    """POST import returns 422 for invalid artifact JSON."""
+    pid = client.post("/api/projects", json={"name": "I2"}).json()["projekt_id"]
+    # ExplorationArtifact requires 'slots' to be a dict — pass invalid type
+    resp = client.post(
+        f"/api/projects/{pid}/import",
+        json={"typ": "exploration", "artefakt": {"slots": "not-a-dict"}},
+    )
+    assert resp.status_code == 422

@@ -1,12 +1,4 @@
-"""REST-Endpunkte — FastAPI router for all REST API endpoints (HLA Section 6).
-
-All route handlers use explicit Pydantic request/response models from
-api.schemas — no dict or Any responses (AGENTS.md API Contract rules).
-
-SDD references: FR-G-01 (Projektanlage), FR-G-02 (Projektliste),
-FR-G-04 (Projektabschluss), FR-B-06 (Artefaktsichtbarkeit),
-FR-B-07 (Download/Export/Import), FR-B-10 (Versionswiederherstellung).
-"""
+"""REST-Endpunkte — all REST API endpoints (HLA Section 6, api/router.py)."""
 
 from __future__ import annotations
 
@@ -14,9 +6,15 @@ from typing import Annotated
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import ValidationError
 
 from api.schemas import (
+    ArtifactImportRequest,
+    ArtifactRestoreRequest,
+    ArtifactRestoreResponse,
     ArtifactsResponse,
+    ArtifactVersionInfo,
+    ArtifactVersionsResponse,
     DownloadResponse,
     ErrorResponse,
     ProjectCompleteResponse,
@@ -24,7 +22,12 @@ from api.schemas import (
     ProjectListResponse,
     ProjectResponse,
 )
-from artifacts.models import Projektstatus
+from artifacts.models import (
+    AlgorithmArtifact,
+    ExplorationArtifact,
+    Projektstatus,
+    StructureArtifact,
+)
 from core.models import Project
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
@@ -32,11 +35,6 @@ from persistence.project_repository import ProjectRepository
 logger = structlog.get_logger()
 
 router = APIRouter(prefix="/api", tags=["projects"])
-
-
-# ---------------------------------------------------------------------------
-# Dependency injection
-# ---------------------------------------------------------------------------
 
 
 def _get_repository() -> ProjectRepository:
@@ -49,11 +47,6 @@ def _get_repository() -> ProjectRepository:
 
 
 RepoDep = Annotated[ProjectRepository, Depends(_get_repository)]
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _project_to_response(project: Project) -> ProjectResponse:
@@ -78,11 +71,6 @@ def _load_or_404(repo: ProjectRepository, projekt_id: str) -> Project:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Projekt '{projekt_id}' nicht gefunden",
         )
-
-
-# ---------------------------------------------------------------------------
-# Project CRUD (Story 05-02)
-# ---------------------------------------------------------------------------
 
 
 @router.post(
@@ -122,11 +110,6 @@ async def get_project(
     """Projektdetails laden (FR-E-02)."""
     project = _load_or_404(repo, projekt_id)
     return _project_to_response(project)
-
-
-# ---------------------------------------------------------------------------
-# Artifact endpoints (Story 05-03)
-# ---------------------------------------------------------------------------
 
 
 @router.get(
@@ -185,3 +168,127 @@ async def complete_project(
     repo.save(project)
     logger.info("project_completed", projekt_id=projekt_id)
     return ProjectCompleteResponse(project=_project_to_response(project))
+
+
+_TYP_TO_DB: dict[str, str] = {
+    "exploration": "exploration",
+    "struktur": "structure",
+    "algorithmus": "algorithm",
+}
+
+_TYP_TO_MODEL: dict[str, type[ExplorationArtifact | StructureArtifact | AlgorithmArtifact]] = {
+    "exploration": ExplorationArtifact,
+    "struktur": StructureArtifact,
+    "algorithmus": AlgorithmArtifact,
+}
+
+
+def _validate_typ(typ: str) -> str:
+    """Validate and map the artifact type path parameter."""
+    if typ not in _TYP_TO_DB:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Ungültiger Artefakttyp: '{typ}'. Erlaubt: exploration, struktur, algorithmus",
+        )
+    return _TYP_TO_DB[typ]
+
+
+@router.get(
+    "/projects/{projekt_id}/artifacts/{typ}/versions",
+    response_model=ArtifactVersionsResponse,
+    responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
+)
+async def list_artifact_versions(
+    projekt_id: str,
+    typ: str,
+    repo: RepoDep,
+) -> ArtifactVersionsResponse:
+    """Versionshistorie eines Artefakts (FR-B-10)."""
+    db_typ = _validate_typ(typ)
+    _load_or_404(repo, projekt_id)  # ensure project exists
+    versions_raw = repo.list_artifact_versions(projekt_id, db_typ)
+    versions = [
+        ArtifactVersionInfo(
+            version=v["version"],  # type: ignore[arg-type]
+            erstellt_am=str(v["erstellt_am"]),
+            created_by=str(v["created_by"]),
+        )
+        for v in versions_raw
+    ]
+    return ArtifactVersionsResponse(versions=versions)
+
+
+@router.post(
+    "/projects/{projekt_id}/artifacts/{typ}/restore",
+    response_model=ArtifactRestoreResponse,
+    responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
+)
+async def restore_artifact_version(
+    projekt_id: str,
+    typ: str,
+    body: ArtifactRestoreRequest,
+    repo: RepoDep,
+) -> ArtifactRestoreResponse:
+    """Version wiederherstellen — erzeugt neue Version (FR-B-10)."""
+    db_typ = _validate_typ(typ)
+    project = _load_or_404(repo, projekt_id)
+    try:
+        raw_json = repo.load_artifact_version(projekt_id, db_typ, body.version)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Version {body.version} nicht gefunden",
+        )
+    model_class = _TYP_TO_MODEL[typ]
+    restored = model_class.model_validate_json(raw_json)
+    # Increment version to create a new entry (FR-B-10: history not overwritten)
+    restored.version = _get_current_version(project, typ) + 1
+    _set_artifact(project, typ, restored)
+    repo.save(project)
+    return ArtifactRestoreResponse(artefakt=restored.model_dump())
+
+
+@router.post(
+    "/projects/{projekt_id}/import",
+    response_model=ArtifactRestoreResponse,
+    responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
+)
+async def import_artifact(
+    projekt_id: str,
+    body: ArtifactImportRequest,
+    repo: RepoDep,
+) -> ArtifactRestoreResponse:
+    """Artefakt importieren und validieren (FR-B-07, FR-C-04)."""
+    _validate_typ(body.typ)
+    project = _load_or_404(repo, projekt_id)
+    model_class = _TYP_TO_MODEL[body.typ]
+    try:
+        imported = model_class.model_validate(body.artefakt)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        )
+    imported.version = _get_current_version(project, body.typ) + 1
+    _set_artifact(project, body.typ, imported)
+    repo.save(project)
+    return ArtifactRestoreResponse(artefakt=imported.model_dump())
+
+
+_ARTIFACT_ATTR = {
+    "exploration": "exploration_artifact",
+    "struktur": "structure_artifact",
+    "algorithmus": "algorithm_artifact",
+}
+
+
+def _get_current_version(project: Project, typ: str) -> int:
+    return getattr(project, _ARTIFACT_ATTR[typ]).version
+
+
+def _set_artifact(
+    project: Project,
+    typ: str,
+    artifact: ExplorationArtifact | StructureArtifact | AlgorithmArtifact,
+) -> None:
+    setattr(project, _ARTIFACT_ATTR[typ], artifact)
