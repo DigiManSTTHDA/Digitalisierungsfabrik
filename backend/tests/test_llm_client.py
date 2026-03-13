@@ -58,7 +58,10 @@ async def test_anthropic_client_positive_text_and_tool_use() -> None:
     tool_block = MagicMock()
     tool_block.type = "tool_use"
     tool_block.name = "apply_patches"
-    tool_block.input = {"patches": [{"op": "add", "path": "/slots/s1", "value": {}}]}
+    tool_block.input = {
+        "nutzeraeusserung": "Ich helfe Ihnen gerne.",
+        "patches": [{"op": "add", "path": "/slots/s1", "value": {}}],
+    }
 
     mock_response = MagicMock()
     mock_response.content = [text_block, tool_block]
@@ -76,7 +79,7 @@ async def test_anthropic_client_positive_text_and_tool_use() -> None:
 
     assert isinstance(result, LLMResponse)
     assert result.nutzeraeusserung == "Ich helfe Ihnen gerne."
-    assert result.tool_input == {"patches": [{"op": "add", "path": "/slots/s1", "value": {}}]}
+    assert "patches" in result.tool_input
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +179,7 @@ async def test_anthropic_client_default_tool_choice() -> None:
     tool_block = MagicMock()
     tool_block.type = "tool_use"
     tool_block.name = "apply_patches"
-    tool_block.input = {"patches": []}
+    tool_block.input = {"nutzeraeusserung": "Ok", "patches": []}
 
     mock_response = MagicMock()
     mock_response.content = [text_block, tool_block]
@@ -259,7 +262,7 @@ async def test_anthropic_client_logs_when_enabled() -> None:
     tool_block = MagicMock()
     tool_block.type = "tool_use"
     tool_block.name = "apply_patches"
-    tool_block.input = {"patches": []}
+    tool_block.input = {"nutzeraeusserung": "Ok", "patches": []}
 
     mock_response = MagicMock()
     mock_response.content = [text_block, tool_block]

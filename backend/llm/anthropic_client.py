@@ -66,14 +66,11 @@ class AnthropicClient(LLMClient):
 
         response = self._client.messages.create(**kwargs)
 
-        # Parse response content blocks
-        nutzeraeusserung = ""
+        # Parse response: extract tool_use block (nutzeraeusserung is inside tool_input)
         tool_input: dict | None = None  # type: ignore[type-arg]
 
         for block in response.content:
-            if block.type == "text":
-                nutzeraeusserung = block.text
-            elif block.type == "tool_use":
+            if block.type == "tool_use":
                 tool_input = block.input
 
         if tool_input is None:
@@ -81,6 +78,8 @@ class AnthropicClient(LLMClient):
                 "Anthropic-Antwort enthält keinen tool_use-Block — "
                 "Output-Kontrakt-Verletzung (SDD 6.5.2)"
             )
+
+        nutzeraeusserung = str(tool_input.get("nutzeraeusserung", ""))
 
         if self._settings.llm_log_enabled:
             logger.info(

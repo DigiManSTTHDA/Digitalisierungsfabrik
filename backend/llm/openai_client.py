@@ -80,20 +80,25 @@ class OpenAIClient(LLMClient):
         }
         if openai_tools:
             kwargs["tools"] = openai_tools
-            # Force the model to call apply_patches (equivalent to Anthropic tool_choice)
-            kwargs["tool_choice"] = {"type": "function", "function": {"name": "apply_patches"}}
+            # "required" forces a tool call while allowing message.content alongside it.
+            # Specific function forcing {"type":"function","name":...} suppresses message.content
+            # in gpt-4o, resulting in empty nutzeraeusserung. "required" + single tool
+            # is functionally equivalent but preserves the conversational text.
+            kwargs["tool_choice"] = "required"
 
         response = self._client.chat.completions.create(**kwargs)
 
         choice = response.choices[0]
         message = choice.message
 
-        nutzeraeusserung: str = message.content or ""
         tool_input: dict | None = None  # type: ignore[type-arg]
 
         if message.tool_calls:
             call = message.tool_calls[0]
             tool_input = json.loads(call.function.arguments)
+
+        # nutzeraeusserung is a required field inside tool_input (not message.content)
+        nutzeraeusserung: str = str(tool_input.get("nutzeraeusserung", "")) if tool_input else ""
 
         if tool_input is None:
             raise ValueError(
