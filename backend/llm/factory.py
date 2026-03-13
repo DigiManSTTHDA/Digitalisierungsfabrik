@@ -29,11 +29,16 @@ def create_llm_client(settings: Settings) -> LLMClient:
 
         return AnthropicClient(settings)
 
+    if settings.llm_provider == "openai":
+        from llm.openai_client import OpenAIClient
+
+        return OpenAIClient(settings)
+
     if settings.llm_provider == "ollama":
         from llm.ollama_client import OllamaClient
 
         return OllamaClient(settings)
 
     raise ValueError(
-        f"Unbekannter LLM-Provider '{settings.llm_provider}'. Erlaubt: 'anthropic', 'ollama'."
+        f"Unbekannter LLM-Provider '{settings.llm_provider}'. Erlaubt: 'anthropic', 'openai', 'ollama'."
     )

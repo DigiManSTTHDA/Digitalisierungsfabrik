@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # LLM
-    llm_provider: Literal["anthropic", "ollama"] = "anthropic"
+    llm_provider: Literal["anthropic", "openai", "ollama"] = "anthropic"
     llm_model: str = "claude-opus-4-6"
     llm_api_key: str = ""
     ollama_base_url: str = "http://localhost:11434"
