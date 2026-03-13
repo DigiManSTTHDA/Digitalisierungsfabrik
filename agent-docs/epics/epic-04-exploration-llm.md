@@ -48,6 +48,25 @@ via WebSocket should be defined as Pydantic models in this epic (e.g. in
 Epic 05 to reference them directly in the WebSocket endpoint schema without rework, and
 keep the generated OpenAPI spec accurate.
 
+## Technical Debt to Resolve in This Epic
+
+The following items from Epics 01–03 must be addressed during story design and implementation:
+
+**DEBT-01 — ExplorationArtifact Pflicht-Slot-Initialisierung (FR-B-00)**
+New projects currently have `ExplorationArtifact(slots={})` — empty. SDD FR-B-00 and Section 5.3
+define 8 mandatory slots (`prozessausloeser`, `prozessziel`, `scope`, `beteiligte_systeme`,
+`umgebung`, `randbedingungen`, `ausnahmen`, `prozesszusammenfassung`). `ExplorationMode` must
+initialize these slots on the very first turn if they are not yet present. The story implementing
+`ExplorationMode` must include acceptance criteria that verify all 8 slots exist after the first
+turn, and a test for this initialization behaviour.
+
+**DEBT-05 — Orchestrator file size (300-line limit)**
+`backend/core/orchestrator.py` is at 299 lines. Any substantive addition in this epic
+(dialog history integration, output validator wiring, context assembly updates) will exceed the
+300-line limit defined in AGENTS.md. Before or during the story that extends the orchestrator,
+extract cohesive helper methods or a sub-module. Target paths are within `backend/core/` as
+defined in HLA Section 6. Create a separate refactoring commit if needed.
+
 ## Stories
 
 _To be defined before this epic begins._
