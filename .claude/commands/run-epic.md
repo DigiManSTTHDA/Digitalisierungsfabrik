@@ -111,11 +111,19 @@ Run:
 
 Follow TDD strictly.
 
+Note: /implement-next-epic now includes per-story quality gates:
+- Critic review after each story (active search for missed edge cases,
+  weak assertions, SDD mismatches, overly complex solutions)
+- Mini-Audit after each story (file paths, line counts, FR coverage,
+  type hints, test count vs. previous story)
+
 Append to Epic log:
 
 - stories implemented
 - key modules created
 - architecture components added
+- Critic issues found and fixed per story
+- Mini-Audit results per story
 
 ------------------------------------------
 STEP 4 — VALIDATE TESTS
@@ -136,17 +144,21 @@ Run:
 /run-tests
 
 ------------------------------------------------
-STEP 6 — AUDIT IMPLEMENTATION
+STEP 6 — EPIC-LEVEL AUDIT
 ------------------------------------------------
 
 Run:
 
 /audit-epic
 
+This is the comprehensive final audit across the entire epic.
+The per-story Mini-Audits in /implement-next-epic catch issues early.
+This step verifies the complete picture — all stories together.
+
 Verify:
 
-- SDD compliance
-- architecture compliance
+- SDD compliance (full Section 4 check)
+- architecture compliance (all files, all paths)
 - dependency rules
 - API contract rules
 

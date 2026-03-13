@@ -97,8 +97,13 @@ For each Story in order:
 6. Refactor if needed — keep tests green (refactor phase).
 7. Check file size: if any touched file exceeds 300 lines, split it now.
 8. Run all DoD commands — every command must exit 0.
-9. Mark all DoD checkboxes in the epic document.
-10. Commit with a meaningful message referencing the story.
+9. **Run Critic review** (see STEP 3a below).
+10. Fix any issues raised by the Critic.
+11. Re-run DoD commands — must still pass.
+12. Run Mini-Audit (see STEP 3b below).
+13. Fix any issues found.
+14. Mark all DoD checkboxes in the epic document.
+15. Commit with a meaningful message referencing the story.
 
 **DoD commands (run from backend/ with venv active):**
 
@@ -110,6 +115,81 @@ pytest --tb=short -q
 ```
 
 **A story is only done when all its checkboxes are [x].**
+
+------------------------------------------------
+STEP 3a — CRITIC REVIEW (after each story)
+------------------------------------------------
+
+After implementing a story, switch to the role of a Critic.
+
+**Apply to ALL stories:**
+
+Read the implementation you just wrote and actively look for:
+
+- Missing edge cases not covered by tests
+- Incorrect interpretation of the acceptance criteria
+- SDD fields or requirements that were overlooked
+- Overly complex solutions where simpler ones exist
+- Tests that only assert `is not None` or `len > 0` (too weak)
+- Missing negative test cases
+
+Produce a short Critic Report:
+
+```
+CRITIC REPORT — Story <id>
+Issues found: <n>
+- [issue 1]
+- [issue 2]
+...
+```
+
+If issues exist: fix them before proceeding to the Mini-Audit.
+If no issues: write "CRITIC REPORT — Story <id>: No issues found."
+
+**Apply full Critic depth when the story:**
+
+- introduces more than ~100 lines of new logic
+- implements a new abstraction or module
+- interprets an ambiguous SDD requirement
+- touches the Orchestrator cycle
+
+For simple stories (config changes, pure refactors, test additions):
+a brief Critic pass is sufficient.
+
+------------------------------------------------
+STEP 3b — MINI-AUDIT (after each story)
+------------------------------------------------
+
+After the Critic review and fixes, run a targeted mini-audit.
+
+Check ONLY what this story touched:
+
+1. **File paths**: do all new/modified files match HLA Section 6 exactly?
+   Reject invented paths. Flag any file not in the HLA-defined structure.
+
+2. **Line counts**: does any new/modified file exceed 300 lines?
+
+3. **FR coverage**: for the FRs this story implements —
+   are all required SDD fields present in the implementation?
+   (Do not re-read the full SDD — use what you already know from Step 3.)
+
+4. **Type completeness**: do all new functions have full type hints?
+
+5. **No regressions**: does `pytest --tb=short -q` still show the same
+   or more passing tests vs. the previous story?
+
+Produce a Mini-Audit Result:
+
+```
+MINI-AUDIT — Story <id>
+File paths: OK / VIOLATION (<details>)
+Line counts: OK / VIOLATION (<file>: <n> lines)
+FR coverage: OK / GAP (<FR-id>: <missing field>)
+Type hints: OK / MISSING (<function>)
+Tests: <n> passing (was <n-prev>)
+```
+
+If any item is VIOLATION or GAP: fix before committing.
 
 ------------------------------------------------
 STEP 4 — ADR DISCIPLINE
@@ -177,4 +257,6 @@ Include:
 - ADRs written
 - libraries used vs. custom code written
 - escalations made (if any)
+- Critic issues found and fixed (per story)
+- Mini-Audit results (per story)
 - file size / modularity decisions
