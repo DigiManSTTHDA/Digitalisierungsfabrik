@@ -25,7 +25,7 @@ from artifacts.models import Projektphase, Projektstatus
 class ProjectCreateRequest(BaseModel):
     """Request body for POST /api/projects (FR-G-01)."""
 
-    name: str
+    name: str = Field(min_length=1, max_length=200, pattern=r"\S")
     beschreibung: str = ""
 
 

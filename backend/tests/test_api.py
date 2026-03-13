@@ -293,6 +293,18 @@ def test_restore_struktur_artifact_type_mapping(client: TestClient) -> None:
     assert len(versions) == 2
 
 
+def test_create_project_empty_name_rejected(client: TestClient) -> None:
+    """POST /api/projects with empty name returns 422."""
+    resp = client.post("/api/projects", json={"name": ""})
+    assert resp.status_code == 422
+
+
+def test_create_project_whitespace_name_rejected(client: TestClient) -> None:
+    """POST /api/projects with whitespace-only name returns 422."""
+    resp = client.post("/api/projects", json={"name": "   "})
+    assert resp.status_code == 422
+
+
 def test_import_artifact_persisted(client: TestClient) -> None:
     """POST import persists the imported artifact — verified by reload."""
     pid = client.post("/api/projects", json={"name": "IP"}).json()["projekt_id"]

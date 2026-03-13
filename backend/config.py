@@ -4,6 +4,7 @@ All parameters are loaded from environment variables or a .env file.
 See .env.example for the full list with descriptions.
 """
 
+from functools import lru_cache
 from typing import Literal
 
 from pydantic import Field
@@ -42,6 +43,7 @@ class Settings(BaseSettings):
     llm_log_enabled: bool = True
 
 
+@lru_cache
 def get_settings() -> Settings:
-    """Return application settings (instantiated once per call; cache at call site)."""
+    """Return cached application settings — parsed once from .env on first call."""
     return Settings()

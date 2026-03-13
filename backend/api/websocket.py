@@ -92,8 +92,21 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
     settings = get_settings()
     db = Database(settings.database_path)
     repo = ProjectRepository(db)
-    orchestrator = _build_orchestrator(repo, settings)
     log = logger.bind(project_id=project_id)
+
+    # Validate project exists before allocating resources
+    try:
+        repo.load(project_id)
+    except ValueError:
+        await _send_event(
+            ws,
+            ErrorEvent(message=f"Projekt '{project_id}' nicht gefunden", recoverable=False),
+        )
+        db.close()
+        await ws.close()
+        return
+
+    orchestrator = _build_orchestrator(repo, settings)
 
     try:
         while True:
@@ -107,18 +120,42 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
             msg_type = data.get("type")
 
             if msg_type == "turn":
-                text = data.get("text", "")
+                text = data.get("text")
+                if not isinstance(text, str) or not text.strip():
+                    await _send_event(
+                        ws,
+                        ErrorEvent(message="Feld 'text' fehlt oder ist leer", recoverable=True),
+                    )
+                    continue
                 datei = data.get("datei")
                 turn_input = TurnInput(text=text, datei=datei)
                 try:
                     output = await orchestrator.process_turn(project_id, turn_input)
-                    await _send_turn_events(ws, output, repo, project_id)
+                except ValueError as exc:
+                    log.warning("websocket.project_error", error=str(exc))
+                    await _send_event(
+                        ws,
+                        ErrorEvent(message=str(exc), recoverable=False),
+                    )
+                    continue
                 except Exception:
                     log.exception("websocket.process_turn_error")
                     await _send_event(
                         ws,
                         ErrorEvent(
-                            message="Interner Fehler bei der Verarbeitung",
+                            message="Interner Fehler bei der Turn-Verarbeitung",
+                            recoverable=True,
+                        ),
+                    )
+                    continue
+                try:
+                    await _send_turn_events(ws, output, repo, project_id)
+                except Exception:
+                    log.exception("websocket.send_events_error")
+                    await _send_event(
+                        ws,
+                        ErrorEvent(
+                            message="Turn verarbeitet, aber Ereignisse konnten nicht gesendet werden",
                             recoverable=True,
                         ),
                     )

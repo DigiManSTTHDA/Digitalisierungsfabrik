@@ -134,22 +134,19 @@ def test_websocket_invalid_message(ws_setup) -> None:  # type: ignore[no-untyped
 
 
 def test_websocket_project_not_found(ws_setup) -> None:  # type: ignore[no-untyped-def]
-    """Turn for non-existent project returns error event."""
+    """WebSocket for non-existent project sends error and closes connection."""
     app, db, repo, _pid = ws_setup
 
-    with patch("api.websocket._build_orchestrator") as mock_build:
-        mock_orch = AsyncMock()
-        mock_orch.process_turn.side_effect = ValueError("Projekt nicht gefunden")
-        mock_build.return_value = mock_orch
-
-        with patch("api.websocket.Database", return_value=db):
-            with patch("api.websocket.ProjectRepository", return_value=repo):
+    with patch("api.websocket.Database", return_value=db):
+        with patch("api.websocket.ProjectRepository", return_value=repo):
+            with patch("api.websocket._build_orchestrator"):
                 client = TestClient(app)
                 with client.websocket_connect("/ws/session/nonexistent") as ws:
-                    ws.send_text(json.dumps({"type": "turn", "text": "Hallo"}))
+                    # Server validates project on connect and sends error before closing
                     event = ws.receive_json()
     assert event["event"] == "error"
-    assert event["recoverable"] is True
+    assert "nicht gefunden" in event["message"]
+    assert event["recoverable"] is False
 
 
 def test_websocket_multiple_turns(ws_setup) -> None:  # type: ignore[no-untyped-def]
@@ -191,6 +188,36 @@ def test_websocket_unknown_message_type(ws_setup) -> None:  # type: ignore[no-un
     assert event["event"] == "error"
     assert "unknown_type" in event["message"]
     assert event["recoverable"] is True
+
+
+def test_websocket_turn_empty_text(ws_setup) -> None:  # type: ignore[no-untyped-def]
+    """Turn message with empty text returns error event."""
+    app, db, repo, pid = ws_setup
+
+    with patch("api.websocket.Database", return_value=db):
+        with patch("api.websocket.ProjectRepository", return_value=repo):
+            with patch("api.websocket._build_orchestrator"):
+                client = TestClient(app)
+                with client.websocket_connect(f"/ws/session/{pid}") as ws:
+                    ws.send_text(json.dumps({"type": "turn", "text": ""}))
+                    event = ws.receive_json()
+    assert event["event"] == "error"
+    assert "text" in event["message"].lower()
+
+
+def test_websocket_turn_missing_text(ws_setup) -> None:  # type: ignore[no-untyped-def]
+    """Turn message without text field returns error event."""
+    app, db, repo, pid = ws_setup
+
+    with patch("api.websocket.Database", return_value=db):
+        with patch("api.websocket.ProjectRepository", return_value=repo):
+            with patch("api.websocket._build_orchestrator"):
+                client = TestClient(app)
+                with client.websocket_connect(f"/ws/session/{pid}") as ws:
+                    ws.send_text(json.dumps({"type": "turn"}))
+                    event = ws.receive_json()
+    assert event["event"] == "error"
+    assert "text" in event["message"].lower()
 
 
 def test_websocket_turn_output_error_field(ws_setup) -> None:  # type: ignore[no-untyped-def]
