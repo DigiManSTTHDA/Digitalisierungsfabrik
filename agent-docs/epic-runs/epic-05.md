@@ -225,3 +225,37 @@ All stories: **No issues found.** Each Critic review confirmed correct implement
 - **Critical gaps closed:** Missing name 422, `struktur` type mapping, import persistence, TurnOutput.error path
 
 ---
+
+## STEP 5 — Run Tests
+
+**Date:** 2026-03-13
+
+### Backend Results
+
+| Command | Result |
+|---|---|
+| `ruff check .` | All checks passed (exit 0) |
+| `ruff format --check .` | 56 files already formatted (exit 0) |
+| `python -m mypy . --explicit-package-bases` | 7 pre-existing errors in scripts/tests from earlier epics; 0 new errors from Epic 05 (exit 1 — pre-existing) |
+| `pytest --tb=short -q` | 225 passed (exit 0) |
+
+### Frontend Results
+
+| Command | Result |
+|---|---|
+| `npm run lint` | exit 0 |
+| `npm run format:check` | All matched files use Prettier code style (exit 0) |
+| `npm run typecheck` | exit 0 |
+
+### Fixes Applied
+
+1. `project_repository.py:221` — wrapped `row["inhalt"]` in `str()` to satisfy mypy `no-any-return`
+2. `router.py:286` — wrapped `getattr(...).version` in `int()` for mypy `no-any-return`
+3. `websocket.py:37` — added explicit `dict[str, BaseMode]` type annotation to fix dict invariance
+4. `websocket.py:43,45` — removed stale `type: ignore` comments
+5. `test_api.py` / `test_websocket.py` — added `type: ignore[no-untyped-def]` to fixtures
+6. Frontend files formatted with Prettier (pre-existing formatting drift)
+
+### No tests deleted, skipped, or weakened.
+
+---
