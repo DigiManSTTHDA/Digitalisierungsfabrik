@@ -21,10 +21,9 @@ Read in full (small, always relevant):
 
 Read selectively (large documents — use offset/limit):
 - HLA: read section headings and Section 6 only
-- SDD: run grep -n "^# " docs/digitalisierungsfabrik_systemdefinition.md
-  to get all section headings with line numbers; read content only for
-  sections referenced in this Epic. The grep output alone is sufficient
-  for Section 10 (SDD Coverage overview).
+- SDD: read lines 6–80 (table of contents) — sufficient for Section 10
+  (SDD Coverage overview); read content only for sections referenced
+  in this Epic
 
 Also inspect:
 

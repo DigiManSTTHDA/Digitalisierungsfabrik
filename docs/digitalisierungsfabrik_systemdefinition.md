@@ -3,6 +3,82 @@ Digitalisierungsfabrik
 
 ---
 
+## Inhaltsverzeichnis
+
+Für gezielten Zugriff: Zeile notieren → Datei mit `offset=<Zeile>` und passendem `limit` lesen.
+
+| Abschnitt | Inhalt | Zeile |
+|---|---|---|
+| **1** | **SYSTEMÜBERSICHT** | **77** |
+| 1.1 | Systemzweck, Artefakte, Systemrolle | 79 |
+| 1.2 | Zielnutzer | 118 |
+| 1.3 | Systemsprache | 138 |
+| **2** | **BENUTZERINTERAKTION & UI** | **148** |
+| 2.1 | Kerninteraktion, Turn-Modell | 150 |
+| 2.2 | Benutzeroberfläche | 178 |
+| 2.3 | Debug-Bereich | 193 |
+| 2.4 | Panik-Button | 207 |
+| 2.5 | Phasenanzeige & Fortschrittsindikator | 229 |
+| **3** | **SYSTEMFÄHIGKEITEN** | **245** |
+| **4** | **FUNKTIONALE ANFORDERUNGEN (FR)** | **251** |
+| 4 Konventionen | FR-Referenzformat: FR-[Gruppe]-[Nr] | 255 |
+| Gruppe A | Wissensextraktion & Dialog (FR-A-01…) | 264 |
+| Gruppe B | Artefaktmanagement (FR-B-01…) | 300 |
+| Gruppe C | Validierung & Konsistenz (FR-C-01…) | 364 |
+| Gruppe D | Orchestrierung & kognitive Modi (FR-D-01…) | 398 |
+| Gruppe E | Persistenz & Fehlerbehandlung (FR-E-01…) | 434 |
+| Gruppe F | UI & Observability (FR-F-01…) | 464 |
+| Gruppe G | Projektverwaltung (FR-G-01…) | 488 |
+| **5** | **PROZESSARTEFAKTE** | **518** |
+| 5.1 | Überblick, Externes Artefakt-Prinzip | 522 |
+| 5.2 | Versionierung | 550 |
+| 5.3 | Explorationsartefakt | 571 |
+| → | Explorations-Slot Felder-Tabelle | 586 |
+| 5.4 | Strukturartefakt | 618 |
+| → | Strukturschritt Felder-Tabelle | 635 |
+| 5.5 | Algorithmusartefakt | 664 |
+| → | Algorithmusabschnitt Felder-Tabelle | 683 |
+| → | EMMA-Aktion Felder-Tabelle | 694 |
+| 5.5 | Referenzielle Integrität | 750 |
+| 5.6 | Completeness-State (Artefakt & Working Memory) | 777 |
+| 5.7 | Schreiboperationen — RFC 6902 JSON Patch | 802 |
+| 5.8 | Template-Schema | 852 |
+| **6** | **SYSTEMSTEUERUNG** | **884** |
+| 6.1 | Systemphasen, Phasenwechsel, Validierungsschleife, Rücksprung | 888 |
+| 6.2 | Orchestrator — Eigenschaften & Verantwortlichkeiten | 964 |
+| 6.3 | Orchestrator-Zyklus (11 Schritte) | 986 |
+| → | Moduswechsel-Logik | 1004 |
+| 6.4 | Working Memory | 1019 |
+| → | Felder-Tabelle | 1025 |
+| 6.4.1 | Steuerungsflags / Flag-Enum (NICHT im WM) | 1045 |
+| 6.5 | Context Engineering, Output-Kontrakt, Tokenlimit-Strategie | 1067 |
+| 6.6 | Kognitive Modi (Übersicht) | 1119 |
+| 6.6.1 | Explorationsmodus | 1131 |
+| 6.6.2 | Strukturierungsmodus | 1150 |
+| 6.6.3 | Spezifikationsmodus | 1170 |
+| 6.6.4 | Validierungsmodus, Schweregradskala | 1190 |
+| 6.6.5 | Moderator | 1224 |
+| 6.7 | Fortschrittsmodell (Phasenstatus, Slot-Zähler) | 1249 |
+| **7** | **DATENINTEGRATION & PERSISTENZ** | **1288** |
+| 7.1 | Rohdaten-Integration | 1293 |
+| 7.2 | Projektmodell — Felder-Tabelle (Projektmetadaten) | 1329 |
+| 7.3 | Persistenzmodell (was/wann/ACID/Constraints) | 1369 |
+| **8** | **SYSTEMGRENZEN & QUALITÄTSANFORDERUNGEN** | **1434** |
+| 8.1.1 | NFR: Wartbarkeit — PRIMÄR | 1444 |
+| 8.1.2 | NFR: Zuverlässigkeit — PRIMÄR | 1460 |
+| 8.1.3 | NFR: Beobachtbarkeit — PRIMÄR | 1474 |
+| 8.1.4 | NFR: Performance — SEKUNDÄR | 1490 |
+| 8.1.5 | NFR: Skalierung — SEKUNDÄR | 1504 |
+| 8.1.6 | NFR: Sicherheit — PRAGMATISCH | 1509 |
+| 8.2 | Architekturrahmen (Constraints) | 1524 |
+| 8.3 | EMMA-Aktionskatalog | 1541 |
+| 8.4 | Prozessumfang & Partitionierung | 1576 |
+| 8.5 | Systemgrenzen (Ausschlüsse) | 1589 |
+| 8.6 | Abschlusskriterien | 1605 |
+| **Offene Punkte** | **Konsolidierte Gesamtliste** | **1634** |
+
+---
+
 # 1. SYSTEMÜBERSICHT
 
 ## 1.1 Systemzweck
