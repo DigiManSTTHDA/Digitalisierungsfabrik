@@ -110,8 +110,8 @@ class Orchestrator:
         # Schritt 6: Modus aufrufen
         mode_output = await mode.call(context)
 
-        # OutputValidator (Stub in Epic 03 — immer True)
-        if not validate(mode_output):
+        # OutputValidator (SDD 6.5.2 — prüft RFC 6902 Syntax + Template-Pfade)
+        if not validate(mode_output, context.artifact_template):
             return self._error_output(wm, "Output-Kontrakt-Verletzung: ModeOutput ungültig")
 
         # Schritt 7: Patches anwenden (wenn vorhanden)

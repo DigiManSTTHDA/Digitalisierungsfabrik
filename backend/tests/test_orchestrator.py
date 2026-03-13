@@ -640,6 +640,12 @@ async def test_invalidation_write_applied_after_structure_patch() -> None:
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
 
+    # Set phase to strukturierung so OutputValidator uses the structure template
+    project.aktive_phase = Projektphase.strukturierung
+    project.aktiver_modus = "exploration"  # mode key stays the same for test simplicity
+    project.working_memory.aktive_phase = Projektphase.strukturierung
+    repo.save(project)
+
     # Set up: one structure step referencing one algorithm section
     schritt = Strukturschritt(
         schritt_id="s1",
