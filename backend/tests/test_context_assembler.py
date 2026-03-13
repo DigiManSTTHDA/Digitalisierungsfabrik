@@ -163,3 +163,42 @@ def test_prompt_context_summary_nonempty_for_minimal_context() -> None:
     summary = prompt_context_summary(context)
     assert len(summary) > 0
     assert "0/0 befüllt" in summary
+
+
+# ---------------------------------------------------------------------------
+# dialog_history_n returns the LAST N turns, not any N turns
+# ---------------------------------------------------------------------------
+
+
+def test_build_context_dialog_history_n_returns_last_n_turns() -> None:
+    """build_context with dialog_history_n=3 returns specifically the last 3 turns."""
+    db = Database(":memory:")
+    repo = ProjectRepository(db)
+    project = repo.create("Test")
+
+    # Write 5 dialog turns with distinguishable content
+    for i in range(1, 6):
+        repo.append_dialog_turn(project.projekt_id, i, "user", f"Turn {i}")
+
+    settings = Settings(
+        llm_provider="anthropic",
+        llm_api_key="",
+        llm_model="test",
+        dialog_history_n=3,
+    )
+
+    context = build_context(project, completeness_state={}, repository=repo, settings=settings)
+
+    # Exactly 3 turns returned
+    assert len(context.dialog_history) == 3
+
+    # They must be the LAST 3 turns: Turn 3, Turn 4, Turn 5
+    contents = [entry["inhalt"] for entry in context.dialog_history]
+    assert "Turn 3" in contents
+    assert "Turn 4" in contents
+    assert "Turn 5" in contents
+
+    # The first two turns must NOT appear
+    assert "Turn 1" not in contents
+    assert "Turn 2" not in contents
+    db.close()

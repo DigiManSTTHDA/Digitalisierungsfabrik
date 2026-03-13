@@ -239,11 +239,16 @@ class ProjectRepository:
             Liste von Dicts mit Schlüsseln 'role', 'inhalt', 'timestamp' (chronologisch).
         """
         conn = self._db.get_connection()
+        # Subquery selects the last N rows by turn_id DESC, outer query
+        # restores chronological (ASC) order for the LLM message list.
         rows = conn.execute(
-            """SELECT role, inhalt, timestamp FROM dialog_history
-               WHERE projekt_id = ?
-               ORDER BY turn_id ASC, id ASC
-               LIMIT ?
+            """SELECT role, inhalt, timestamp FROM (
+                   SELECT role, inhalt, timestamp, turn_id, id
+                   FROM dialog_history
+                   WHERE projekt_id = ?
+                   ORDER BY turn_id DESC, id DESC
+                   LIMIT ?
+               ) ORDER BY turn_id ASC, id ASC
             """,
             (projekt_id, last_n),
         ).fetchall()

@@ -5,6 +5,8 @@ Coverage: one round-trip serialisation test per event model (6 total).
 
 from __future__ import annotations
 
+import pytest
+
 from artifacts.models import Phasenstatus
 from core.events import (
     ArtifactUpdateEvent,
@@ -13,6 +15,7 @@ from core.events import (
     DebugUpdateEvent,
     ErrorEvent,
     ProgressUpdateEvent,
+    WebSocketEvent,
 )
 
 
@@ -74,3 +77,17 @@ def test_error_event_round_trip() -> None:
     assert restored.event == "error"
     assert restored.message == "LLM Timeout"
     assert restored.recoverable is True
+
+
+# ---------------------------------------------------------------------------
+# WebSocketEvent discriminated union rejects unknown event type
+# ---------------------------------------------------------------------------
+
+
+def test_websocket_event_union_rejects_unknown_type() -> None:
+    """WebSocketEvent union must raise ValidationError for an unknown event discriminator."""
+    from pydantic import TypeAdapter, ValidationError
+
+    ta: TypeAdapter[WebSocketEvent] = TypeAdapter(WebSocketEvent)
+    with pytest.raises(ValidationError):
+        ta.validate_python({"event": "totally_unknown_type", "token": "x"})

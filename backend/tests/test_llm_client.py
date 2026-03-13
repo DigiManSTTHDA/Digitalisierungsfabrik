@@ -122,6 +122,9 @@ async def test_anthropic_client_no_tool_use_raises_value_error() -> None:
 
 async def test_anthropic_client_api_error_propagated() -> None:
     """anthropic.APIStatusError is propagated from AnthropicClient.complete()."""
+    import anthropic
+    import httpx
+
     from llm.anthropic_client import AnthropicClient
 
     settings = Settings(
@@ -132,12 +135,17 @@ async def test_anthropic_client_api_error_propagated() -> None:
     )
     client = AnthropicClient(settings)
 
+    # Construct a real anthropic.APIStatusError matching the AC requirement
+    req = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    resp = httpx.Response(status_code=500, request=req)
+    api_error = anthropic.APIStatusError("Internal Server Error", response=resp, body=None)
+
     mock_messages = MagicMock()
-    mock_messages.create = MagicMock(side_effect=RuntimeError("API connection failed"))
+    mock_messages.create = MagicMock(side_effect=api_error)
 
     with patch.object(client, "_client") as mock_client:
         mock_client.messages = mock_messages
-        with pytest.raises(RuntimeError, match="API connection failed"):
+        with pytest.raises(anthropic.APIStatusError):
             await client.complete(
                 system="System prompt",
                 messages=[{"role": "user", "content": "Hallo"}],
@@ -225,6 +233,70 @@ def test_factory_returns_ollama_client() -> None:
     settings = Settings(llm_provider="ollama", llm_api_key="", llm_model="llama3")
     client = create_llm_client(settings)
     assert isinstance(client, OllamaClient)
+
+
+# ---------------------------------------------------------------------------
+# Story 04-01 — AnthropicClient: logging when llm_log_enabled=True (AC9)
+# ---------------------------------------------------------------------------
+
+
+async def test_anthropic_client_logs_when_enabled() -> None:
+    """When llm_log_enabled=True, structlog is called with request and response info."""
+    from llm.anthropic_client import AnthropicClient
+
+    settings = Settings(
+        llm_provider="anthropic",
+        llm_api_key="sk-test-key",
+        llm_model="claude-log-test",
+        llm_log_enabled=True,
+    )
+    client = AnthropicClient(settings)
+
+    text_block = MagicMock()
+    text_block.type = "text"
+    text_block.text = "Log-Test-Antwort"
+
+    tool_block = MagicMock()
+    tool_block.type = "tool_use"
+    tool_block.name = "apply_patches"
+    tool_block.input = {"patches": []}
+
+    mock_response = MagicMock()
+    mock_response.content = [text_block, tool_block]
+
+    mock_messages = MagicMock()
+    mock_messages.create = MagicMock(return_value=mock_response)
+
+    log_calls: list[tuple[str, dict[str, object]]] = []
+
+    class CapturingLogger:
+        def info(self, event: str, **kwargs: object) -> None:
+            log_calls.append((event, kwargs))
+
+    with (
+        patch.object(client, "_client") as mock_client,
+        patch("llm.anthropic_client.logger", CapturingLogger()),
+    ):
+        mock_client.messages = mock_messages
+        await client.complete(
+            system="System prompt",
+            messages=[{"role": "user", "content": "Hallo"}],
+        )
+
+    # Two log calls must have been made: one for request, one for response
+    assert len(log_calls) == 2
+    request_events = [ev for ev, _ in log_calls if "request" in ev]
+    response_events = [ev for ev, _ in log_calls if "response" in ev]
+    assert len(request_events) == 1, "Expected one request log event"
+    assert len(response_events) == 1, "Expected one response log event"
+
+    # Request log must include model and message_count
+    _, req_kwargs = next((ev, kw) for ev, kw in log_calls if "request" in ev)
+    assert req_kwargs.get("model") == "claude-log-test"
+
+    # Response log must include has_tool_use=True
+    _, resp_kwargs = next((ev, kw) for ev, kw in log_calls if "response" in ev)
+    assert resp_kwargs.get("has_tool_use") is True
 
 
 def test_factory_raises_for_unknown_provider() -> None:

@@ -158,6 +158,115 @@ async def test_dialog_history_written() -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Test: second turn does not re-initialize slots (AC #4, Story 04-06)
+# ---------------------------------------------------------------------------
+
+
+async def test_second_turn_does_not_reinitialize_slots() -> None:
+    """On the second turn, no add patches are emitted for already-existing slots."""
+    db = Database(":memory:")
+    repo = ProjectRepository(db)
+    project = repo.create("Test")
+    llm = _make_mock_llm()
+    orchestrator = _make_orchestrator(repo, llm)
+
+    # First turn: initializes 8 slots
+    result1 = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Erster Turn"))
+    assert result1.error is None
+
+    reloaded_after_first = repo.load(project.projekt_id)
+    assert len(reloaded_after_first.exploration_artifact.slots) == 8
+
+    # Second turn: LLM returns an empty patches list (no new slot writes)
+    llm2 = _make_mock_llm(patches=[])
+    orchestrator2 = _make_orchestrator(repo, llm2)
+
+    result2 = await orchestrator2.process_turn(project.projekt_id, TurnInput(text="Zweiter Turn"))
+    assert result2.error is None
+
+    reloaded_after_second = repo.load(project.projekt_id)
+    # Still exactly 8 slots — no duplicate add patches
+    assert len(reloaded_after_second.exploration_artifact.slots) == 8
+
+    # The 8 slot IDs must be unchanged (no new slots added, none removed)
+    expected_ids = {
+        "prozessausloeser",
+        "prozessziel",
+        "scope",
+        "beteiligte_systeme",
+        "umgebung",
+        "randbedingungen",
+        "ausnahmen",
+        "prozesszusammenfassung",
+    }
+    assert set(reloaded_after_second.exploration_artifact.slots.keys()) == expected_ids
+    db.close()
+
+
+# ---------------------------------------------------------------------------
+# Test: phasenstatus=nearing_completion when all 8 Pflicht-Slots are non-leer
+# (AC #8, Story 04-06)
+# ---------------------------------------------------------------------------
+
+
+async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
+    """phasenstatus is nearing_completion when all 8 Pflicht-Slots are non-leer."""
+    from datetime import UTC, datetime
+
+    from artifacts.models import (
+        AlgorithmArtifact,
+        CompletenessStatus,
+        ExplorationArtifact,
+        ExplorationSlot,
+        Phasenstatus,
+        Projektphase,
+        StructureArtifact,
+    )
+    from artifacts.template_schema import EXPLORATION_TEMPLATE
+    from core.working_memory import WorkingMemory
+    from modes.base import ModeContext
+    from modes.exploration import PFLICHT_SLOTS, ExplorationMode
+
+    # Build a context where all 8 Pflicht-Slots exist and are non-leer
+    slots = {
+        slot_id: ExplorationSlot(
+            slot_id=slot_id,
+            titel=titel,
+            inhalt="Etwas Inhalt",
+            completeness_status=CompletenessStatus.vollstaendig,
+        )
+        for slot_id, titel in PFLICHT_SLOTS.items()
+    }
+
+    llm_mock = _make_mock_llm(patches=[])
+    mode = ExplorationMode(llm_client=llm_mock)
+
+    now = datetime.now(tz=UTC)
+    wm = WorkingMemory(
+        projekt_id="p-fill",
+        aktive_phase=Projektphase.exploration,
+        aktiver_modus="exploration",
+        phasenstatus=Phasenstatus.in_progress,
+        letzte_aenderung=now,
+    )
+    context = ModeContext(
+        projekt_id="p-fill",
+        aktive_phase=Projektphase.exploration,
+        aktiver_modus="exploration",
+        exploration_artifact=ExplorationArtifact(slots=slots),
+        structure_artifact=StructureArtifact(),
+        algorithm_artifact=AlgorithmArtifact(),
+        working_memory=wm,
+        dialog_history=[],
+        artifact_template=EXPLORATION_TEMPLATE,
+    )
+
+    output = await mode.call(context)
+
+    assert output.phasenstatus == Phasenstatus.nearing_completion
+
+
 async def test_output_validator_rejects_invalid_path() -> None:
     """Mock LLM returns patch with invalid path → TurnOutput.error is set."""
     db = Database(":memory:")

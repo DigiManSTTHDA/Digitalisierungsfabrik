@@ -93,3 +93,42 @@ def test_replace_patch_missing_value_fails_validation() -> None:
 def test_remove_patch_without_value_is_valid() -> None:
     output = _make_output([{"op": "remove", "path": "/slots/prozessziel"}])
     assert validate(output, EXPLORATION_TEMPLATE) is True
+
+
+# ---------------------------------------------------------------------------
+# Positive: add patch for a new (not-yet-existing) slot ID is accepted
+# (verifies template uses regex [^/]+ for slot IDs — any string is valid)
+# ---------------------------------------------------------------------------
+
+
+def test_valid_add_patch_for_new_slot_id_passes() -> None:
+    """An add patch for an arbitrary new slot path is accepted by the template."""
+    output = _make_output(
+        [
+            {
+                "op": "add",
+                "path": "/slots/new_custom_slot",
+                "value": {
+                    "slot_id": "new_custom_slot",
+                    "titel": "Neuer Slot",
+                    "inhalt": "",
+                    "completeness_status": "leer",
+                },
+            }
+        ]
+    )
+    assert validate(output, EXPLORATION_TEMPLATE) is True
+
+
+# ---------------------------------------------------------------------------
+# Negative: patch targeting a completely unknown path segment is rejected
+# (not just a wrong field under a valid slot, but a wrong top-level key)
+# ---------------------------------------------------------------------------
+
+
+def test_patch_with_unknown_top_level_path_fails_validation() -> None:
+    """A patch with an unknown top-level path (not /slots/) is rejected by the template."""
+    output = _make_output(
+        [{"op": "replace", "path": "/unknown_key/prozessziel/inhalt", "value": "test"}]
+    )
+    assert validate(output, EXPLORATION_TEMPLATE) is False
