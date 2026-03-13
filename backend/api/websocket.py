@@ -31,18 +31,19 @@ logger = structlog.get_logger()
 def _build_orchestrator(repo: ProjectRepository, settings: Settings) -> Orchestrator:
     """Build an Orchestrator with real mode instances."""
     from llm.factory import create_llm_client
+    from modes.base import BaseMode
 
     llm = create_llm_client(settings)
-    modes = {"exploration": ExplorationMode(llm_client=llm)}
+    modes: dict[str, BaseMode] = {"exploration": ExplorationMode(llm_client=llm)}
     return Orchestrator(repository=repo, modes=modes, settings=settings)
 
 
 async def _send_event(ws: WebSocket, event: object) -> None:
     """Send a Pydantic model as JSON over the WebSocket."""
     if hasattr(event, "model_dump"):
-        await ws.send_json(event.model_dump(mode="json"))  # type: ignore[union-attr]
+        await ws.send_json(event.model_dump(mode="json"))
     else:
-        await ws.send_json(event)  # type: ignore[arg-type]
+        await ws.send_json(event)
 
 
 async def _send_turn_events(

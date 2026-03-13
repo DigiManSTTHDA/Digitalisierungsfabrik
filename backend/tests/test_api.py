@@ -15,7 +15,7 @@ from persistence.project_repository import ProjectRepository
 
 
 @pytest.fixture()
-def _app_with_memory_db():
+def _app_with_memory_db():  # type: ignore[no-untyped-def]
     """Create a fresh app + in-memory DB for each test."""
     app = create_app()
     db = Database(":memory:")
@@ -33,13 +33,13 @@ def _app_with_memory_db():
 
 
 @pytest.fixture()
-def client(_app_with_memory_db):
+def client(_app_with_memory_db):  # type: ignore[no-untyped-def]
     app, _repo = _app_with_memory_db
     return TestClient(app)
 
 
 @pytest.fixture()
-def repo(_app_with_memory_db):
+def repo(_app_with_memory_db):  # type: ignore[no-untyped-def]
     _app, repo = _app_with_memory_db
     return repo
 

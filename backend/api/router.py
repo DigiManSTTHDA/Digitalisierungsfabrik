@@ -283,7 +283,7 @@ _ARTIFACT_ATTR = {
 
 
 def _get_current_version(project: Project, typ: str) -> int:
-    return getattr(project, _ARTIFACT_ATTR[typ]).version
+    return int(getattr(project, _ARTIFACT_ATTR[typ]).version)
 
 
 def _set_artifact(

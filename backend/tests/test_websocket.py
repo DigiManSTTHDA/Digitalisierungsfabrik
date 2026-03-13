@@ -21,7 +21,7 @@ from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
 
-def _make_test_app():
+def _make_test_app():  # type: ignore[no-untyped-def]
     """Create a fresh app + in-memory DB for WebSocket tests."""
     app = create_app()
     db = Database(":memory:")
@@ -47,9 +47,9 @@ def _make_mock_output(project_id: str) -> TurnOutput:
 
 
 @pytest.fixture()
-def ws_setup():
+def ws_setup():  # type: ignore[no-untyped-def]
     """Provide app, db, repo, project_id for WebSocket tests."""
-    app, db, repo = _make_test_app()
+    app, db, repo = _make_test_app()  # type: ignore[no-untyped-call]
     project = repo.create(name="WS-Test")
     yield app, db, repo, project.projekt_id
     db.close()

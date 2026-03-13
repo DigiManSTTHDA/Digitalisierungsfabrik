@@ -218,7 +218,7 @@ class ProjectRepository:
             raise ValueError(
                 f"Version {version_id} für Artefakt '{typ}' in Projekt '{projekt_id}' nicht gefunden"
             )
-        return row["inhalt"]
+        return str(row["inhalt"])
 
     def _load_latest_artifact(
         self,
