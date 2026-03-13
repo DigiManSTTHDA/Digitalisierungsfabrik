@@ -5,11 +5,12 @@ is used by uvicorn and the test client.
 """
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from api.router import router as api_router
+from api.websocket import websocket_session
 from config import get_settings
 
 logger = structlog.get_logger()
@@ -47,6 +48,11 @@ def create_app() -> FastAPI:
 
     # REST routes
     application.include_router(api_router)
+
+    # WebSocket route (HLA 3.2)
+    @application.websocket("/ws/session/{project_id}")
+    async def ws_session(websocket: WebSocket, project_id: str) -> None:
+        await websocket_session(websocket, project_id)
 
     @application.get("/health", response_model=HealthResponse, tags=["meta"])
     async def health_check() -> HealthResponse:
