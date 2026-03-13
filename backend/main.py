@@ -6,8 +6,10 @@ is used by uvicorn and the test client.
 
 import structlog
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from api.router import router as api_router
 from config import get_settings
 
 logger = structlog.get_logger()
@@ -34,6 +36,17 @@ def create_app() -> FastAPI:
         ),
         version="0.1.0",
     )
+
+    # CORS — allow frontend dev server (HLA 2.2)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # REST routes
+    application.include_router(api_router)
 
     @application.get("/health", response_model=HealthResponse, tags=["meta"])
     async def health_check() -> HealthResponse:
