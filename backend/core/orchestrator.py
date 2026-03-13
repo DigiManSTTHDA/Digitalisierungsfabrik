@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from artifacts.completeness import CompletenessCalculator
 from artifacts.models import Phasenstatus
+from config import Settings
 from core.artifact_router import (
     apply_invalidations,
     get_artifact,
@@ -65,9 +66,11 @@ class Orchestrator:
         self,
         repository: ProjectRepository,
         modes: dict[str, BaseMode],
+        settings: Settings | None = None,
     ) -> None:
         self._repository = repository
         self._modes = modes
+        self._settings = settings
         self._executor = Executor()
         self._calculator = CompletenessCalculator()
 
@@ -105,7 +108,9 @@ class Orchestrator:
             project.structure_artifact,
             project.algorithm_artifact,
         )
-        context = build_context(project, completeness_state, repository=repo)
+        context = build_context(
+            project, completeness_state, repository=repo, settings=self._settings
+        )
 
         # Schritt 6: Modus aufrufen
         mode_output = await mode.call(context)
