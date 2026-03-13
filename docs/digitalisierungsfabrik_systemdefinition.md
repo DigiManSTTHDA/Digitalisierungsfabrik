@@ -9,73 +9,76 @@ Für gezielten Zugriff: Zeile notieren → Datei mit `offset=<Zeile>` und passen
 
 | Abschnitt | Inhalt | Zeile |
 |---|---|---|
-| **1** | **SYSTEMÜBERSICHT** | **77** |
-| 1.1 | Systemzweck, Artefakte, Systemrolle | 79 |
-| 1.2 | Zielnutzer | 118 |
-| 1.3 | Systemsprache | 138 |
-| **2** | **BENUTZERINTERAKTION & UI** | **148** |
-| 2.1 | Kerninteraktion, Turn-Modell | 150 |
-| 2.2 | Benutzeroberfläche | 178 |
-| 2.3 | Debug-Bereich | 193 |
-| 2.4 | Panik-Button | 207 |
-| 2.5 | Phasenanzeige & Fortschrittsindikator | 229 |
-| **3** | **SYSTEMFÄHIGKEITEN** | **245** |
-| **4** | **FUNKTIONALE ANFORDERUNGEN (FR)** | **251** |
-| 4 Konventionen | FR-Referenzformat: FR-[Gruppe]-[Nr] | 255 |
-| Gruppe A | Wissensextraktion & Dialog (FR-A-01…) | 264 |
-| Gruppe B | Artefaktmanagement (FR-B-01…) | 300 |
-| Gruppe C | Validierung & Konsistenz (FR-C-01…) | 364 |
-| Gruppe D | Orchestrierung & kognitive Modi (FR-D-01…) | 398 |
-| Gruppe E | Persistenz & Fehlerbehandlung (FR-E-01…) | 434 |
-| Gruppe F | UI & Observability (FR-F-01…) | 464 |
-| Gruppe G | Projektverwaltung (FR-G-01…) | 488 |
-| **5** | **PROZESSARTEFAKTE** | **518** |
-| 5.1 | Überblick, Externes Artefakt-Prinzip | 522 |
-| 5.2 | Versionierung | 550 |
-| 5.3 | Explorationsartefakt | 571 |
-| → | Explorations-Slot Felder-Tabelle | 586 |
-| 5.4 | Strukturartefakt | 618 |
-| → | Strukturschritt Felder-Tabelle | 635 |
-| 5.5 | Algorithmusartefakt | 664 |
-| → | Algorithmusabschnitt Felder-Tabelle | 683 |
-| → | EMMA-Aktion Felder-Tabelle | 694 |
-| 5.5 | Referenzielle Integrität | 750 |
-| 5.6 | Completeness-State (Artefakt & Working Memory) | 777 |
-| 5.7 | Schreiboperationen — RFC 6902 JSON Patch | 802 |
-| 5.8 | Template-Schema | 852 |
-| **6** | **SYSTEMSTEUERUNG** | **884** |
-| 6.1 | Systemphasen, Phasenwechsel, Validierungsschleife, Rücksprung | 888 |
-| 6.2 | Orchestrator — Eigenschaften & Verantwortlichkeiten | 964 |
-| 6.3 | Orchestrator-Zyklus (11 Schritte) | 986 |
-| → | Moduswechsel-Logik | 1004 |
-| 6.4 | Working Memory | 1019 |
-| → | Felder-Tabelle | 1025 |
-| 6.4.1 | Steuerungsflags / Flag-Enum (NICHT im WM) | 1045 |
-| 6.5 | Context Engineering, Output-Kontrakt, Tokenlimit-Strategie | 1067 |
-| 6.6 | Kognitive Modi (Übersicht) | 1119 |
-| 6.6.1 | Explorationsmodus | 1131 |
-| 6.6.2 | Strukturierungsmodus | 1150 |
-| 6.6.3 | Spezifikationsmodus | 1170 |
-| 6.6.4 | Validierungsmodus, Schweregradskala | 1190 |
-| 6.6.5 | Moderator | 1224 |
-| 6.7 | Fortschrittsmodell (Phasenstatus, Slot-Zähler) | 1249 |
-| **7** | **DATENINTEGRATION & PERSISTENZ** | **1288** |
-| 7.1 | Rohdaten-Integration | 1293 |
-| 7.2 | Projektmodell — Felder-Tabelle (Projektmetadaten) | 1329 |
-| 7.3 | Persistenzmodell (was/wann/ACID/Constraints) | 1369 |
-| **8** | **SYSTEMGRENZEN & QUALITÄTSANFORDERUNGEN** | **1434** |
-| 8.1.1 | NFR: Wartbarkeit — PRIMÄR | 1444 |
-| 8.1.2 | NFR: Zuverlässigkeit — PRIMÄR | 1460 |
-| 8.1.3 | NFR: Beobachtbarkeit — PRIMÄR | 1474 |
-| 8.1.4 | NFR: Performance — SEKUNDÄR | 1490 |
-| 8.1.5 | NFR: Skalierung — SEKUNDÄR | 1504 |
-| 8.1.6 | NFR: Sicherheit — PRAGMATISCH | 1509 |
-| 8.2 | Architekturrahmen (Constraints) | 1524 |
-| 8.3 | EMMA-Aktionskatalog | 1541 |
-| 8.4 | Prozessumfang & Partitionierung | 1576 |
-| 8.5 | Systemgrenzen (Ausschlüsse) | 1589 |
-| 8.6 | Abschlusskriterien | 1605 |
-| **Offene Punkte** | **Konsolidierte Gesamtliste** | **1634** |
+| **1** | **SYSTEMÜBERSICHT** | **82** |
+| 1.1 | Systemzweck, Artefakte, Systemrolle | 84 |
+| 1.2 | Zielnutzer | 123 |
+| 1.3 | Systemsprache | 143 |
+| **2** | **BENUTZERINTERAKTION & UI** | **153** |
+| 2.1 | Kerninteraktion, Turn-Modell, Eingabeformen | 155 |
+| 2.2 | Benutzeroberfläche | 183 |
+| 2.3 | Debug-Bereich | 198 |
+| 2.4 | Panik-Button | 212 |
+| 2.5 | Phasenanzeige & Fortschrittsindikator | 234 |
+| **3** | **SYSTEMFÄHIGKEITEN** | **250** |
+| **4** | **FUNKTIONALE ANFORDERUNGEN (FR)** | **256** |
+| 4 Konventionen | FR-Referenzformat: FR-[Gruppe]-[Nr] | 260 |
+| Gruppe A | Wissensextraktion & Dialog — FR-A-01 bis FR-A-08 | 269 |
+| Gruppe B | Artefaktmanagement — FR-B-00 bis FR-B-11 | 310 |
+| Gruppe C | Validierung & Konsistenz — FR-C-01 bis FR-C-09 | 374 |
+| Gruppe D | Orchestrierung & kognitive Modi — FR-D-01 bis FR-D-12 | 418 |
+| Gruppe E | Persistenz & Fehlerbehandlung — FR-E-01 bis FR-E-07 | 481 |
+| Gruppe F | UI & Observability — FR-F-01 bis FR-F-05 | 516 |
+| Gruppe G | Projektverwaltung — FR-G-01 bis FR-G-04 | 540 |
+| **5** | **PROZESSARTEFAKTE** | **570** |
+| 5.1 | Überblick, Externes Artefakt-Prinzip | 574 |
+| 5.2 | Versionierung | 602 |
+| 5.3 | Explorationsartefakt | 623 |
+| → | Explorations-Slot Felder-Tabelle | 638 |
+| 5.4 | Strukturartefakt | 670 |
+| → | Strukturschritt Felder-Tabelle | 687 |
+| 5.5 | Algorithmusartefakt | 716 |
+| → | Algorithmusabschnitt Felder-Tabelle | 735 |
+| → | EMMA-Aktion Felder-Tabelle | 746 |
+| 5.5 | Referenzielle Integrität | 802 |
+| 5.6 | Completeness-State (Artefakt & Working Memory) | 829 |
+| 5.7 | Schreiboperationen — RFC 6902 JSON Patch | 854 |
+| 5.8 | Template-Schema | 904 |
+| **6** | **SYSTEMSTEUERUNG** | **936** |
+| 6.1 | Systemphasen | 940 |
+| 6.1.0 | Systemstart (neues Projekt / bestehendes laden) | 944 |
+| 6.1.1 | Phasendefinitionen (4 Phasen, Tabelle) | 957 |
+| 6.1.2 | Phasenwechsel-Protokoll | 966 |
+| 6.1.3 | Validierungs-Korrekturschleife | 977 |
+| 6.1.4 | Rücksprung in frühere Phasen | 997 |
+| 6.2 | Orchestrator — Eigenschaften & Verantwortlichkeiten | 1016 |
+| 6.3 | Orchestrator-Zyklus (11 Schritte) | 1038 |
+| → | Moduswechsel-Logik | 1056 |
+| 6.4 | Working Memory | 1071 |
+| → | Felder-Tabelle | 1077 |
+| 6.4.1 | Steuerungsflags / Flag-Enum (NICHT im WM) | 1097 |
+| 6.5 | Context Engineering, Output-Kontrakt, Tokenlimit-Strategie | 1119 |
+| 6.6 | Kognitive Modi (Übersicht) | 1171 |
+| 6.6.1 | Explorationsmodus | 1183 |
+| 6.6.2 | Strukturierungsmodus | 1202 |
+| 6.6.3 | Spezifikationsmodus | 1222 |
+| 6.6.4 | Validierungsmodus, Schweregradskala | 1242 |
+| 6.6.5 | Moderator | 1276 |
+| 6.7 | Fortschrittsmodell (Phasenstatus, Slot-Zähler) | 1301 |
+| **7** | **DATENINTEGRATION & PERSISTENZ** | **1340** |
+| 7.1 | Rohdaten-Integration | 1345 |
+| 7.2 | Projektmodell — Felder-Tabelle (Projektmetadaten) | 1381 |
+| 7.3 | Persistenzmodell (was/wann/ACID/Constraints) | 1421 |
+| **8** | **SYSTEMGRENZEN & QUALITÄTSANFORDERUNGEN** | **1486** |
+| 8.1.1 | NFR: Wartbarkeit — PRIMÄR (inkl. Konfigurierbarkeit) | 1496 |
+| 8.1.2 | NFR: Zuverlässigkeit — PRIMÄR | 1511 |
+| 8.1.3 | NFR: Beobachtbarkeit — PRIMÄR | 1527 |
+| 8.1.4 | NFR: Performance — SEKUNDÄR | 1541 |
+| 8.1.5 | NFR: Skalierung — SEKUNDÄR | 1555 |
+| 8.1.6 | NFR: Sicherheit — PRAGMATISCH | 1561 |
+| 8.2 | Architekturrahmen (Constraints) | 1576 |
+| 8.3 | EMMA-Aktionskatalog | 1593 |
+| 8.4 | Prozessumfang & Partitionierung | 1628 |
+| 8.5 | Systemgrenzen (Ausschlüsse) | 1641 |
 
 ---
 
@@ -296,9 +299,14 @@ Das System bewertet identifizierte Prozessschritte hinsichtlich ihrer Automatisi
 AK: Jeder Prozessschritt erhält eine Klassifikation: automatisierbar / bedingt automatisierbar / nicht automatisierbar — mit Begründung.  
 Abhängigkeit: FR-C-03 (EMMA-Aktionskatalog muss als Referenz hinterlegt sein)
 
-**FR-A-07: Warnung bei eingeschränkter Automatisierbarkeit**  
-Das System warnt den Nutzer aktiv, wenn ein Prozess Schritte enthält, die mit EMMA nicht oder nur schwer automatisierbar sind.  
+**FR-A-07: Warnung bei eingeschränkter Automatisierbarkeit**
+Das System warnt den Nutzer aktiv, wenn ein Prozess Schritte enthält, die mit EMMA nicht oder nur schwer automatisierbar sind.
 AK: Bei mehr als einem nicht automatisierbaren Schritt erfolgt eine explizite Warnung mit Handlungsoptionen (Anpassen, Ignorieren, Abbrechen).
+
+**FR-A-08: Systemsprache Deutsch**
+Das System kommuniziert ausnahmslos in deutscher Sprache.
+AK: (1) Alle LLM-generierten Antworten im Chatbereich sind auf Deutsch. (2) Alle Artefaktinhalte (Slot-Werte, Prozesszusammenfassungen, Anmerkungen) werden auf Deutsch erzeugt. (3) Alle Systemhinweise, Fehlermeldungen und Statusmeldungen im UI sind auf Deutsch. (4) LLM-Prompts und Systemanweisungen (System Prompt) sind auf Deutsch verfasst. (5) Vom Nutzer eingegebene Fremdsprachen-Inhalte werden entgegengenommen aber nicht automatisch übersetzt.
+Abhängigkeit: Abschnitt 1.3 (Systemsprache)
 
 ---
 
@@ -346,9 +354,9 @@ Unterstützte Download-Formate:
 Zusätzlich können modifizierte Artefakte als JSON reimportiert werden.  
 AK: (1) Download ist jederzeit über einen dedizierten Button im UI auslösbar. (2) Importierte Artefakte werden vor der Übernahme auf Schema-Konformität und Slot-Integrität validiert (FR-C-04). Ungültige Artefakte werden mit Fehlerbeschreibung abgelehnt.
 
-**FR-B-07: Artefaktintegrität durch externes Artefaktmodell**  
-Artefakte werden außerhalb des LLM-Kontexts verwaltet. Das LLM gibt Artefakte niemals vollständig zurück. Alle Artefaktänderungen erfolgen ausschließlich als chirurgische Schreiboperationen auf benannte Slots.  
-AK: (1) Kein LLM-Output enthält das Artefakt als Volltext. (2) Jede Artefaktänderung ist auf einen einzelnen Slot beschränkt und wird vom Orchestrator vor Ausführung validiert. (3) Das Artefakt ist zu jedem Zeitpunkt vollständig und korrekt abrufbar, unabhängig vom LLM-Zustand. (4) Die Versionierung beider Artefakte wird beim Anlegen eines neuen Projekts sofort initialisiert — nicht erst bei der ersten Schreiboperation. Version 0 repräsentiert den leeren Initialzustand.
+**FR-B-11: Artefaktintegrität durch externes Artefaktmodell**
+Artefakte werden außerhalb des LLM-Kontexts verwaltet. Das LLM gibt Artefakte niemals vollständig zurück. Alle Artefaktänderungen erfolgen ausschließlich als chirurgische Schreiboperationen auf benannte Slots.
+AK: (1) Kein LLM-Output enthält das Artefakt als Volltext. (2) Jede Artefaktänderung ist auf einen einzelnen Slot beschränkt und wird vom Orchestrator vor Ausführung validiert. (3) Das Artefakt ist zu jedem Zeitpunkt vollständig und korrekt abrufbar, unabhängig vom LLM-Zustand. (4) Die Versionierung aller drei Artefakte wird beim Anlegen eines neuen Projekts sofort initialisiert — nicht erst bei der ersten Schreiboperation. Version 0 repräsentiert den leeren Initialzustand.
 
 **FR-B-08: Generierung einer Prozesszusammenfassung**  
 Das System kann auf Anforderung eine für Nicht-Techniker verständliche Zusammenfassung des aktuellen Prozessartefakts erzeugen.  
@@ -398,6 +406,16 @@ Ein Slot darf ausschließlich durch explizite Nutzerbestätigung auf den Status 
 AK: (1) Der Status `nutzervalidiert` wird ausschließlich als Reaktion auf eine explizite Bestätigungsaktion des Nutzers gesetzt — nie automatisch durch das System oder das LLM. (2) Das System fordert die Nutzerbestätigung aktiv an, bevor ein Slot als `nutzervalidiert` markiert wird. (3) Eine Massenbestätigung mehrerer Slots in einem Schritt ist zulässig, erfordert aber eine explizite Nutzeraktion die alle betroffenen Slots benennt. (4) Der Orchestrator ist die einzige Komponente die `nutzervalidiert` schreiben darf — nach expliziter Nutzerbestätigung im Dialog.
 Abhängigkeit: Abschnitt 5.6 (Completeness-State), FR-D-01 (Orchestrator als zentraler Steuerknoten)
 
+**FR-C-08: Schweregradklassifikation von Validierungsbefunden**
+Der Validierungsmodus klassifiziert jeden Befund nach Schweregrad.
+AK: (1) Jeder Validierungsbefund erhält einen von drei Schweregraden: `kritisch` (sollte vor Projektabschluss behoben werden — explizite Warnung beim Abschluss), `wichtig` (Handlungsempfehlung, nicht blockierend), `hinweis` (optionale Verbesserung). (2) Befunde mit Schweregrad `kritisch` werden im Validierungsbericht und im UI visuell hervorgehoben. (3) Das System informiert den Nutzer beim Projektabschluss über die Anzahl offener `kritischer` Befunde und fordert eine explizite Bestätigung (s. Abschnitt 8.6). (4) Der Schweregrad wird pro Befund gespeichert und ist in der Dialoghistorie nachvollziehbar.
+Abhängigkeit: Abschnitt 6.6.4 (Validierungsmodus, Schweregradskala), FR-G-04 (Projektabschluss)
+
+**FR-C-09: Validierungs-Korrekturschleife**
+Die Validierungsphase kann beliebig oft mit der Spezifikationsphase abwechseln bis alle kritischen Befunde behoben sind oder der Nutzer den Abschluss explizit bestätigt.
+AK: (1) Nach Abschluss eines Validierungsdurchlaufs entscheidet der Nutzer: Befunde beheben (→ Spezifikationsmodus wird mit Validierungsbericht als Kontext aktiviert) oder Abschluss (mit expliziter Warnung bei offenen kritischen Befunden). (2) Nach Abarbeitung der Befunde im Spezifikationsmodus wird automatisch erneut der Validierungsmodus aktiviert — mit Fokus auf die zuvor gemeldeten Befunde. (3) Der Wechsel zwischen Validierungs- und Spezifikationsmodus erfolgt ausschließlich über den Moderator — nie direkt. (4) Jeder Wechsel erfordert explizite Nutzerbestätigung. (5) Die Anzahl der Korrekturschleifen ist nicht begrenzt.
+Abhängigkeit: Abschnitt 6.1.3 (Validierungs-Korrekturschleife), FR-C-08 (Schweregradklassifikation), FR-D-09 (Phasenwechsel-Protokoll)
+
 ---
 
 ## Gruppe D — Orchestrierung & kognitive Modi
@@ -411,13 +429,15 @@ Abhängigkeit: Abschnitt 6.2 (Orchestrator), Abschnitt 6.3 (Orchestrator-Zyklus)
 Ein dedizierter Moderator-Modus ist verfügbar für Eskalation, Phasenwechsel und Problemlösung.  
 AK: Der Moderator erhält bei Aktivierung: aktuelle Artefakte (Read-Only), Systemzustand inkl. Completeness-State, letzte N Dialogturns.
 
-**FR-D-03: Panik-Button-Eskalation**  
-Der Nutzer kann jederzeit über einen Panik-Button den aktiven Modus unterbrechen und den Moderator aktivieren.  
-AK: Der Moderator analysiert die Situation, schlägt eine Lösungsstrategie vor und reaktiviert einen Modus erst nach expliziter Nutzer-Zustimmung.
+**FR-D-03: Panik-Button-Eskalation**
+Der Nutzer kann jederzeit über einen Panik-Button den aktiven Modus unterbrechen und den Moderator aktivieren.
+AK: (1) Der Moderator analysiert die Situation und entwickelt gemeinsam mit dem Nutzer eine Lösungsstrategie. (2) Ein Modus wird erst nach expliziter Nutzer-Zustimmung reaktiviert. (3) Der reaktivierte Modus erhält als Kontext: den relevanten Dialogauszug vor der Unterbrechung UND die vom Moderator entwickelte Lösungsstrategie — sodass die vereinbarte Lösung direkt umgesetzt werden kann. (4) Der Orchestrator setzt Flag `escalate` um die Panik-Button-Aktivierung intern zu signalisieren.
+Abhängigkeit: Abschnitt 2.4 (Panik-Button), FR-D-02 (Moderator-Modus), FR-D-04 (Kontextübergabe)
 
-**FR-D-04: Kontextübergabe bei Moduswechsel**  
-Bei jedem Moduswechsel übergibt der Orchestrator einen definierten Kontext an den neuen Modus.  
-AK: Der empfangende Modus erhält mindestens: aktuelle Artefakte (Read-Only), Template-Schema, aktive Phase, Completeness-State, relevante Dialoghistorie (N Turns), ggf. Moderator-Lösungskontext.
+**FR-D-04: Kontextübergabe bei Moduswechsel**
+Bei jedem Moduswechsel übergibt der Orchestrator einen definierten Kontext an den neuen Modus.
+AK: (1) Der empfangende Modus erhält mindestens: aktuelle Artefakte (Read-Only), Template-Schema, aktive Phase, Completeness-State, relevante Dialoghistorie (N Turns). (2) Wenn der Moderator zuvor aktiv war: der Moderator-Lösungskontext wird obligatorisch übergeben — nicht optional. (3) Bei Wiederaufnahme nach Panik-Button: der Kontext enthält zusätzlich den Dialogauszug vor der Unterbrechung (s. FR-D-03).
+Abhängigkeit: Abschnitt 6.5 (Context Engineering), FR-D-03 (Panik-Button-Eskalation)
 
 **FR-D-05: Aktives Kontextmanagement**  
 Das System verwaltet den LLM-Kontext aktiv nach der in Abschnitt 6.5 definierten Strategie.  
@@ -429,10 +449,35 @@ Das System überwacht kontinuierlich die Token-Größe der Artefakte im Verhält
 AK: (1) Das System erkennt wenn die Artefaktgröße einen konfigurierten Schwellenwert überschreitet. (2) Bei Überschreitung wird der Nutzer aktiv informiert und eine Prozesspartitionierung vorgeschlagen. (3) Die Partitionierung wird nicht automatisch ausgeführt — der Nutzer bestätigt explizit. (4) Konkrete Schwellenwerte sind konfigurierbar ohne Code-Änderung. (5) Wird das Tokenlimit des konfigurierten Modells trotzdem überschritten, wird der laufende Turn abgebrochen. Der Nutzer erhält eine Fehlermeldung und die Handlungsoption Prozesspartitionierung. Der Systemzustand bleibt auf dem letzten validen Stand.
 Abhängigkeit: Abschnitt 8.4 (Prozessumfang), `[OFFEN: OP-05]`
 
-**FR-D-07: Fortschrittsmodell pro Modus**  
-Jeder kognitive Modus meldet nach jedem Turn einen Phasenstatus (`in_progress` / `nearing_completion` / `phase_complete`) an den Orchestrator. Der Orchestrator berechnet zusätzlich den Slot-Zähler aus den Artefakten und schreibt beide Werte ins Working Memory.  
-AK: Phasenstatus und Slot-Zähler sind nach jedem Turn im Working Memory aktuell und im UI sichtbar. Kein Prozentwert.  
+**FR-D-07: Fortschrittsmodell pro Modus**
+Jeder kognitive Modus meldet nach jedem Turn einen Phasenstatus (`in_progress` / `nearing_completion` / `phase_complete`) an den Orchestrator. Der Orchestrator berechnet zusätzlich den Slot-Zähler aus den Artefakten und schreibt beide Werte ins Working Memory.
+AK: Phasenstatus und Slot-Zähler sind nach jedem Turn im Working Memory aktuell und im UI sichtbar. Kein Prozentwert.
 Abhängigkeit: Abschnitt 5.6 (Completeness-State), Abschnitt 6.7 (Fortschrittsmodell)
+
+**FR-D-08: Systemphasen-Sequenz**
+Das System verarbeitet Projekte in exakt vier sequenziellen Phasen.
+AK: (1) Die Phasen sind in dieser Reihenfolge: Exploration → Strukturierung → Spezifikation → Validierung. (2) Jede Phase hat einen definierten primären Modus und einen definierten Output (s. Abschnitt 6.1.1). (3) Eine Phase gilt erst als abgeschlossen wenn der aktive Modus `phase_complete` gemeldet hat UND der Nutzer den Phasenwechsel über den Moderator bestätigt hat. (4) Das System blockiert keinen Abschluss wegen Unvollständigkeit — es informiert den Nutzer aber transparent über offene Punkte.
+Abhängigkeit: Abschnitt 6.1.1 (Phasendefinitionen), FR-D-09 (Phasenwechsel-Protokoll)
+
+**FR-D-09: Phasenwechsel-Protokoll**
+Jeder Phasenwechsel erfolgt nach einem definierten, nutzerkontrollierten Protokoll.
+AK: (1) Ein Phasenwechsel wird ausschließlich durch Flag `phase_complete` des aktiven Modus initiiert — nie automatisch durch das System. (2) Der Orchestrator aktiviert bei `phase_complete` den Moderator, der dem Nutzer den Erreichten Stand zusammenfasst und den Phasenwechsel vorschlägt. (3) Der Nutzer bestätigt den Wechsel explizit. Erst dann aktiviert der Orchestrator den Modus der nächsten Phase. (4) Wenn der Nutzer Klärungsbedarf beim aktuellen Modus hat, reaktiviert der Orchestrator diesen Modus — `phase_complete` wird zurückgesetzt. (5) Ein Phasenwechsel ohne Nutzerbestätigung findet nicht statt.
+Abhängigkeit: Abschnitt 6.1.2 (Phasenwechsel), FR-D-08 (Systemphasen-Sequenz), FR-D-01 (Orchestrator als zentraler Steuerknoten)
+
+**FR-D-10: Phasenrücksprung**
+Das System unterstützt strukturell den Rücksprung in frühere Phasen — im Prototyp ausschließlich über den Moderator.
+AK: (1) Im Prototyp ist ein Rücksprung ausschließlich über den Moderator möglich, der via Panik-Button aktiviert wird. (2) Bei Rücksprung nach Exploration: Struktur- und Algorithmusartefakt bleiben erhalten; Completeness-Status aller Slots bleibt erhalten. (3) Bei Rücksprung nach Strukturierung: Algorithmusartefakt bleibt erhalten; modifizierte Strukturschritte lösen deterministisch Invalidierungen aus (s. FR-B-04). (4) Artefakte werden bei Rücksprung nicht gelöscht — durch Versionierung ist der Stand vor dem Rücksprung wiederherstellbar (s. Abschnitt 5.2). (5) Die Architektur schließt eine spätere direkte Rücksprung-Funktion nicht aus.
+Abhängigkeit: Abschnitt 6.1.4 (Rücksprung in frühere Phasen), FR-B-04 (Invalidierungslogik), FR-D-03 (Panik-Button-Eskalation)
+
+**FR-D-11: Systemstart-Verhalten**
+Das System unterscheidet beim Start zwischen neuem Projekt und Laden eines bestehenden Projekts und führt den Nutzer in beiden Fällen über den Moderator ein.
+AK: (1) Bei neuem Projekt: Orchestrator initialisiert leere Artefakte mit Versionierung, aktiviert Moderator. Moderator begrüßt Nutzer, erklärt das Vorgehen und leitet in die Explorationsphase ein. Explorationsmodus wird erst nach expliziter Nutzerbestätigung aktiviert. (2) Bei bestehendem Projekt: Orchestrator lädt Projektzustand vollständig (s. FR-E-02), aktiviert Moderator. Moderator rekonstruiert den Stand für den Nutzer (aktive Phase, Fortschritt, offene Punkte) und schlägt den Fortsetzungspunkt vor. Zuletzt aktiver Modus wird erst nach Nutzerbestätigung aktiviert. (3) In beiden Fällen ist der Moderator der erste aktive Modus — nie ein Arbeits-Modus direkt.
+Abhängigkeit: Abschnitt 6.1.0 (Systemstart), FR-D-02 (Moderator-Modus), FR-E-02 (Laden gespeicherter Projekte)
+
+**FR-D-12: LLM-Provider-Konfigurierbarkeit**
+Das System unterstützt mehrere LLM-Provider, die ohne Codeänderung konfigurierbar sind.
+AK: (1) LLM-Provider (z.B. Anthropic, Ollama), Modellname und API-Schlüssel sind ausschließlich in der zentralen Konfigurationsdatei definiert — kein Hardcoding im Code. (2) Ein Wechsel des Providers erfordert ausschließlich eine Konfigurationsänderung — keine Codeänderung. (3) Das System ist ohne externe Netzwerkverbindung betreibbar wenn ein lokales Modell (z.B. Ollama/Llama) konfiguriert ist. (4) Neue Provider können ohne Änderung an Orchestrator, Modi oder Artefakten integriert werden.
+Abhängigkeit: Abschnitt 8.1.1 (Wartbarkeit/Konfigurierbarkeit), Abschnitt 8.2 (LLM-Flexibilität)
 
 ---
 
@@ -464,13 +509,18 @@ Projekte sind vollständig voneinander isoliert.
 AK: (1) Schreiboperationen auf einem Projekt haben keinen Einfluss auf andere Projekte. (2) Das Laden oder Wechseln eines Projekts verändert den Zustand anderer Projekte nicht. (3) Ein Fehler in einem Projekt führt nicht zum Datenverlust in anderen Projekten.
 Abhängigkeit: FR-G-03 (Projektwechsel), s. 8.1.2 (NFR Projektisolation)
 
+**FR-E-07: Persistenz und Laden der Dialoghistorie**
+Die Dialoghistorie jedes Projekts wird vollständig persistiert und pro Turn für den Kontext-Aufbau bereitgestellt.
+AK: (1) Jeder Dialogturn (Nutzertext, LLM-Antwort, Zeitstempel, Turn-Index) wird in der Datenbank unter der Projekt-ID gespeichert. (2) Der ContextAssembler lädt beim Aufbau des Moduskontexts die letzten N Turns aus der Datenbank — N ist konfigurierbar (s. 8.1.1). (3) Beim Laden eines Projekts ist die vollständige Dialoghistorie sofort verfügbar — kein Neuaufbau erforderlich. (4) Dialoghistorie und Artefakte werden in derselben atomaren Transaktion persistiert (s. FR-E-01). (5) Die Dialoghistorie wird nicht gelöscht wenn Artefakte wiederhergestellt werden.
+Abhängigkeit: Abschnitt 6.5.3 (Kontext-Bestandteile), FR-E-01 (Automatische Speicherung), `[OFFEN: OP-11]`
+
 ---
 
 ## Gruppe F — UI & Observability
 
-**FR-F-01: Phasen- und Fortschrittsanzeige**  
-Die aktuelle Systemphase und der Fortschritt innerhalb der Phase sind jederzeit sichtbar.  
-AK: Phase und Fortschrittswert (aus FR-D-06, basierend auf Completeness-State) werden in Echtzeit im UI aktualisiert.
+**FR-F-01: Phasen- und Fortschrittsanzeige**
+Die aktuelle Systemphase und der Fortschritt innerhalb der Phase sind jederzeit sichtbar.
+AK: Phase und Fortschrittswert (aus FR-D-07, basierend auf Completeness-State) werden in Echtzeit im UI aktualisiert.
 
 **FR-F-02: Debug-Modus**  
 Ein Debug-Bereich zeigt interne Systemzustände an: aktiver kognitiver Modus, gesetzte Steuerungsflags, Fortschrittsmetriken, Working-Memory-Inhalte, Completeness-State, letzte ausgeführte Schreiboperation.  
@@ -494,7 +544,7 @@ Abhängigkeit: Abschnitt 5.5 (Referenzielle Integrität), FR-B-04 (Invalidierung
 
 **FR-G-01: Projektanlage**
 Der Nutzer kann ein neues Projekt anlegen.
-AK: Bei Anlage eines neuen Projekts werden Projektname (Pflicht) und Beschreibung (optional) erfasst. Das System erzeugt eine eindeutige Projekt-ID, initialisiert leere Artefakte mit Versionierung (s. FR-B-07) und setzt den Systemzustand auf Phase `exploration`. Das neue Projekt wird sofort persistiert.
+AK: Bei Anlage eines neuen Projekts werden Projektname (Pflicht) und Beschreibung (optional) erfasst. Das System erzeugt eine eindeutige Projekt-ID, initialisiert leere Artefakte mit Versionierung (s. FR-B-11) und setzt den Systemzustand auf Phase `exploration`. Das neue Projekt wird sofort persistiert.
 
 **FR-G-02: Projektliste und Projektauswahl**
 Der Nutzer sieht beim Start der Anwendung eine Übersicht aller vorhandenen Projekte und kann ein bestehendes Projekt laden.

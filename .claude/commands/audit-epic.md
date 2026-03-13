@@ -41,8 +41,9 @@ Read in full (small, always relevant):
 
 Read selectively (large documents — use offset/limit):
 - HLA Section 6 only (file structure and module paths)
-- SDD: first read the Epic document to identify referenced SDD sections,
-  then read only those sections. Do not read the full SDD.
+- SDD: read lines 6–82 (table of contents), then **always read Section 4
+  in full** (FR lines ~256–569) — it is the primary compliance reference.
+  Additionally read sections referenced in the Epic document.
 
 Locate the epic document that was just implemented.
 

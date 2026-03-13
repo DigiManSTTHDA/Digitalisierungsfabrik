@@ -13,8 +13,10 @@ You must read and follow:
 - hla_architecture.md — read Section 6 only (file structure); read other
   sections on demand if a specific architectural question arises
 - digitalisierungsfabrik_systemdefinition.md — do NOT read in full;
-  read lines 6–80 (table of contents) to find relevant section line numbers,
-  then read only the sections referenced by each story
+  read lines 6–82 (table of contents) to orient yourself, then:
+  **always read Section 4 completely** (FR lines ~256–569) — it is the
+  primary implementation contract for every story.
+  Additionally read story-specific sections (5, 6, 7) via offset/limit.
 - the Epic document — read in full
 
 Never assume compliance — always verify.

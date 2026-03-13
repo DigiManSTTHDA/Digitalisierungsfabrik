@@ -509,7 +509,7 @@ context unless there is a specific reason. Follow this protocol:
 |---|---|
 | AGENTS.md | Always read in full — it is the rule set |
 | `hla_architecture.md` | Read Section 6 (file structure) by default; read other sections on demand |
-| `digitalisierungsfabrik_systemdefinition.md` | Read lines 6–80 (table of contents with exact line numbers for every section and key subsection). Then read only the sections relevant to the current story or task using `offset`/`limit`. |
+| `digitalisierungsfabrik_systemdefinition.md` | Read lines 6–82 (table of contents). Then: **always read Section 4 in full** (Funktionale Anforderungen, lines ~256–569) — it is the primary implementation contract. Additionally read the specific Sections referenced by the current story using `offset`/`limit`. |
 
 Use `offset` and `limit` parameters when reading files to fetch specific line ranges.
 

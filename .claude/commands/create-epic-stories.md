@@ -37,8 +37,12 @@ STEP 2 — MAP TO SDD
 ------------------------------------------------
 
 1. Read the SDD table of contents: docs/digitalisierungsfabrik_systemdefinition.md
-   lines 6–80. It lists every section with its exact line number.
-   Identify which sections are relevant to this Epic.
+   lines 6–82. It lists every section with its exact line number.
+2. **Always read Section 4 completely** (FR lines ~256–569).
+   Section 4 is the primary requirements contract — every story must
+   trace back to at least one FR or NFR. Know all FRs before designing stories.
+3. Identify which additional sections (5, 6, 7) are relevant to this Epic
+   and read those sections via offset/limit.
 2. Read only those specific SDD sections using offset/limit.
    Do not read sections unrelated to this Epic.
 

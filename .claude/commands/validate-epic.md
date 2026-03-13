@@ -23,8 +23,9 @@ Read in full (small, always relevant):
 
 Read selectively (large documents — use offset/limit):
 - HLA Section 6 only (file paths and module structure)
-- SDD: read lines 6–80 (table of contents) to find relevant section
-  line numbers, then read only those sections
+- SDD: read lines 6–82 (table of contents), then **always read Section 4
+  in full** (FR lines ~256–569) — every story must trace to an FR.
+  Read additional sections via offset/limit as needed.
 
 Then read the Epic document provided by the user.
 
