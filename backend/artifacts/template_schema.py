@@ -63,8 +63,8 @@ EXPLORATION_TEMPLATE = ArtifactTemplate(
         ),
         TemplatePathPattern(
             pattern=r"/slots/[^/]+/completeness_status",
-            allowed_ops=["replace"],
-            description="Completeness-Status eines Slots setzen",
+            allowed_ops=["add", "replace"],
+            description="Completeness-Status eines Slots setzen (add und replace erlaubt — RFC 6902 §4.1)",
         ),
     ],
 )
