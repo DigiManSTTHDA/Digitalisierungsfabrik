@@ -106,3 +106,66 @@ def test_get_project_not_found(client: TestClient) -> None:
     resp = client.get("/api/projects/nonexistent-id")
     assert resp.status_code == 404
     assert "nicht gefunden" in resp.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Story 05-03: Artifact & Project Lifecycle
+# ---------------------------------------------------------------------------
+
+
+def test_get_artifacts(client: TestClient) -> None:
+    """GET /api/projects/{id}/artifacts returns all 3 artifacts."""
+    pid = client.post("/api/projects", json={"name": "A"}).json()["projekt_id"]
+    resp = client.get(f"/api/projects/{pid}/artifacts")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "exploration" in data
+    assert "struktur" in data
+    assert "algorithmus" in data
+    # Empty artifacts should have version 0 and empty slots
+    assert data["exploration"]["version"] == 0
+    assert data["struktur"]["version"] == 0
+    assert data["algorithmus"]["version"] == 0
+
+
+def test_get_artifacts_not_found(client: TestClient) -> None:
+    """GET /api/projects/{id}/artifacts returns 404 for non-existent project."""
+    resp = client.get("/api/projects/no-such-id/artifacts")
+    assert resp.status_code == 404
+
+
+def test_download_project(client: TestClient) -> None:
+    """GET /api/projects/{id}/download returns JSON with all 3 artifacts."""
+    pid = client.post("/api/projects", json={"name": "DL"}).json()["projekt_id"]
+    resp = client.get(f"/api/projects/{pid}/download")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "exploration" in data
+    assert "struktur" in data
+    assert "algorithmus" in data
+
+
+def test_complete_project(client: TestClient) -> None:
+    """POST /api/projects/{id}/complete sets projektstatus to abgeschlossen."""
+    pid = client.post("/api/projects", json={"name": "C"}).json()["projekt_id"]
+    resp = client.post(f"/api/projects/{pid}/complete")
+    assert resp.status_code == 200
+    assert resp.json()["project"]["projektstatus"] == "abgeschlossen"
+    # Verify persistence — reload the project
+    get_resp = client.get(f"/api/projects/{pid}")
+    assert get_resp.json()["projektstatus"] == "abgeschlossen"
+
+
+def test_complete_project_already_completed(client: TestClient) -> None:
+    """POST /api/projects/{id}/complete returns 409 if already completed."""
+    pid = client.post("/api/projects", json={"name": "C2"}).json()["projekt_id"]
+    client.post(f"/api/projects/{pid}/complete")
+    resp = client.post(f"/api/projects/{pid}/complete")
+    assert resp.status_code == 409
+    assert "bereits abgeschlossen" in resp.json()["detail"]
+
+
+def test_complete_project_not_found(client: TestClient) -> None:
+    """POST /api/projects/{id}/complete returns 404 for non-existent project."""
+    resp = client.post("/api/projects/no-such-id/complete")
+    assert resp.status_code == 404
