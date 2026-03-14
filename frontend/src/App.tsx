@@ -13,6 +13,11 @@ import {
   loadProjects,
   createProject,
 } from "./store/session";
+import { connectWebSocket, disconnect } from "./api/websocket";
+import { PhaseHeader } from "./components/PhaseHeader";
+import { ChatPane } from "./components/ChatPane";
+import { ArtifactPane } from "./components/ArtifactPane";
+import { DebugPanel } from "./components/DebugPanel";
 import "./App.css";
 
 function ProjectSelection() {
@@ -93,25 +98,22 @@ function SessionView() {
   const { activeProjectId } = useSession();
   const dispatch = useSessionDispatch();
 
+  // Connect WebSocket when project selected, disconnect on back
+  useEffect(() => {
+    if (activeProjectId) {
+      connectWebSocket(activeProjectId, dispatch);
+      return () => disconnect();
+    }
+  }, [activeProjectId, dispatch]);
+
   return (
     <div className="session-layout">
-      <header className="phase-header">
-        <span>Projekt: {activeProjectId?.slice(0, 8)}...</span>
-        <button onClick={() => dispatch({ type: "DESELECT_PROJECT" })}>
-          Zurück
-        </button>
-      </header>
+      <PhaseHeader />
       <div className="main-content">
-        <div className="chat-pane">
-          <p>ChatPane — wird in Story 06-04 implementiert</p>
-        </div>
-        <div className="artifact-pane">
-          <p>ArtifactPane — wird in Story 06-05 implementiert</p>
-        </div>
+        <ChatPane />
+        <ArtifactPane />
       </div>
-      <div className="debug-panel">
-        <p>DebugPanel — wird in Story 06-06 implementiert</p>
-      </div>
+      <DebugPanel />
     </div>
   );
 }
