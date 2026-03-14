@@ -248,3 +248,58 @@ def test_overlapping_id_later_artifact_overwrites_earlier(calc: CompletenessCalc
 
     # befuellte_slots is based on state values (1 entry = vollstaendig → counts)
     assert befuellte == 1
+
+
+# ---------------------------------------------------------------------------
+# QA Review: Boundary + Edge Case Tests
+# ---------------------------------------------------------------------------
+
+
+class TestBoundaryCases:
+    """Edge cases for CompletenessCalculator identified in QA review."""
+
+    def test_all_empty_artifacts(self, calc: CompletenessCalculator) -> None:
+        """Three empty artifacts produce zero slots."""
+        state, befuellte, bekannte = calc.calculate(
+            ExplorationArtifact(), StructureArtifact(), AlgorithmArtifact()
+        )
+        assert state == {}
+        assert befuellte == 0
+        assert bekannte == 0
+
+    def test_many_slots_performance(self, calc: CompletenessCalculator) -> None:
+        """Calculator handles 100+ slots without error."""
+        slots = {f"s{i}": _make_slot(f"s{i}", CompletenessStatus.teilweise) for i in range(100)}
+        exploration = ExplorationArtifact(slots=slots)
+        state, befuellte, bekannte = calc.calculate(
+            exploration, StructureArtifact(), AlgorithmArtifact()
+        )
+        assert bekannte == 100
+        assert befuellte == 100  # teilweise counts as filled per _FILLED_STATUSES
+
+    def test_mixed_statuses_across_artifacts(self, calc: CompletenessCalculator) -> None:
+        """Correct counting with mixed statuses across all three artifact types."""
+        exploration = ExplorationArtifact(
+            slots={
+                "e1": _make_slot("e1", CompletenessStatus.vollstaendig),
+                "e2": _make_slot("e2", CompletenessStatus.leer),
+            }
+        )
+        structure = StructureArtifact(
+            schritte={
+                "s1": _make_schritt("s1", CompletenessStatus.nutzervalidiert),
+            }
+        )
+        algorithm = AlgorithmArtifact(
+            abschnitte={
+                "a1": _make_abschnitt("a1", CompletenessStatus.teilweise),
+            }
+        )
+        state, befuellte, bekannte = calc.calculate(exploration, structure, algorithm)
+        assert bekannte == 4
+        # teilweise + vollstaendig + nutzervalidiert = 3 filled (only leer is unfilled)
+        assert befuellte == 3
+        assert state["e1"] == CompletenessStatus.vollstaendig
+        assert state["e2"] == CompletenessStatus.leer
+        assert state["s1"] == CompletenessStatus.nutzervalidiert
+        assert state["a1"] == CompletenessStatus.teilweise

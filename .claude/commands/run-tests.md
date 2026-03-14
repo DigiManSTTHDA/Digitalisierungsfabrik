@@ -63,6 +63,25 @@ If any command fails:
 Repeat until all commands pass.
 
 ------------------------------------------------
+STEP 4 — INFRASTRUCTURE CHECKS
+------------------------------------------------
+
+After all tests pass, verify infrastructure correctness:
+
+1. Check that ALL FastAPI dependencies that create resources
+   (Database, file handles) use generator pattern:
+   ```python
+   import inspect
+   from api.router import _get_repository
+   assert inspect.isgeneratorfunction(_get_repository)
+   ```
+
+2. Check that no `except Exception` in production code lacks
+   a corresponding test that triggers it.
+
+3. Verify error messages in error responses are non-empty.
+
+------------------------------------------------
 FINAL VERIFICATION
 ------------------------------------------------
 
@@ -72,6 +91,7 @@ Verify:
 - no tests were skipped
 - no assertions were weakened
 - all checks pass
+- resource cleanup is tested (Rule T-5)
 
 ------------------------------------------------
 EPIC LOG UPDATE

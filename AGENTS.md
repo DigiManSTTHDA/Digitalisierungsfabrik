@@ -324,6 +324,26 @@ If a story's AC lists N fields, scenarios, or cases, the tests must cover all N.
 test suite that covers only a subset of the AC is an incomplete test suite. Cross-check
 the AC line by line before marking a story done.
 
+**Rule T-5 — Test infrastructure, not just logic.**
+Resource lifecycle bugs (connection leaks, unclosed files, missing cleanup) are not caught
+by logic tests. Every story that introduces a resource (DB connection, file handle, external
+client) must include a test verifying the resource is properly released. For FastAPI
+dependencies, verify that generator-based cleanup (`yield` + `finally`) is used.
+
+**Rule T-6 — Test error propagation, not just success.**
+Every component that can fail (DB operations, LLM calls, network I/O) needs a test that
+verifies error propagation. Bare `except Exception` that swallows errors is a bug.
+Test that:
+- Errors from lower layers propagate or are translated to meaningful error responses
+- Error messages are non-empty and contain actionable information
+- `recoverable` flags accurately reflect whether the user can retry
+
+**Rule T-7 — Test boundary values.**
+For every validated input (string lengths, numeric ranges, collection sizes), test:
+- The exact boundary value (e.g. `max_length=200` → test with 200 AND 201)
+- Empty input where non-empty is required
+- The zero/null case
+
 ---
 
 ## Library-First Principle

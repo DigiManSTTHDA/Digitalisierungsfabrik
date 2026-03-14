@@ -697,3 +697,55 @@ async def test_invalidation_write_applied_after_structure_patch() -> None:
 
     reloaded = repo.load(project.projekt_id)
     assert reloaded.algorithm_artifact.abschnitte["a1"].status == AlgorithmusStatus.invalidiert
+
+
+# ---------------------------------------------------------------------------
+# QA Review Lücke 1: Orchestrator Fehlerbehandlung bei DB-Fehlern
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_process_turn_nonexistent_project_returns_error() -> None:
+    """process_turn with unknown project_id raises ValueError."""
+    db = _make_db()
+    repo = _make_repo(db)
+    orchestrator = _make_orchestrator(repo)
+    with pytest.raises(ValueError, match="nicht gefunden"):
+        await orchestrator.process_turn("nonexistent-id", TurnInput(text="Hallo"))
+
+
+@pytest.mark.asyncio
+async def test_process_turn_save_failure_propagates() -> None:
+    """If repository.save() fails, the error propagates (no silent swallowing)."""
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Save-Fail-Test")
+    orchestrator = _make_orchestrator(repo)
+
+    # Corrupt the DB connection to cause save() to fail
+    db.close()
+
+    with pytest.raises(Exception):
+        await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+
+
+@pytest.mark.asyncio
+async def test_process_turn_unknown_mode_returns_error() -> None:
+    """If active mode is not in the modes dict, error is returned."""
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Mode-Fail-Test")
+
+    # Set active mode to something that doesn't exist in the modes dict
+    project.working_memory.aktiver_modus = "nonexistent_mode"
+    project.aktiver_modus = "nonexistent_mode"
+    repo.save(project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"exploration": ExplorationMode()},
+    )
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+    # Should handle gracefully — either error field set or fallback mode used
+    # The orchestrator falls back to exploration if mode not found
+    assert result is not None

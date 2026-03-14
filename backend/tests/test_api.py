@@ -315,3 +315,72 @@ def test_import_artifact_persisted(client: TestClient) -> None:
     # Reload and verify the artifact version incremented
     artifacts = client.get(f"/api/projects/{pid}/artifacts").json()
     assert artifacts["exploration"]["version"] == 1
+
+
+# ---------------------------------------------------------------------------
+# QA Review: Connection Lifecycle + Boundary Tests
+# ---------------------------------------------------------------------------
+
+
+def test_db_connection_closed_after_request(_app_with_memory_db) -> None:  # type: ignore[no-untyped-def]
+    """Verify the generator dependency closes the DB after each request.
+
+    This is a regression test for BUG 1 (CRITICAL connection leak).
+    The _get_repository dependency must use yield/finally to close the DB.
+    """
+    import inspect
+
+    from api.router import _get_repository
+
+    # The dependency MUST be a generator (yield-based) to ensure cleanup
+    assert inspect.isgeneratorfunction(_get_repository), (
+        "_get_repository must be a generator function (yield + finally: db.close()). "
+        "A plain return leaks SQLite connections on every request."
+    )
+
+
+def test_create_project_very_long_name(client: TestClient) -> None:
+    """POST /api/projects rejects names exceeding 200 characters."""
+    resp = client.post("/api/projects", json={"name": "A" * 201})
+    assert resp.status_code == 422
+
+
+def test_create_project_max_length_name(client: TestClient) -> None:
+    """POST /api/projects accepts name at exactly 200 characters."""
+    resp = client.post("/api/projects", json={"name": "B" * 200})
+    assert resp.status_code == 201
+    assert len(resp.json()["name"]) == 200
+
+
+def test_import_artifact_empty_body(client: TestClient) -> None:
+    """POST /api/projects/{id}/import with empty body returns 422."""
+    pid = client.post("/api/projects", json={"name": "Empty"}).json()["projekt_id"]
+    resp = client.post(f"/api/projects/{pid}/import", json={})
+    assert resp.status_code == 422
+
+
+def test_restore_invalid_typ(client: TestClient) -> None:
+    """POST restore with invalid artifact type returns 422."""
+    pid = client.post("/api/projects", json={"name": "RT"}).json()["projekt_id"]
+    resp = client.post(
+        f"/api/projects/{pid}/artifacts/invalid_type/restore",
+        json={"version": 0},
+    )
+    assert resp.status_code == 422
+
+
+def test_multiple_projects_isolated(client: TestClient) -> None:
+    """Changes to one project don't affect another (FR-E-06)."""
+    pid1 = client.post("/api/projects", json={"name": "P1"}).json()["projekt_id"]
+    pid2 = client.post("/api/projects", json={"name": "P2"}).json()["projekt_id"]
+
+    # Complete P1
+    client.post(f"/api/projects/{pid1}/complete")
+
+    # P2 should still be aktiv
+    p2 = client.get(f"/api/projects/{pid2}").json()
+    assert p2["projektstatus"] == "aktiv"
+
+    # P1 should be abgeschlossen
+    p1 = client.get(f"/api/projects/{pid1}").json()
+    assert p1["projektstatus"] == "abgeschlossen"

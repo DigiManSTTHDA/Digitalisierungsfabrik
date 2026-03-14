@@ -221,6 +221,52 @@ If both contain the same mistake, the test may pass incorrectly.
 Prefer independent verification of behaviour.
 
 ------------------------------------------------
+INFRASTRUCTURE TESTS (Rule T-5)
+------------------------------------------------
+
+For every component that manages resources (DB connections, file handles,
+external clients), verify:
+
+- Resources are properly released after use
+- FastAPI dependencies use generator pattern (yield + finally)
+- Database connections are closed — not leaked
+- Error during cleanup does not mask the original error
+
+Example check:
+
+```python
+import inspect
+from api.router import _get_repository
+assert inspect.isgeneratorfunction(_get_repository)
+```
+
+------------------------------------------------
+ERROR PROPAGATION TESTS (Rule T-6)
+------------------------------------------------
+
+For every component that can fail, verify:
+
+- DB errors (connection closed, disk full) propagate or return meaningful errors
+- LLM errors produce user-facing error messages, not silent swallows
+- Error messages are non-empty and contain actionable information
+- Bare `except Exception` blocks are flagged and each catch path is tested
+
+Every `except` block in production code MUST have a corresponding test
+that triggers it.
+
+------------------------------------------------
+BOUNDARY VALUE TESTS (Rule T-7)
+------------------------------------------------
+
+For every validated input, test:
+
+- Exact boundary: max_length=200 → test 200 (pass) AND 201 (fail)
+- Empty input where non-empty required
+- Whitespace-only where content required
+- Large inputs (100+ items in collections)
+- Zero/null/None where positive required
+
+------------------------------------------------
 TEST HARDENING
 ------------------------------------------------
 
@@ -235,6 +281,8 @@ Examples:
 - persistence rollback
 - API validation errors
 - invalid orchestration steps
+- resource cleanup after errors
+- error message content verification
 
 ------------------------------------------------
 STRICT PROHIBITIONS

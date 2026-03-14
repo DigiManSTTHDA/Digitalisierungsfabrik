@@ -100,6 +100,8 @@ def test_websocket_turn_error(ws_setup) -> None:  # type: ignore[no-untyped-def]
                     event = ws.receive_json()
     assert event["event"] == "error"
     assert event["recoverable"] is True
+    assert len(event["message"]) > 0  # QA: error message must not be empty
+    assert "Fehler" in event["message"] or "Interner" in event["message"]
 
 
 def test_websocket_panic(ws_setup) -> None:  # type: ignore[no-untyped-def]
