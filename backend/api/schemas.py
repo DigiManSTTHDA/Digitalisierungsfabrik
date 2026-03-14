@@ -125,6 +125,17 @@ class ErrorResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Debug
+# ---------------------------------------------------------------------------
+
+
+class AdvancePhaseResponse(BaseModel):
+    """Response for POST /api/projects/{id}/debug/advance-phase."""
+
+    project: ProjectResponse
+
+
+# ---------------------------------------------------------------------------
 # WebSocket incoming messages
 # ---------------------------------------------------------------------------
 

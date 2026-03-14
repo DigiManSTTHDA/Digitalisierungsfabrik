@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError
 
 from api.schemas import (
+    AdvancePhaseResponse,
     ArtifactImportRequest,
     ArtifactRestoreRequest,
     ArtifactRestoreResponse,
@@ -58,8 +59,8 @@ def _get_repository() -> Generator[ProjectRepository, None, None]:
 RepoDep = Annotated[ProjectRepository, Depends(_get_repository)]
 
 
-def _project_to_response(project: Project) -> ProjectResponse:
-    return ProjectResponse.model_validate(project, from_attributes=True)
+def _project_to_response(p: Project) -> ProjectResponse:
+    return ProjectResponse.model_validate(p, from_attributes=True)
 
 
 def _load_or_404(repo: ProjectRepository, projekt_id: str) -> Project:
@@ -283,14 +284,21 @@ def _set_artifact(
     setattr(project, _ARTIFACT_ATTR[typ], artifact)
 
 
+@router.post("/projects/{projekt_id}/debug/advance-phase", response_model=AdvancePhaseResponse)
+async def debug_advance_phase(projekt_id: str, repo: RepoDep) -> AdvancePhaseResponse:
+    from core.phase_transition import advance_phase as do_advance
+
+    project = _load_or_404(repo, projekt_id)
+    if not do_advance(project, project.working_memory):
+        raise HTTPException(status_code=400, detail="Bereits in der letzten Phase")
+    repo.save(project)
+    return AdvancePhaseResponse(project=_project_to_response(project))
+
+
 def _recalculate_completeness(project: Project) -> None:
-    """Recalculate completeness state from artifacts (FR-B-10 AC#4, FR-E-05)."""
-    calc = CompletenessCalculator()
-    state, filled, total = calc.calculate(
-        project.exploration_artifact,
-        project.structure_artifact,
-        project.algorithm_artifact,
+    """Recalculate completeness from artifacts (FR-B-10 AC#4, FR-E-05)."""
+    state, filled, total = CompletenessCalculator().calculate(
+        project.exploration_artifact, project.structure_artifact, project.algorithm_artifact
     )
-    project.working_memory.completeness_state = state
-    project.working_memory.befuellte_slots = filled
-    project.working_memory.bekannte_slots = total
+    wm = project.working_memory
+    wm.completeness_state, wm.befuellte_slots, wm.bekannte_slots = state, filled, total

@@ -487,6 +487,48 @@
         }
       }
     },
+    "/api/projects/{projekt_id}/debug/advance-phase": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Debug Advance Phase",
+        "operationId": "debug_advance_phase_api_projects__projekt_id__debug_advance_phase_post",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvancePhaseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -512,6 +554,19 @@
   },
   "components": {
     "schemas": {
+      "AdvancePhaseResponse": {
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/ProjectResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project"
+        ],
+        "title": "AdvancePhaseResponse",
+        "description": "Response for POST /api/projects/{id}/debug/advance-phase."
+      },
       "ArtifactImportRequest": {
         "properties": {
           "typ": {
@@ -718,6 +773,9 @@
         "properties": {
           "name": {
             "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
             "title": "Name"
           },
           "beschreibung": {

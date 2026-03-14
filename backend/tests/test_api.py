@@ -305,6 +305,31 @@ def test_create_project_whitespace_name_rejected(client: TestClient) -> None:
     assert resp.status_code == 422
 
 
+def test_debug_advance_phase(client: TestClient) -> None:
+    """POST debug/advance-phase advances from exploration to strukturierung."""
+    pid = client.post("/api/projects", json={"name": "AP"}).json()["projekt_id"]
+    resp = client.post(f"/api/projects/{pid}/debug/advance-phase")
+    assert resp.status_code == 200
+    assert resp.json()["project"]["aktive_phase"] == "strukturierung"
+
+
+def test_debug_advance_phase_at_end(client: TestClient) -> None:
+    """POST debug/advance-phase returns 400 at last phase."""
+    pid = client.post("/api/projects", json={"name": "APE"}).json()["projekt_id"]
+    # Advance through all phases
+    for _ in range(3):  # exploration→strukturierung→spezifikation→validierung
+        client.post(f"/api/projects/{pid}/debug/advance-phase")
+    resp = client.post(f"/api/projects/{pid}/debug/advance-phase")
+    assert resp.status_code == 400
+    assert "letzten Phase" in resp.json()["detail"]
+
+
+def test_debug_advance_phase_not_found(client: TestClient) -> None:
+    """POST debug/advance-phase returns 404 for non-existent project."""
+    resp = client.post("/api/projects/nope/debug/advance-phase")
+    assert resp.status_code == 404
+
+
 def test_import_artifact_persisted(client: TestClient) -> None:
     """POST import persists the imported artifact — verified by reload."""
     pid = client.post("/api/projects", json={"name": "IP"}).json()["projekt_id"]

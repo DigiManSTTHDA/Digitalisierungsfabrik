@@ -168,6 +168,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/projects/{projekt_id}/debug/advance-phase": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Debug Advance Phase */
+    post: operations["debug_advance_phase_api_projects__projekt_id__debug_advance_phase_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/health": {
     parameters: {
       query?: never;
@@ -192,6 +209,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /**
+     * AdvancePhaseResponse
+     * @description Response for POST /api/projects/{id}/debug/advance-phase.
+     */
+    AdvancePhaseResponse: {
+      project: components["schemas"]["ProjectResponse"];
+    };
     /**
      * ArtifactImportRequest
      * @description Request body for POST /api/projects/{id}/import (FR-B-07, FR-C-04).
@@ -740,6 +764,37 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  debug_advance_phase_api_projects__projekt_id__debug_advance_phase_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        projekt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdvancePhaseResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
