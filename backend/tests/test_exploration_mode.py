@@ -289,8 +289,8 @@ async def test_current_user_message_passed_to_llm_on_first_turn() -> None:
 
     await orchestrator.process_turn(project.projekt_id, TurnInput(text="Meine Eingabe"))
 
-    call_args = llm.complete.call_args
-    messages: list[dict] = call_args.kwargs.get("messages") or call_args.args[1]  # type: ignore[index]
+    call_args = llm.complete.call_args  # type: ignore[attr-defined]
+    messages: list[dict[str, str]] = call_args.kwargs.get("messages") or call_args.args[1]
     user_messages = [m for m in messages if m.get("role") == "user"]
 
     assert len(user_messages) >= 1, (

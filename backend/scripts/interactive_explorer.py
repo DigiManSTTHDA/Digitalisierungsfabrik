@@ -47,7 +47,7 @@ RESET = "\033[0m"
 
 def _print_header(settings: Settings) -> None:
     print(f"\n{BOLD}{'=' * 70}")
-    print("  DIGITALISIERUNGSFABRIK — Interaktiver Explorer-Test")
+    print("  DIGITALISIERUNGSFABRIK -- Interaktiver Explorer-Test")
     print(f"{'=' * 70}{RESET}")
     print(f"  Provider : {settings.llm_provider}")
     print(f"  Modell   : {settings.llm_model}")
@@ -55,14 +55,14 @@ def _print_header(settings: Settings) -> None:
     print(f"{BOLD}{'=' * 70}{RESET}\n")
 
 
-def _print_slots(project: Project, previous_slots: dict | None = None) -> None:
+def _print_slots(project: Project, previous_slots: dict[str, dict[str, str]] | None = None) -> None:
     """Zeigt alle Slots mit Status und markiert Änderungen."""
     slots = project.exploration_artifact.slots
     filled = sum(1 for s in slots.values() if s.inhalt and s.inhalt.strip())
     total = len(slots)
 
     print(f"\n  {BOLD}Slots ({filled}/{total} befüllt):{RESET}")
-    print(f"  {'─' * 66}")
+    print(f"  {'-' * 66}")
 
     for slot_id, slot in slots.items():
         status = slot.completeness_status.value
@@ -75,7 +75,7 @@ def _print_slots(project: Project, previous_slots: dict | None = None) -> None:
             if prev is None:
                 changed = f" {GREEN}[NEU]{RESET}"
             elif prev.get("inhalt", "") != inhalt:
-                changed = f" {YELLOW}[GEÄNDERT]{RESET}"
+                changed = f" {YELLOW}[GEAENDERT]{RESET}"
 
         # Status-Farbe
         if status == "vollstaendig":
@@ -99,20 +99,20 @@ def _print_slots(project: Project, previous_slots: dict | None = None) -> None:
         else:
             print(f"                    {DIM}(leer){RESET}")
 
-    print(f"  {'─' * 66}")
+    print(f"  {'-' * 66}")
 
 
 def _print_slot_detail(project: Project) -> None:
     """Zeigt alle Slots mit vollem Inhalt."""
     slots = project.exploration_artifact.slots
     print(f"\n{BOLD}{'=' * 70}")
-    print("  ALLE SLOTS — VOLLSTÄNDIGER INHALT")
+    print("  ALLE SLOTS -- VOLLSTAENDIGER INHALT")
     print(f"{'=' * 70}{RESET}")
 
     for slot_id, slot in slots.items():
         status = slot.completeness_status.value
         print(f"\n  {BOLD}{slot.titel}{RESET} ({slot_id}) [{status}]")
-        print(f"  {'─' * 50}")
+        print(f"  {'-' * 50}")
         if slot.inhalt:
             for line in slot.inhalt.split("\n"):
                 print(f"    {line}")
@@ -122,7 +122,7 @@ def _print_slot_detail(project: Project) -> None:
     print(f"\n{'=' * 70}\n")
 
 
-def _slots_snapshot(project: Project) -> dict:
+def _slots_snapshot(project: Project) -> dict[str, dict[str, str]]:
     """Erstellt einen Snapshot der aktuellen Slot-Inhalte für Diff."""
     return {
         sid: {"inhalt": s.inhalt, "status": s.completeness_status.value}
@@ -138,7 +138,9 @@ def _export_artifact(project: Project) -> None:
     print(f"\n  {GREEN}Exportiert nach: {filename}{RESET}\n")
 
 
-async def _create_session(settings: Settings, db_path: str) -> tuple:
+async def _create_session(
+    settings: Settings, db_path: str
+) -> tuple[Orchestrator, ProjectRepository, Project]:
     """Erstellt eine neue Session mit Orchestrator und Projekt."""
     db = Database(db_path)
     repo = ProjectRepository(db)
@@ -156,7 +158,7 @@ async def run(db_path: str) -> None:
     orchestrator, repo, project = await _create_session(settings, db_path)
     print(f"  {DIM}Projekt-ID: {project.projekt_id}{RESET}")
 
-    previous_slots: dict | None = None
+    previous_slots: dict[str, dict[str, str]] | None = None
     turn_nr = 0
 
     while True:
