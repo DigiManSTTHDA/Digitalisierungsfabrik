@@ -134,8 +134,8 @@ def test_working_memory_json_round_trip() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_flag_enum_has_six_values() -> None:
-    assert len(Flag) == 6
+def test_flag_enum_has_expected_values() -> None:
+    assert len(Flag) == 8  # 6 original + advance_phase + return_to_mode (Epic 07)
 
 
 def test_flag_enum_values_match_sdd() -> None:

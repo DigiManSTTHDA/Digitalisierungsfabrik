@@ -40,6 +40,8 @@ class Flag(StrEnum):
     blocked = "blocked"
     artefakt_updated = "artefakt_updated"
     validation_failed = "validation_failed"
+    advance_phase = "advance_phase"
+    return_to_mode = "return_to_mode"
 
 
 class ModeContext(BaseModel):

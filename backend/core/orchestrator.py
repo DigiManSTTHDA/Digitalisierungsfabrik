@@ -27,6 +27,7 @@ from core.context_assembler import build_context
 from core.executor import Executor
 from core.models import Project
 from core.output_validator import validate
+from core.phase_transition import advance_phase as do_advance_phase
 from core.progress_tracker import update_working_memory
 from core.working_memory import WorkingMemory
 from modes.base import BaseMode, Flag
@@ -169,6 +170,19 @@ class Orchestrator:
                 to_mode="moderator",
                 trigger_flags=flag_strings,
             )
+
+        # Moderator signals: advance to next phase (FR-D-09)
+        if Flag.advance_phase in active_flags:
+            success = do_advance_phase(project, wm)
+            if success:
+                log.info("orchestrator.phase_advanced", new_phase=wm.aktive_phase.value)
+
+        # Moderator signals: return to previous mode (FR-D-09 AC#4)
+        if Flag.return_to_mode in active_flags and wm.vorheriger_modus:
+            wm.aktiver_modus = wm.vorheriger_modus
+            wm.vorheriger_modus = None
+            project.aktiver_modus = wm.aktiver_modus
+            log.info("orchestrator.return_to_mode", mode=wm.aktiver_modus)
 
         project.working_memory = wm
         project.aktiver_modus = wm.aktiver_modus
