@@ -3,46 +3,56 @@
  *
  * HLA 3.1: All 6 event types handled.
  * HLA 3.2: turn and panic messages sent.
+ *
+ * Note: React 18 StrictMode double-mounts components in dev mode.
+ * The onclose handler must guard against nulling a newer connection.
  */
 
 import type { Dispatch } from "react";
 import type { SessionAction } from "../store/session";
 
 let ws: WebSocket | null = null;
-let dispatch: Dispatch<SessionAction> | null = null;
+let currentDispatch: Dispatch<SessionAction> | null = null;
 
 export function connectWebSocket(
   projectId: string,
   sessionDispatch: Dispatch<SessionAction>,
 ): void {
   disconnect();
-  dispatch = sessionDispatch;
+  currentDispatch = sessionDispatch;
 
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const host = window.location.host;
-  ws = new WebSocket(`${protocol}//${host}/ws/session/${projectId}`);
+  const newWs = new WebSocket(`${protocol}//${host}/ws/session/${projectId}`);
 
-  ws.onmessage = (event: MessageEvent) => {
-    if (!dispatch) return;
+  // Store reference AFTER creating — so onclose guards work
+  ws = newWs;
+
+  newWs.onmessage = (event: MessageEvent) => {
+    if (!currentDispatch) return;
     try {
       const data = JSON.parse(event.data as string) as Record<string, unknown>;
-      handleEvent(data, dispatch);
+      handleEvent(data, currentDispatch);
     } catch {
       console.error("WebSocket: failed to parse message", event.data);
     }
   };
 
-  ws.onerror = () => {
-    if (dispatch) {
-      dispatch({
+  newWs.onerror = () => {
+    if (currentDispatch) {
+      currentDispatch({
         type: "SET_ERROR",
         error: "WebSocket-Verbindungsfehler",
       });
     }
   };
 
-  ws.onclose = () => {
-    ws = null;
+  // Guard: only null out ws if THIS connection is still the active one.
+  // Prevents React 18 StrictMode double-mount from killing the second connection.
+  newWs.onclose = () => {
+    if (ws === newWs) {
+      ws = null;
+    }
   };
 }
 
@@ -54,7 +64,7 @@ function handleEvent(
 
   switch (eventType) {
     case "chat_token":
-      // Token streaming — future use; for now, ignored (complete response via chat_done)
+      // Token streaming — future use; complete response via chat_done
       break;
 
     case "chat_done":
@@ -124,5 +134,5 @@ export function disconnect(): void {
     ws.close();
     ws = null;
   }
-  dispatch = null;
+  currentDispatch = null;
 }
