@@ -749,3 +749,101 @@ async def test_process_turn_unknown_mode_returns_error() -> None:
     # Should handle gracefully — either error field set or fallback mode used
     # The orchestrator falls back to exploration if mode not found
     assert result is not None
+
+
+# ---------------------------------------------------------------------------
+# Story 07-05: Phase Transition Integration Tests
+# ---------------------------------------------------------------------------
+
+
+class PhaseCompleteMode(BaseMode):
+    """Test mode that signals phase_complete."""
+
+    async def call(self, context: ModeContext) -> ModeOutput:
+        return ModeOutput(
+            nutzeraeusserung="Phase abgeschlossen.",
+            patches=[],
+            phasenstatus=Phasenstatus.phase_complete,
+            flags=[Flag.phase_complete],
+        )
+
+
+class AdvancePhaseMode(BaseMode):
+    """Simulates Moderator confirming phase advance."""
+
+    async def call(self, context: ModeContext) -> ModeOutput:
+        return ModeOutput(
+            nutzeraeusserung="Phasenwechsel bestätigt.",
+            patches=[],
+            phasenstatus=Phasenstatus.in_progress,
+            flags=[Flag.advance_phase],
+        )
+
+
+class ReturnToModeMode(BaseMode):
+    """Simulates Moderator returning to previous mode."""
+
+    async def call(self, context: ModeContext) -> ModeOutput:
+        return ModeOutput(
+            nutzeraeusserung="Zurück zum vorherigen Modus.",
+            patches=[],
+            phasenstatus=Phasenstatus.in_progress,
+            flags=[Flag.return_to_mode],
+        )
+
+
+@pytest.mark.asyncio
+async def test_phase_complete_triggers_moderator_then_advance() -> None:
+    """Full cycle: exploration → phase_complete → moderator → advance → strukturierung."""
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Phase-Transition-Test")
+
+    # Turn 1: ExplorationMode signals phase_complete → Orchestrator switches to Moderator
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={
+            "exploration": PhaseCompleteMode(),
+            "moderator": AdvancePhaseMode(),
+            "structuring": ExplorationMode(),  # stub for structuring
+        },
+    )
+    result1 = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Alles fertig"))
+    assert result1.error is None
+    # After turn 1: mode should have switched to moderator
+    reloaded1 = repo.load(project.projekt_id)
+    assert reloaded1.aktiver_modus == "moderator"
+
+    # Turn 2: Moderator confirms advance → phase transitions to strukturierung
+    result2 = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Ja, weiter"))
+    assert result2.error is None
+    reloaded2 = repo.load(project.projekt_id)
+    assert reloaded2.aktive_phase == Projektphase.strukturierung
+    assert reloaded2.aktiver_modus == "structuring"
+
+
+@pytest.mark.asyncio
+async def test_moderator_return_to_mode_restores_previous() -> None:
+    """Moderator with return_to_mode flag restores the previous mode."""
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Return-Test")
+
+    # Set up: moderator is active with vorheriger_modus = exploration
+    project.working_memory.aktiver_modus = "moderator"
+    project.working_memory.vorheriger_modus = "exploration"
+    project.aktiver_modus = "moderator"
+    repo.save(project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={
+            "exploration": ExplorationMode(),
+            "moderator": ReturnToModeMode(),
+        },
+    )
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Nein, bleib"))
+    assert result.error is None
+    reloaded = repo.load(project.projekt_id)
+    assert reloaded.aktiver_modus == "exploration"
+    assert reloaded.working_memory.vorheriger_modus is None
