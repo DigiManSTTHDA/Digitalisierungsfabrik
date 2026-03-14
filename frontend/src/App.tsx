@@ -12,6 +12,7 @@ import {
   useSessionDispatch,
   loadProjects,
   createProject,
+  loadProjectState,
 } from "./store/session";
 import { connectWebSocket, disconnect } from "./api/websocket";
 import { PhaseHeader } from "./components/PhaseHeader";
@@ -73,7 +74,11 @@ function ProjectSelection() {
             key={p.projekt_id}
             className="project-card"
             onClick={() =>
-              dispatch({ type: "SELECT_PROJECT", id: p.projekt_id })
+              dispatch({
+                type: "SELECT_PROJECT",
+                id: p.projekt_id,
+                phase: p.aktive_phase,
+              })
             }
           >
             <div className="project-name">{p.name}</div>
@@ -94,14 +99,42 @@ function ProjectSelection() {
   );
 }
 
+function ErrorBanner() {
+  const { error } = useSession();
+  const dispatch = useSessionDispatch();
+  if (!error) return null;
+  return (
+    <div
+      className="error-banner"
+      style={{
+        background: "#fef2f2",
+        color: "#991b1b",
+        padding: "0.5rem 1rem",
+        borderBottom: "1px solid #fecaca",
+        display: "flex",
+        justifyContent: "space-between",
+      }}
+    >
+      <span>{error}</span>
+      <button
+        onClick={() => dispatch({ type: "SET_ERROR", error: null })}
+        style={{ background: "none", border: "none", cursor: "pointer" }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function SessionView() {
   const { activeProjectId } = useSession();
   const dispatch = useSessionDispatch();
 
-  // Connect WebSocket when project selected, disconnect on back
+  // Connect WebSocket + load existing project state
   useEffect(() => {
     if (activeProjectId) {
       connectWebSocket(activeProjectId, dispatch);
+      loadProjectState(dispatch, activeProjectId);
       return () => disconnect();
     }
   }, [activeProjectId, dispatch]);
@@ -109,6 +142,7 @@ function SessionView() {
   return (
     <div className="session-layout">
       <PhaseHeader />
+      <ErrorBanner />
       <div className="main-content">
         <ChatPane />
         <ArtifactPane />

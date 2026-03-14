@@ -10,7 +10,7 @@ import { useSession, useSessionDispatch } from "../store/session";
 import { apiClient } from "../api/client";
 
 export function PhaseHeader() {
-  const { activeProjectId, progress } = useSession();
+  const { activeProjectId, activePhase, progress } = useSession();
   const dispatch = useSessionDispatch();
 
   const handleBack = () => {
@@ -52,7 +52,9 @@ export function PhaseHeader() {
   return (
     <header className="phase-header">
       <div className="phase-info">
-        <span>Exploration</span>
+        <span>
+          {activePhase.charAt(0).toUpperCase() + activePhase.slice(1)}
+        </span>
         <span className="slot-counter">
           {progress.befuellte_slots} von {progress.bekannte_slots} Slots befüllt
         </span>

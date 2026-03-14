@@ -32,6 +32,7 @@ export interface ChatMessage {
 export interface SessionState {
   projects: ProjectResponse[];
   activeProjectId: string | null;
+  activePhase: string;
   chatMessages: ChatMessage[];
   artifacts: {
     exploration: Record<string, unknown>;
@@ -58,7 +59,7 @@ export interface SessionState {
 export type SessionAction =
   | { type: "SET_PROJECTS"; projects: ProjectResponse[] }
   | { type: "ADD_PROJECT"; project: ProjectResponse }
-  | { type: "SELECT_PROJECT"; id: string }
+  | { type: "SELECT_PROJECT"; id: string; phase: string }
   | { type: "DESELECT_PROJECT" }
   | { type: "ADD_CHAT_MESSAGE"; message: ChatMessage }
   | { type: "SET_PROCESSING"; value: boolean }
@@ -87,6 +88,7 @@ export type SessionAction =
 export const initialState: SessionState = {
   projects: [],
   activeProjectId: null,
+  activePhase: "exploration",
   chatMessages: [],
   artifacts: {
     exploration: {},
@@ -123,6 +125,7 @@ export function sessionReducer(
       return {
         ...state,
         activeProjectId: action.id,
+        activePhase: action.phase,
         chatMessages: [],
         error: null,
       };
@@ -202,11 +205,42 @@ export async function createProject(
   name: string,
   beschreibung: string,
 ): Promise<void> {
-  const { data } = await apiClient.POST("/api/projects", {
+  const { data, error } = await apiClient.POST("/api/projects", {
     body: { name, beschreibung },
   });
   if (data) {
     dispatch({ type: "ADD_PROJECT", project: data });
+  } else if (error) {
+    dispatch({
+      type: "SET_ERROR",
+      error: "Projekt konnte nicht erstellt werden",
+    });
+  }
+}
+
+export async function loadProjectState(
+  dispatch: Dispatch<SessionAction>,
+  projektId: string,
+): Promise<void> {
+  const { data } = await apiClient.GET("/api/projects/{projekt_id}/artifacts", {
+    params: { path: { projekt_id: projektId } },
+  });
+  if (data) {
+    dispatch({
+      type: "UPDATE_ARTIFACT",
+      typ: "exploration",
+      artefakt: data.exploration as Record<string, unknown>,
+    });
+    dispatch({
+      type: "UPDATE_ARTIFACT",
+      typ: "struktur",
+      artefakt: data.struktur as Record<string, unknown>,
+    });
+    dispatch({
+      type: "UPDATE_ARTIFACT",
+      typ: "algorithmus",
+      artefakt: data.algorithmus as Record<string, unknown>,
+    });
   }
 }
 
