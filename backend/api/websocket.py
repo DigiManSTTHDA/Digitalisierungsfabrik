@@ -161,13 +161,25 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
                     )
 
             elif msg_type == "panic":
-                await _send_event(
-                    ws,
-                    ErrorEvent(
-                        message="Panik-Button: Moderator wird in Epic 07 implementiert",
-                        recoverable=True,
-                    ),
-                )
+                # FR-D-03: Panic button activates Moderator
+                try:
+                    project = repo.load(project_id)
+                    project.working_memory.vorheriger_modus = project.working_memory.aktiver_modus
+                    project.working_memory.aktiver_modus = "moderator"
+                    project.aktiver_modus = "moderator"
+                    repo.save(project)
+                    turn_input = TurnInput(text="[Panik-Button aktiviert]")
+                    output = await orchestrator.process_turn(project_id, turn_input)
+                    await _send_turn_events(ws, output, repo, project_id)
+                except Exception:
+                    log.exception("websocket.panic_error")
+                    await _send_event(
+                        ws,
+                        ErrorEvent(
+                            message="Fehler bei Panik-Verarbeitung",
+                            recoverable=True,
+                        ),
+                    )
 
             else:
                 await _send_event(

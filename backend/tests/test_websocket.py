@@ -104,20 +104,27 @@ def test_websocket_turn_error(ws_setup) -> None:  # type: ignore[no-untyped-def]
     assert "Fehler" in event["message"] or "Interner" in event["message"]
 
 
-def test_websocket_panic(ws_setup) -> None:  # type: ignore[no-untyped-def]
-    """Panic message returns informational error about Epic 07."""
+def test_websocket_panic_triggers_moderator(ws_setup) -> None:  # type: ignore[no-untyped-def]
+    """Panic message activates Moderator and returns chat_done event."""
     app, db, repo, pid = ws_setup
+    mock_output = _make_mock_output(pid)
+    mock_output.nutzeraeusserung = "Moderator: Ich analysiere die Situation."
 
-    with patch("api.websocket.Database", return_value=db):
-        with patch("api.websocket.ProjectRepository", return_value=repo):
-            with patch("api.websocket._build_orchestrator"):
+    with patch("api.websocket._build_orchestrator") as mock_build:
+        mock_orch = AsyncMock()
+        mock_orch.process_turn.return_value = mock_output
+        mock_build.return_value = mock_orch
+
+        with patch("api.websocket.Database", return_value=db):
+            with patch("api.websocket.ProjectRepository", return_value=repo):
                 client = TestClient(app)
                 with client.websocket_connect(f"/ws/session/{pid}") as ws:
                     ws.send_text(json.dumps({"type": "panic"}))
-                    event = ws.receive_json()
-    assert event["event"] == "error"
-    assert "Epic 07" in event["message"]
-    assert event["recoverable"] is True
+                    events = [ws.receive_json() for _ in range(6)]
+    event_types = [e["event"] for e in events]
+    assert "chat_done" in event_types
+    chat = next(e for e in events if e["event"] == "chat_done")
+    assert "Moderator" in chat["message"]
 
 
 def test_websocket_invalid_message(ws_setup) -> None:  # type: ignore[no-untyped-def]
