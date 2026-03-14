@@ -12,7 +12,11 @@ Coverage:
 from __future__ import annotations
 
 from artifacts.models import Phasenstatus
-from artifacts.template_schema import EXPLORATION_TEMPLATE
+from artifacts.template_schema import (
+    ALGORITHM_TEMPLATE,
+    EXPLORATION_TEMPLATE,
+    STRUCTURE_TEMPLATE,
+)
 from core.output_validator import validate
 from modes.base import ModeOutput
 
@@ -132,3 +136,53 @@ def test_patch_with_unknown_top_level_path_fails_validation() -> None:
         [{"op": "replace", "path": "/unknown_key/prozessziel/inhalt", "value": "test"}]
     )
     assert validate(output, EXPLORATION_TEMPLATE) is False
+
+
+# ---------------------------------------------------------------------------
+# Structure template tests (QA fix: was untested — only exploration covered)
+# ---------------------------------------------------------------------------
+
+
+def test_structure_template_valid_add_schritt() -> None:
+    """Adding a new Strukturschritt is valid for STRUCTURE_TEMPLATE."""
+    output = _make_output([{"op": "add", "path": "/schritte/s01", "value": {"titel": "Schritt 1"}}])
+    assert validate(output, STRUCTURE_TEMPLATE) is True
+
+
+def test_structure_template_replace_beschreibung() -> None:
+    """Replacing a Strukturschritt beschreibung is valid."""
+    output = _make_output([{"op": "replace", "path": "/schritte/s01/beschreibung", "value": "Neu"}])
+    assert validate(output, STRUCTURE_TEMPLATE) is True
+
+
+def test_structure_template_invalid_path_rejected() -> None:
+    """Invalid path in structure template is rejected."""
+    output = _make_output([{"op": "replace", "path": "/slots/s01/inhalt", "value": "wrong"}])
+    assert validate(output, STRUCTURE_TEMPLATE) is False
+
+
+# ---------------------------------------------------------------------------
+# Algorithm template tests (QA fix: was untested)
+# ---------------------------------------------------------------------------
+
+
+def test_algorithm_template_valid_add_abschnitt() -> None:
+    """Adding a new Algorithmusabschnitt is valid."""
+    output = _make_output(
+        [{"op": "add", "path": "/abschnitte/a01", "value": {"aktionstyp": "click"}}]
+    )
+    assert validate(output, ALGORITHM_TEMPLATE) is True
+
+
+def test_algorithm_template_replace_aktion_aktionstyp() -> None:
+    """Replacing aktionstyp of an EMMA-Aktion within an Abschnitt is valid."""
+    output = _make_output(
+        [{"op": "replace", "path": "/abschnitte/a01/aktionen/ak1/aktionstyp", "value": "click"}]
+    )
+    assert validate(output, ALGORITHM_TEMPLATE) is True
+
+
+def test_algorithm_template_invalid_path_rejected() -> None:
+    """Path from exploration template is rejected by algorithm template."""
+    output = _make_output([{"op": "replace", "path": "/slots/s01/inhalt", "value": "wrong"}])
+    assert validate(output, ALGORITHM_TEMPLATE) is False

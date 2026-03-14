@@ -354,19 +354,19 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
     assert "leer" in status, (
         "Uninitialized Pflicht-Slots must appear as 'leer' in the slot status string"
     )
-    # All 9 Pflicht-Slots must be listed
-    for slot_id in (
-        "prozessausloeser",
-        "prozessziel",
-        "prozessbeschreibung",
-        "scope",
-        "beteiligte_systeme",
-        "umgebung",
-        "randbedingungen",
-        "ausnahmen",
-        "prozesszusammenfassung",
+    # All 9 Pflicht-Slots must be listed by their German title
+    for titel in (
+        "Prozessauslöser",
+        "Prozessziel",
+        "Prozessbeschreibung",
+        "Scope",
+        "Beteiligte Systeme",
+        "Umgebung",
+        "Randbedingungen",
+        "Ausnahmen",
+        "Prozesszusammenfassung",
     ):
-        assert slot_id not in status or True  # slot_id may not be in output, titel is
+        assert titel in status, f"Pflicht-Slot '{titel}' missing from slot status"
     # Verify count: 9 lines expected
     lines = [line for line in status.splitlines() if line.strip()]
     assert len(lines) == 9, f"Expected 9 slot lines, got {len(lines)}"

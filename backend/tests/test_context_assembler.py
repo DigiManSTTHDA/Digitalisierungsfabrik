@@ -161,8 +161,8 @@ def test_prompt_context_summary_nonempty_for_minimal_context() -> None:
     project = _make_project()
     context = build_context(project, completeness_state={})
     summary = prompt_context_summary(context)
-    assert len(summary) > 0
-    assert "0/0 befüllt" in summary
+    assert "exploration" in summary  # contains the phase name
+    assert "0/0 befüllt" in summary  # contains slot counter
 
 
 # ---------------------------------------------------------------------------

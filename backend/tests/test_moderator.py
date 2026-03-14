@@ -102,13 +102,15 @@ async def test_moderator_with_mock_llm_calls_complete() -> None:
 async def test_moderator_receives_full_context() -> None:
     """Moderator context includes all required fields (FR-D-02)."""
     ctx = _make_context()
-    # Verify context has all required fields per FR-D-02
-    assert ctx.exploration_artifact is not None
-    assert ctx.structure_artifact is not None
-    assert ctx.algorithm_artifact is not None
-    assert ctx.working_memory is not None
-    assert ctx.dialog_history is not None
-    assert ctx.completeness_state is not None  # dict, may be empty
+    # Verify context has all required fields per FR-D-02 with specific checks
+    assert isinstance(ctx.exploration_artifact, ExplorationArtifact)
+    assert isinstance(ctx.structure_artifact, StructureArtifact)
+    assert isinstance(ctx.algorithm_artifact, AlgorithmArtifact)
+    assert ctx.working_memory.projekt_id == "test-id"
+    assert ctx.working_memory.befuellte_slots == 5
+    assert len(ctx.dialog_history) == 1
+    assert ctx.dialog_history[0]["role"] == "user"
+    assert isinstance(ctx.completeness_state, dict)
     assert ctx.aktive_phase == Projektphase.exploration
 
 

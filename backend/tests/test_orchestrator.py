@@ -210,7 +210,7 @@ async def test_exploration_mode_returns_valid_output() -> None:
     assert len(output.patches) == 9
     assert output.flags == []
     assert output.phasenstatus == Phasenstatus.in_progress
-    assert len(output.nutzeraeusserung) > 0
+    assert "Pflicht-Slot" in output.nutzeraeusserung or len(output.nutzeraeusserung) > 10
 
 
 async def test_structuring_mode_returns_valid_output() -> None:
@@ -219,7 +219,7 @@ async def test_structuring_mode_returns_valid_output() -> None:
     output = await mode.call(ctx)
     assert output.patches == []
     assert output.flags == []
-    assert len(output.nutzeraeusserung) > 0
+    assert "StructuringMode" in output.nutzeraeusserung
 
 
 async def test_specification_mode_returns_valid_output() -> None:
@@ -228,7 +228,7 @@ async def test_specification_mode_returns_valid_output() -> None:
     output = await mode.call(ctx)
     assert output.patches == []
     assert output.flags == []
-    assert len(output.nutzeraeusserung) > 0
+    assert "SpecificationMode" in output.nutzeraeusserung
 
 
 async def test_validation_mode_returns_valid_output() -> None:
@@ -237,7 +237,7 @@ async def test_validation_mode_returns_valid_output() -> None:
     output = await mode.call(ctx)
     assert output.patches == []
     assert output.flags == []
-    assert len(output.nutzeraeusserung) > 0
+    assert "ValidationMode" in output.nutzeraeusserung
 
 
 async def test_moderator_returns_valid_output() -> None:
@@ -246,7 +246,7 @@ async def test_moderator_returns_valid_output() -> None:
     output = await mode.call(ctx)
     assert output.patches == []
     assert output.flags == []
-    assert len(output.nutzeraeusserung) > 0
+    assert "Moderator" in output.nutzeraeusserung
 
 
 # ---------------------------------------------------------------------------
@@ -746,9 +746,9 @@ async def test_process_turn_unknown_mode_returns_error() -> None:
         modes={"exploration": ExplorationMode()},
     )
     result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
-    # Should handle gracefully — either error field set or fallback mode used
-    # The orchestrator falls back to exploration if mode not found
-    assert result is not None
+    # Orchestrator falls back to exploration mode when unknown mode requested
+    assert result.error is None  # no error — fallback worked
+    assert result.nutzeraeusserung != ""  # exploration stub produces a response
 
 
 # ---------------------------------------------------------------------------
