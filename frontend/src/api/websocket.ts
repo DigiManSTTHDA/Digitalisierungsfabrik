@@ -43,7 +43,11 @@ export function connectWebSocket(
   // Also suppresses transient errors during connect/disconnect that cause
   // rapid state updates and keyboard lag.
   newWs.onerror = () => {
-    if (ws === newWs && currentDispatch && newWs.readyState === WebSocket.OPEN) {
+    if (
+      ws === newWs &&
+      currentDispatch &&
+      newWs.readyState === WebSocket.OPEN
+    ) {
       currentDispatch({
         type: "SET_ERROR",
         error: "WebSocket-Verbindungsfehler",
@@ -53,9 +57,14 @@ export function connectWebSocket(
 
   // Guard: only null out ws if THIS connection is still the active one.
   // Prevents React 18 StrictMode double-mount from killing the second connection.
+  // Also resets isProcessing to prevent permanent input freeze if the
+  // connection drops while waiting for an LLM response.
   newWs.onclose = () => {
     if (ws === newWs) {
       ws = null;
+      if (currentDispatch) {
+        currentDispatch({ type: "SET_PROCESSING", value: false });
+      }
     }
   };
 }
