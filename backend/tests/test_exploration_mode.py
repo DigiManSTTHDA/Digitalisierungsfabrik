@@ -278,7 +278,8 @@ async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
 
     output = await mode.call(context)
 
-    assert output.phasenstatus == Phasenstatus.nearing_completion
+    # All 9 Pflicht-Slots are vollstaendig → phase_complete (triggers Moderator)
+    assert output.phasenstatus == Phasenstatus.phase_complete
 
 
 # ---------------------------------------------------------------------------

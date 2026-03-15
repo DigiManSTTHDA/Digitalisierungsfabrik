@@ -15,7 +15,7 @@ from artifacts.models import CompletenessStatus, ExplorationSlot, Phasenstatus
 from core.context_assembler import prompt_context_summary
 from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
-from modes.base import BaseMode, ModeContext, ModeOutput
+from modes.base import BaseMode, Flag, ModeContext, ModeOutput
 
 # 8 Pflicht-Slots per SDD 5.3 and FR-B-00
 PFLICHT_SLOTS: dict[str, str] = {
@@ -146,12 +146,52 @@ def _translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type
     return messages
 
 
-def _compute_phasenstatus(context: ModeContext) -> Phasenstatus:
-    """Determine phase status based on Pflicht-Slot completeness."""
+def _compute_phasenstatus_with_patches(
+    context: ModeContext,
+    patches: list[dict],  # type: ignore[type-arg]
+) -> Phasenstatus:
+    """Determine phase status accounting for patches this turn will apply.
+
+    Builds a projected view of slot completeness: starts from the current
+    artifact state, then overlays any completeness_status patches from the
+    LLM. This way, if the LLM marks the last slot as 'vollstaendig' in
+    this turn, we can immediately return phase_complete.
+    """
+    # Start with current statuses
+    projected: dict[str, CompletenessStatus] = {}
     for slot_id in PFLICHT_SLOTS:
         slot = context.exploration_artifact.slots.get(slot_id)
-        if slot is None or slot.completeness_status == CompletenessStatus.leer:
-            return Phasenstatus.in_progress
+        projected[slot_id] = slot.completeness_status if slot else CompletenessStatus.leer
+
+    # Overlay patches that set completeness_status
+    for patch in patches:
+        path = patch.get("path", "")
+        if path.endswith("/completeness_status") and patch.get("op") == "replace":
+            parts = path.strip("/").split("/")
+            if len(parts) == 3 and parts[0] == "slots" and parts[1] in PFLICHT_SLOTS:
+                try:
+                    projected[parts[1]] = CompletenessStatus(patch["value"])
+                except ValueError:
+                    pass
+        # Also: if an inhalt patch exists for a slot that is currently leer,
+        # promote it to at least teilweise (the LLM wrote content).
+        if path.endswith("/inhalt") and patch.get("op") == "replace" and patch.get("value"):
+            parts = path.strip("/").split("/")
+            if len(parts) == 3 and parts[0] == "slots" and parts[1] in PFLICHT_SLOTS:
+                if projected.get(parts[1]) == CompletenessStatus.leer:
+                    projected[parts[1]] = CompletenessStatus.teilweise
+
+    # Evaluate
+    has_leer = any(s == CompletenessStatus.leer for s in projected.values())
+    if has_leer:
+        return Phasenstatus.in_progress
+
+    all_complete = all(
+        s in (CompletenessStatus.vollstaendig, CompletenessStatus.nutzervalidiert)
+        for s in projected.values()
+    )
+    if all_complete:
+        return Phasenstatus.phase_complete
     return Phasenstatus.nearing_completion
 
 
@@ -227,12 +267,16 @@ class ExplorationMode(BaseMode):
         llm_patches = _merge_slot_patches(llm_patches, context)
         all_patches = init_patches + llm_patches
 
-        # Compute phase status
-        phasenstatus = _compute_phasenstatus(context)
+        # Compute phase status — must account for patches THIS turn will apply.
+        # Build a projected view of slot statuses after patches are applied.
+        phasenstatus = _compute_phasenstatus_with_patches(context, llm_patches)
+        flags: list[Flag] = []
+        if phasenstatus == Phasenstatus.phase_complete:
+            flags.append(Flag.phase_complete)
 
         return ModeOutput(
             nutzeraeusserung=response.nutzeraeusserung,
             patches=all_patches,
             phasenstatus=phasenstatus,
-            flags=[],
+            flags=flags,
         )
