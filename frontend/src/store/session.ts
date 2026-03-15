@@ -244,6 +244,40 @@ export async function loadProjectState(
   }
 }
 
+export async function deleteProject(
+  dispatch: Dispatch<SessionAction>,
+  projektId: string,
+): Promise<void> {
+  const resp = await fetch(`/api/projects/${projektId}`, { method: "DELETE" });
+  if (resp.ok) {
+    await loadProjects(dispatch);
+  } else {
+    dispatch({
+      type: "SET_ERROR",
+      error: "Projekt konnte nicht gelöscht werden",
+    });
+  }
+}
+
+export async function deleteProjects(
+  dispatch: Dispatch<SessionAction>,
+  projektIds: string[],
+): Promise<void> {
+  const resp = await fetch("/api/projects/batch", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ projekt_ids: projektIds }),
+  });
+  if (resp.ok) {
+    await loadProjects(dispatch);
+  } else {
+    dispatch({
+      type: "SET_ERROR",
+      error: "Projekte konnten nicht gelöscht werden",
+    });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Provider component
 // ---------------------------------------------------------------------------

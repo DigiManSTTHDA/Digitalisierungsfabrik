@@ -329,16 +329,16 @@ So that users can manage their project list by removing unwanted projects.
 
 **Definition of Done:**
 
-- [ ] `frontend/src/components/ConfirmDialog.tsx` exists and is a reusable modal
-- [ ] `frontend/src/App.tsx` — delete button per project card
-- [ ] `frontend/src/App.tsx` — multi-select checkboxes on project cards
-- [ ] `frontend/src/App.tsx` — bulk delete toolbar appears when items selected
-- [ ] `frontend/src/store/session.ts` — `deleteProject()` and `deleteProjects()` actions exist
-- [ ] Confirmation dialog shown before any deletion
-- [ ] Project list refreshed after deletion
-- [ ] `npm run lint` passes
-- [ ] `npm run format:check` passes
-- [ ] `npm run typecheck` passes
+- [x] `frontend/src/components/ConfirmDialog.tsx` exists and is a reusable modal
+- [x] `frontend/src/App.tsx` — delete button per project card ("Löschen" text)
+- [x] `frontend/src/App.tsx` — multi-select checkboxes on project cards
+- [x] `frontend/src/App.tsx` — bulk delete toolbar appears when items selected
+- [x] `frontend/src/store/session.ts` — `deleteProject()` and `deleteProjects()` actions exist
+- [x] Confirmation dialog shown before any deletion
+- [x] Project list refreshed after deletion (via loadProjects)
+- [x] `npm run lint` passes
+- [x] `npm run format:check` passes
+- [x] `npm run typecheck` passes
 
 ---
 
