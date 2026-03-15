@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    watch: {
+      // Reduce file-watcher load on Windows (chokidar + Defender interaction
+      // can cause system-wide keyboard lag). See: vitejs/vite#4665
+      usePolling: false,
+      ignored: ["**/node_modules/**", "**/.git/**", "**/data/**"],
+    },
     proxy: {
       // Proxy REST API calls to the backend during development
       "/api": {
