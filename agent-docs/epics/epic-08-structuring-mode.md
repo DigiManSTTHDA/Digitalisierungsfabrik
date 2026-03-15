@@ -147,19 +147,19 @@ So that the Structuring phase can conduct a dialog to decompose the process into
 
 **Definition of Done:**
 
-- [ ] `backend/modes/structuring.py` — full LLM implementation (no stub response when LLM client present)
-- [ ] `backend/prompts/structuring.md` exists
-- [ ] `backend/prompts/structuring.md` — German system prompt with Strukturierungsmodus role description
-- [ ] System prompt contains `{context_summary}` and `{slot_status}` placeholders
-- [ ] System prompt instructs LLM not to overwrite existing slots without asking
-- [ ] LLM called with `tool_choice: apply_patches`
-- [ ] Phase status computed from structure artifact completeness
-- [ ] `Flag.phase_complete` emitted when phase is complete
-- [ ] Stub fallback when no LLM client
-- [ ] `ruff check backend/` passes
-- [ ] `ruff format --check backend/` passes
-- [ ] `python -m mypy backend/ --explicit-package-bases` passes
-- [ ] `pytest backend/ --tb=short -q` passes with 0 failures
+- [x] `backend/modes/structuring.py` — full LLM implementation (no stub response when LLM client present)
+- [x] `backend/prompts/structuring.md` exists
+- [x] `backend/prompts/structuring.md` — German system prompt with Strukturierungsmodus role description
+- [x] System prompt contains `{context_summary}` and `{slot_status}` placeholders
+- [x] System prompt instructs LLM not to overwrite existing slots without asking
+- [x] LLM called with `tool_choice: apply_patches`
+- [x] Phase status computed from structure artifact completeness
+- [x] `Flag.phase_complete` emitted when phase is complete
+- [x] Stub fallback when no LLM client
+- [x] `ruff check backend/` passes
+- [x] `ruff format --check backend/` passes
+- [x] `python -m mypy backend/ --explicit-package-bases` passes (no new errors)
+- [x] `pytest backend/ --tb=short -q` passes — 280 passed
 
 ---
 
