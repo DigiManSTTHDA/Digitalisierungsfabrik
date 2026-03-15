@@ -317,6 +317,20 @@ async def test_structuring_prozesszusammenfassung_patch() -> None:
 
 
 @pytest.mark.asyncio
+async def test_structuring_llm_called_with_tool_choice() -> None:
+    """Verify the LLM is called with tool_choice forcing apply_patches (SDD 6.5.2)."""
+    mock_llm = _make_mock_llm()
+    mode = StructuringMode(llm_client=mock_llm)
+    ctx = _make_context()
+    await mode.call(ctx)
+
+    call_kwargs = mock_llm.complete.call_args.kwargs
+    assert call_kwargs["tool_choice"] == {"type": "tool", "name": "apply_patches"}
+    assert len(call_kwargs["tools"]) == 1
+    assert call_kwargs["tools"][0]["name"] == "apply_patches"
+
+
+@pytest.mark.asyncio
 async def test_structuring_error_on_llm_failure() -> None:
     """When LLM client raises an error, the mode propagates it (Rule T-6)."""
     mock_llm = AsyncMock(spec=LLMClient)
@@ -332,6 +346,16 @@ async def test_structuring_error_on_llm_failure() -> None:
 # ---------------------------------------------------------------------------
 # Unit tests for _compute_phasenstatus
 # ---------------------------------------------------------------------------
+
+
+def test_compute_phasenstatus_vollstaendig_is_phase_complete() -> None:
+    """When all schritte are vollstaendig (not nutzervalidiert), return phase_complete."""
+    schritte = {
+        "s1": _make_schritt("s1", status=CompletenessStatus.vollstaendig),
+        "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.vollstaendig),
+    }
+    ctx = _make_context(schritte=schritte)
+    assert _compute_phasenstatus(ctx) == Phasenstatus.phase_complete
 
 
 def test_compute_phasenstatus_nearing_completion() -> None:

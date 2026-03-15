@@ -485,15 +485,28 @@ class TestProject:
 class TestProzesszusammenfassung:
     """SDD 5.4: StructureArtifact must have a prozesszusammenfassung field."""
 
-    def test_structure_artifact_persists_prozesszusammenfassung(self) -> None:
-        """Round-trip: prozesszusammenfassung survives model_dump → model_validate."""
+    def test_structure_artifact_prozesszusammenfassung_survives_persistence(
+        self,
+    ) -> None:
+        """prozesszusammenfassung survives full persistence round-trip via repository."""
         from artifacts.models import StructureArtifact
+        from persistence.database import Database
+        from persistence.project_repository import ProjectRepository
 
-        art = StructureArtifact(prozesszusammenfassung="Test-Zusammenfassung", version=2)
-        data = art.model_dump()
-        reloaded = StructureArtifact.model_validate(data)
-        assert reloaded.prozesszusammenfassung == "Test-Zusammenfassung"
-        assert reloaded.version == 2
+        db = Database(":memory:")
+        repo = ProjectRepository(db)
+        project = repo.create("Test")
+        project.structure_artifact = StructureArtifact(
+            prozesszusammenfassung="Reisekostenprozess in 5 Schritten", version=1
+        )
+        repo.save(project)
+        reloaded = repo.load(project.projekt_id)
+        assert (
+            reloaded.structure_artifact.prozesszusammenfassung
+            == "Reisekostenprozess in 5 Schritten"
+        )
+        assert reloaded.structure_artifact.version == 1
+        db.close()
 
     def test_template_allows_replace_on_prozesszusammenfassung(self) -> None:
         """STRUCTURE_TEMPLATE must accept replace on /prozesszusammenfassung."""

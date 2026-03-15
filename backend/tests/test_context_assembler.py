@@ -157,6 +157,26 @@ def test_prompt_context_summary_contains_slot_counts() -> None:
     assert "1/2 befüllt" in summary
 
 
+def test_prompt_context_summary_contains_prozesszusammenfassung_status() -> None:
+    """prompt_context_summary shows Prozesszusammenfassung as leer or befüllt."""
+    from artifacts.models import StructureArtifact
+
+    # Empty summary → shows leer
+    project = _make_project()
+    context = build_context(project, completeness_state={})
+    summary = prompt_context_summary(context)
+    assert "Prozesszusammenfassung: leer" in summary
+
+    # Filled summary → shows befüllt
+    project2 = _make_project()
+    project2.structure_artifact = StructureArtifact(
+        prozesszusammenfassung="Zusammenfassung des Reisekostenprozesses"
+    )
+    context2 = build_context(project2, completeness_state={})
+    summary2 = prompt_context_summary(context2)
+    assert "Prozesszusammenfassung: befüllt" in summary2
+
+
 def test_prompt_context_summary_nonempty_for_minimal_context() -> None:
     project = _make_project()
     context = build_context(project, completeness_state={})

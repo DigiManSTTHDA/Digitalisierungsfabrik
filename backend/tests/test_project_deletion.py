@@ -167,6 +167,17 @@ def test_batch_delete_partial_ids(client: TestClient) -> None:
     assert resp.json()["deleted_count"] == 1
 
 
+def test_delete_idempotent_second_call_returns_404(client: TestClient) -> None:
+    """Deleting the same project twice: first 204, second 404."""
+    pid = _create_project(client)
+
+    resp1 = client.delete(f"/api/projects/{pid}")
+    assert resp1.status_code == 204
+
+    resp2 = client.delete(f"/api/projects/{pid}")
+    assert resp2.status_code == 404
+
+
 def test_batch_delete_empty_list_rejected(client: TestClient) -> None:
     """Empty projekt_ids list returns 422 (Pydantic validation)."""
     resp = client.request(
