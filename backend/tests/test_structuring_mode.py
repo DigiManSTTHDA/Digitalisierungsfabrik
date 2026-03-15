@@ -290,7 +290,7 @@ async def test_structuring_exploration_artifact_in_context() -> None:
     await mode.call(ctx)
 
     # Check that complete() was called and the system prompt contains exploration content
-    call_args = mock_llm.complete.call_args
+    call_args = mock_llm.complete.call_args  # type: ignore[attr-defined]
     system_prompt = call_args.kwargs.get("system") or call_args.args[0]
     assert "Reisekosten abrechnen" in system_prompt
     assert "Prozessziel" in system_prompt
@@ -324,7 +324,7 @@ async def test_structuring_llm_called_with_tool_choice() -> None:
     ctx = _make_context()
     await mode.call(ctx)
 
-    call_kwargs = mock_llm.complete.call_args.kwargs
+    call_kwargs = mock_llm.complete.call_args.kwargs  # type: ignore[attr-defined]
     assert call_kwargs["tool_choice"] == {"type": "tool", "name": "apply_patches"}
     assert len(call_kwargs["tools"]) == 1
     assert call_kwargs["tools"][0]["name"] == "apply_patches"

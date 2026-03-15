@@ -51,7 +51,7 @@ def _create_project(client: TestClient, name: str = "Test") -> str:
     """Helper: create a project and return its projekt_id."""
     resp = client.post("/api/projects", json={"name": name})
     assert resp.status_code == 201
-    return resp.json()["projekt_id"]
+    return str(resp.json()["projekt_id"])
 
 
 # ---------------------------------------------------------------------------
