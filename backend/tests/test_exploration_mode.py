@@ -71,6 +71,13 @@ def _make_orchestrator(repo: ProjectRepository, llm_client: LLMClient) -> Orches
     return Orchestrator(repository=repo, modes=modes)
 
 
+def _set_exploration_mode(repo: ProjectRepository, project) -> None:  # type: ignore[type-arg]
+    """Force a freshly-created project into exploration mode (FR-D-11 changed default to moderator)."""
+    project.aktiver_modus = "exploration"
+    project.working_memory.aktiver_modus = "exploration"
+    repo.save(project)
+
+
 # ---------------------------------------------------------------------------
 # Test: first turn initializes 9 Pflicht-Slots
 # ---------------------------------------------------------------------------
@@ -81,6 +88,7 @@ async def test_first_turn_initializes_pflicht_slots() -> None:
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
+    _set_exploration_mode(repo, project)
     llm = _make_mock_llm()
     orchestrator = _make_orchestrator(repo, llm)
 
@@ -115,6 +123,7 @@ async def test_patch_applied_and_persisted() -> None:
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
+    _set_exploration_mode(repo, project)
     llm = _make_mock_llm()
     orchestrator = _make_orchestrator(repo, llm)
 
@@ -139,6 +148,7 @@ async def test_dialog_history_written() -> None:
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
+    _set_exploration_mode(repo, project)
     llm = _make_mock_llm(nutzeraeusserung="Erzählen Sie mir mehr.")
     orchestrator = _make_orchestrator(repo, llm)
 
@@ -170,6 +180,7 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
+    _set_exploration_mode(repo, project)
     llm = _make_mock_llm()
     orchestrator = _make_orchestrator(repo, llm)
 
@@ -284,6 +295,7 @@ async def test_current_user_message_passed_to_llm_on_first_turn() -> None:
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
+    _set_exploration_mode(repo, project)
     llm = _make_mock_llm(patches=[])
     orchestrator = _make_orchestrator(repo, llm)
 
@@ -377,6 +389,7 @@ async def test_output_validator_rejects_invalid_path() -> None:
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
+    _set_exploration_mode(repo, project)
     llm = _make_invalid_path_llm()
     orchestrator = _make_orchestrator(repo, llm)
 

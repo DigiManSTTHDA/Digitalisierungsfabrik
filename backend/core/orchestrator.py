@@ -184,6 +184,21 @@ class Orchestrator:
             project.aktiver_modus = wm.aktiver_modus
             log.info("orchestrator.return_to_mode", mode=wm.aktiver_modus)
 
+        # FR-D-11: After Moderator greeting at system start (no flags, no
+        # vorheriger_modus, first turn), hand off to the phase's primary mode.
+        if (
+            mode_key == "moderator"
+            and not active_flags
+            and wm.vorheriger_modus is None
+            and wm.letzter_dialogturn == 1
+        ):
+            from core.phase_transition import PHASE_TO_MODE
+
+            target = PHASE_TO_MODE.get(wm.aktive_phase, "exploration")
+            wm.aktiver_modus = target
+            project.aktiver_modus = target
+            log.info("orchestrator.moderator_handoff", to_mode=target)
+
         project.working_memory = wm
         project.aktiver_modus = wm.aktiver_modus
         project.aktive_phase = wm.aktive_phase

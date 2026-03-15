@@ -61,6 +61,13 @@ def _make_orchestrator(repo: ProjectRepository) -> Orchestrator:
     return Orchestrator(repository=repo, modes=_make_default_modes())
 
 
+def _set_exploration_mode(repo: ProjectRepository, project) -> None:  # type: ignore[type-arg]
+    """Force a freshly-created project into exploration mode (FR-D-11 changed default to moderator)."""
+    project.aktiver_modus = "exploration"
+    project.working_memory.aktiver_modus = "exploration"
+    repo.save(project)
+
+
 def _make_context(wm: WorkingMemory) -> ModeContext:
     """Build a minimal ModeContext for mode stub tests."""
     return ModeContext(
@@ -315,6 +322,7 @@ async def test_correct_mode_called_for_exploration_modus() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
     orchestrator = Orchestrator(
         repository=repo,
         modes={"exploration": TrackedExploration(), "moderator": Moderator()},
@@ -344,6 +352,7 @@ async def test_mode_switch_on_phase_complete_flag() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
     orchestrator = Orchestrator(
         repository=repo,
         modes={
@@ -374,6 +383,7 @@ async def test_mode_switch_on_escalate_flag() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
     orchestrator = Orchestrator(
         repository=repo,
         modes={"exploration": EscalatingMode(), "moderator": Moderator()},
@@ -429,6 +439,7 @@ async def test_completeness_updated_after_turn() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
 
     # Pre-populate project with one exploration slot.
     # version=1 ensures save() does not skip the write (version 0 is already stored by create()).
@@ -489,6 +500,7 @@ async def test_executor_error_returns_error_output_without_save() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
     initial_version = project.exploration_artifact.version
 
     orchestrator = Orchestrator(
@@ -528,6 +540,7 @@ async def test_mode_switch_on_blocked_flag() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
     orchestrator = Orchestrator(
         repository=repo,
         modes={"exploration": BlockedMode(), "moderator": Moderator()},
@@ -555,6 +568,7 @@ async def test_wm_flags_stored_after_turn_with_flags() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
     orchestrator = Orchestrator(
         repository=repo,
         modes={"exploration": FlagEmittingMode(), "moderator": Moderator()},
@@ -647,6 +661,7 @@ async def test_invalidation_write_applied_after_structure_patch() -> None:
     project.aktive_phase = Projektphase.strukturierung
     project.aktiver_modus = "exploration"  # mode key stays the same for test simplicity
     project.working_memory.aktive_phase = Projektphase.strukturierung
+    project.working_memory.aktiver_modus = "exploration"
     repo.save(project)
 
     # Set up: one structure step referencing one algorithm section
@@ -798,6 +813,7 @@ async def test_phase_complete_triggers_moderator_then_advance() -> None:
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Phase-Transition-Test")
+    _set_exploration_mode(repo, project)
 
     # Turn 1: ExplorationMode signals phase_complete → Orchestrator switches to Moderator
     orchestrator = Orchestrator(

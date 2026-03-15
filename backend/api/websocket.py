@@ -32,9 +32,13 @@ def _build_orchestrator(repo: ProjectRepository, settings: Settings) -> Orchestr
     """Build an Orchestrator with real mode instances."""
     from llm.factory import create_llm_client
     from modes.base import BaseMode
+    from modes.moderator import Moderator
 
     llm = create_llm_client(settings)
-    modes: dict[str, BaseMode] = {"exploration": ExplorationMode(llm_client=llm)}
+    modes: dict[str, BaseMode] = {
+        "exploration": ExplorationMode(llm_client=llm),
+        "moderator": Moderator(llm_client=llm),
+    }
     return Orchestrator(repository=repo, modes=modes, settings=settings)
 
 

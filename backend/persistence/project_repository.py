@@ -29,14 +29,18 @@ class ProjectRepository:
         self._db = db
 
     def create(self, name: str, beschreibung: str = "") -> Project:
-        """Create a new project with empty artifacts and persist it immediately."""
+        """Create a new project with empty artifacts and persist it immediately.
+
+        Per SDD 6.1.0 (FR-D-11): New projects start with aktiver_modus='moderator'
+        so the Moderator greets the user before handing off to ExplorationMode.
+        """
         now = datetime.now(tz=UTC)
         projekt_id = str(uuid.uuid4())
 
         wm = WorkingMemory(
             projekt_id=projekt_id,
             aktive_phase=Projektphase.exploration,
-            aktiver_modus="exploration",
+            aktiver_modus="moderator",
             phasenstatus=Phasenstatus.in_progress,
             letzte_aenderung=now,
         )
@@ -47,7 +51,7 @@ class ProjectRepository:
             erstellt_am=now,
             zuletzt_geaendert=now,
             aktive_phase=Projektphase.exploration,
-            aktiver_modus="exploration",
+            aktiver_modus="moderator",
             projektstatus=Projektstatus.aktiv,
             working_memory=wm,
         )

@@ -265,11 +265,51 @@ def compare_artifacts(actual_exploration: dict, expected: dict) -> dict:  # type
     return results
 
 
+def send_one_turn(
+    ws,  # type: ignore[no-untyped-def]
+    text: str,
+    label: str = "",
+) -> dict:  # type: ignore[type-arg]
+    """Send a single turn message and collect the response."""
+    t0 = time.time()
+    ws.send_text(json.dumps({"type": "turn", "text": text}))
+
+    events: list[dict] = []  # type: ignore[type-arg]
+    chat_response: str | None = None
+    error_msg: str | None = None
+
+    for _ in range(EVENTS_PER_TURN):
+        try:
+            event = ws.receive_json()
+            events.append(event)
+            if event.get("event") == "chat_done":
+                chat_response = event.get("message", "")
+            elif event.get("event") == "error":
+                error_msg = event.get("message", "?")
+                break
+        except Exception:
+            break
+
+    elapsed = time.time() - t0
+    if label:
+        preview = (chat_response or error_msg or "")[:150].replace("\n", " ")
+        print(f"  [{label}] ({elapsed:.1f}s): {preview}")
+
+    return {
+        "text": text,
+        "label": label,
+        "system_response": chat_response,
+        "error": error_msg,
+        "elapsed_seconds": round(elapsed, 1),
+        "events": events,
+    }
+
+
 def main() -> None:
     print("=" * 72)
-    print("  E2E-TEST: Reisekostenabrechnung")
+    print("  E2E-TEST: Reisekostenabrechnung (Full Chain)")
+    print("  Moderator Greeting → Explorer Dialog → Moderator Phase-Transition")
     print("  Stack: FastAPI TestClient → Orchestrator → OpenAI GPT-4o → SQLite")
-    print("  Dialog: dialog-reisekosten.jsonl")
     print("=" * 72)
 
     # Load test data
@@ -289,11 +329,43 @@ def main() -> None:
     )
     assert resp.status_code == 201, f"Projekt-Erstellung fehlgeschlagen: {resp.text}"
     projekt_id = resp.json()["projekt_id"]
+    aktiver_modus = resp.json()["aktiver_modus"]
     print(f"  Projekt erstellt: {projekt_id}")
+    print(f"  Aktiver Modus: {aktiver_modus}")
+    assert aktiver_modus == "moderator", (
+        f"Neues Projekt muss mit Moderator starten (FR-D-11), ist: {aktiver_modus}"
+    )
 
-    # Run dialog
+    # ──────────────────────────────────────────────────────────────────
+    # PHASE 1: Moderator Greeting (FR-D-11)
+    # ──────────────────────────────────────────────────────────────────
     print(f"\n{'─' * 72}")
-    print("  DIALOG-SIMULATION")
+    print("  PHASE 1: MODERATOR-BEGRUESSUNG (FR-D-11)")
+    print(f"{'─' * 72}")
+
+    with client.websocket_connect(f"/ws/session/{projekt_id}") as ws:
+        greeting = send_one_turn(
+            ws, "Hallo, ich möchte einen Prozess beschreiben.", "Moderator Greeting"
+        )
+
+    assert greeting["system_response"], "Moderator muss eine Begruessung senden"
+    assert not greeting["error"], f"Moderator Greeting Error: {greeting['error']}"
+    print("\n  Moderator Greeting: OK")
+    print(f"  Antwort: {greeting['system_response'][:200]}")
+
+    # Check that mode switched to exploration after greeting
+    proj_after_greeting = client.get(f"/api/projects/{projekt_id}").json()
+    modus_after = proj_after_greeting["aktiver_modus"]
+    print(f"  Modus nach Greeting: {modus_after}")
+    assert modus_after == "exploration", (
+        f"Nach Moderator-Greeting muss Modus 'exploration' sein, ist: {modus_after}"
+    )
+
+    # ──────────────────────────────────────────────────────────────────
+    # PHASE 2: Explorer Dialog (existing test)
+    # ──────────────────────────────────────────────────────────────────
+    print(f"\n{'─' * 72}")
+    print("  PHASE 2: EXPLORER-DIALOG (13 User-Turns)")
     print(f"{'─' * 72}")
 
     t_start = time.time()
@@ -351,6 +423,44 @@ def main() -> None:
         elif r["error"]:
             resp_preview = f"ERROR: {r['error'][:60]}"
         print(f"  {status} Turn {r['user_turn']:2d} ({r['elapsed_seconds']:5.1f}s): {resp_preview}")
+
+    # ──────────────────────────────────────────────────────────────────
+    # PHASE 3: Moderator Phase-Transition (simulate phase_complete)
+    # ──────────────────────────────────────────────────────────────────
+    print(f"\n{'─' * 72}")
+    print("  PHASE 3: MODERATOR PHASE-TRANSITION")
+    print(f"{'─' * 72}")
+
+    # Use debug endpoint to advance phase — simulates the Moderator flow
+    # (In production, the Explorer would set phase_complete → Moderator activates)
+    proj_state = client.get(f"/api/projects/{projekt_id}").json()
+    print(f"  Aktuelle Phase: {proj_state['aktive_phase']}")
+    print(f"  Aktiver Modus: {proj_state['aktiver_modus']}")
+
+    advance_resp = client.post(f"/api/projects/{projekt_id}/debug/advance-phase")
+    if advance_resp.status_code == 200:
+        new_phase = advance_resp.json()["project"]["aktive_phase"]
+        new_modus = advance_resp.json()["project"]["aktiver_modus"]
+        print(f"  Phase advanced: {proj_state['aktive_phase']} -> {new_phase}")
+        print(f"  Neuer Modus: {new_modus}")
+        phase_transition_ok = new_phase == "strukturierung"
+    else:
+        print(f"  Phase advance fehlgeschlagen: {advance_resp.status_code}")
+        phase_transition_ok = False
+
+    # ──────────────────────────────────────────────────────────────────
+    # FINAL SUMMARY
+    # ──────────────────────────────────────────────────────────────────
+    print(f"\n{'=' * 72}")
+    print("  GESAMTERGEBNIS")
+    print(f"{'=' * 72}")
+    print(
+        f"  Moderator Greeting:     {'OK' if greeting['system_response'] and not greeting['error'] else 'FAIL'}"
+    )
+    print(f"  Modus-Handoff:          {'OK' if modus_after == 'exploration' else 'FAIL'}")
+    print(f"  Explorer Dialog:        {successful}/{len(responses)} Turns OK")
+    print(f"  Artifact Score:         {avg:.0%} ({verdict})")
+    print(f"  Phase Transition:       {'OK' if phase_transition_ok else 'FAIL'}")
 
     print(f"\n  Projekt-ID: {projekt_id}")
     print(f"  Gesamtdauer: {t_total:.0f}s")

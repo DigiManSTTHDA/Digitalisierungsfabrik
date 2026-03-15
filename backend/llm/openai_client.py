@@ -97,12 +97,16 @@ class OpenAIClient(LLMClient):
             call = message.tool_calls[0]
             tool_input = json.loads(call.function.arguments)
 
-        # nutzeraeusserung is a required field inside tool_input (not message.content)
-        nutzeraeusserung: str = str(tool_input.get("nutzeraeusserung", "")) if tool_input else ""
-
-        if tool_input is None:
+        # When tools were requested, nutzeraeusserung is inside tool_input.
+        # When no tools (e.g. Moderator), nutzeraeusserung is message.content.
+        if tool_input is not None:
+            nutzeraeusserung = str(tool_input.get("nutzeraeusserung", ""))
+        elif message.content:
+            nutzeraeusserung = message.content
+            tool_input = {}  # Moderator: no patches, just text
+        else:
             raise ValueError(
-                "OpenAI-Antwort enthält keinen function_call — "
+                "OpenAI-Antwort enthält weder function_call noch text — "
                 "Output-Kontrakt-Verletzung (SDD 6.5.2)"
             )
 
@@ -110,7 +114,7 @@ class OpenAIClient(LLMClient):
             logger.info(
                 "openai_client.response",
                 nutzeraeusserung_length=len(nutzeraeusserung),
-                has_tool_use=True,
+                has_tool_use=bool(message.tool_calls),
             )
 
         return LLMResponse(
