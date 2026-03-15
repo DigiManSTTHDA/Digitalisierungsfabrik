@@ -4,819 +4,930 @@
  */
 
 export interface paths {
-  "/api/projects": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Projects
+         * @description Alle Projekte auflisten (FR-G-02).
+         */
+        get: operations["list_projects_api_projects_get"];
+        put?: never;
+        /**
+         * Create Project
+         * @description Neues Projekt anlegen (FR-G-01).
+         *
+         *     Per SDD 6.1.0: Neue Projekte starten im Moderator-Modus.
+         *     Die Begrüßung erfolgt über den WebSocket bei Verbindungsaufbau (FR-D-11),
+         *     NICHT synchron hier — damit der Moderator im Modus bleibt und der
+         *     Nutzer mit ihm interagieren kann, bevor die Exploration beginnt.
+         */
+        post: operations["create_project_api_projects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * List Projects
-     * @description Alle Projekte auflisten (FR-G-02).
-     */
-    get: operations["list_projects_api_projects_get"];
-    put?: never;
-    /**
-     * Create Project
-     * @description Neues Projekt anlegen (FR-G-01).
-     */
-    post: operations["create_project_api_projects_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project
+         * @description Projektdetails laden (FR-E-02).
+         */
+        get: operations["get_project_api_projects__projekt_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Project
+         * @description Einzelnes Projekt löschen (FR-E-06: isoliert).
+         */
+        delete: operations["delete_project_api_projects__projekt_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Project
-     * @description Projektdetails laden (FR-E-02).
-     */
-    get: operations["get_project_api_projects__projekt_id__get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}/artifacts": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}/artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Artifacts
+         * @description Alle drei Artefakte eines Projekts laden (FR-B-06).
+         */
+        get: operations["get_artifacts_api_projects__projekt_id__artifacts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Artifacts
-     * @description Alle drei Artefakte eines Projekts laden (FR-B-06).
-     */
-    get: operations["get_artifacts_api_projects__projekt_id__artifacts_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}/download": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Project
+         * @description Alle drei Artefakte als JSON herunterladen (FR-B-07).
+         */
+        get: operations["download_project_api_projects__projekt_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Download Project
-     * @description Alle drei Artefakte als JSON herunterladen (FR-B-07).
-     */
-    get: operations["download_project_api_projects__projekt_id__download_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}/complete": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Projects Batch
+         * @description Mehrere Projekte gleichzeitig löschen.
+         */
+        delete: operations["delete_projects_batch_api_projects_batch_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Complete Project
-     * @description Projekt als abgeschlossen markieren (FR-G-04).
-     */
-    post: operations["complete_project_api_projects__projekt_id__complete_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}/artifacts/{typ}/versions": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Project
+         * @description Projekt als abgeschlossen markieren (FR-G-04).
+         */
+        post: operations["complete_project_api_projects__projekt_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * List Artifact Versions
-     * @description Versionshistorie eines Artefakts (FR-B-10).
-     */
-    get: operations["list_artifact_versions_api_projects__projekt_id__artifacts__typ__versions_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}/artifacts/{typ}/restore": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}/artifacts/{typ}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Artifact Versions
+         * @description Versionshistorie eines Artefakts (FR-B-10).
+         */
+        get: operations["list_artifact_versions_api_projects__projekt_id__artifacts__typ__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Restore Artifact Version
-     * @description Version wiederherstellen — erzeugt neue Version (FR-B-10).
-     */
-    post: operations["restore_artifact_version_api_projects__projekt_id__artifacts__typ__restore_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}/import": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}/artifacts/{typ}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore Artifact Version
+         * @description Version wiederherstellen — erzeugt neue Version (FR-B-10).
+         */
+        post: operations["restore_artifact_version_api_projects__projekt_id__artifacts__typ__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Import Artifact
-     * @description Artefakt importieren und validieren (FR-B-07, FR-C-04).
-     */
-    post: operations["import_artifact_api_projects__projekt_id__import_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects/{projekt_id}/debug/advance-phase": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Artifact
+         * @description Artefakt importieren und validieren (FR-B-07, FR-C-04).
+         */
+        post: operations["import_artifact_api_projects__projekt_id__import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Debug Advance Phase */
-    post: operations["debug_advance_phase_api_projects__projekt_id__debug_advance_phase_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/health": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects/{projekt_id}/debug/advance-phase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Debug Advance Phase */
+        post: operations["debug_advance_phase_api_projects__projekt_id__debug_advance_phase_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Health Check
-     * @description Liveness probe — returns ok when the server is running.
-     */
-    get: operations["health_check_health_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health Check
+         * @description Liveness probe — returns ok when the server is running.
+         */
+        get: operations["health_check_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /**
-     * AdvancePhaseResponse
-     * @description Response for POST /api/projects/{id}/debug/advance-phase.
-     */
-    AdvancePhaseResponse: {
-      project: components["schemas"]["ProjectResponse"];
+    schemas: {
+        /**
+         * AdvancePhaseResponse
+         * @description Response for POST /api/projects/{id}/debug/advance-phase.
+         */
+        AdvancePhaseResponse: {
+            project: components["schemas"]["ProjectResponse"];
+        };
+        /**
+         * ArtifactImportRequest
+         * @description Request body for POST /api/projects/{id}/import (FR-B-07, FR-C-04).
+         */
+        ArtifactImportRequest: {
+            /**
+             * Typ
+             * @enum {string}
+             */
+            typ: "exploration" | "struktur" | "algorithmus";
+            /** Artefakt */
+            artefakt: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ArtifactRestoreRequest
+         * @description Request body for POST /api/projects/{id}/artifacts/{typ}/restore.
+         */
+        ArtifactRestoreRequest: {
+            /** Version */
+            version: number;
+        };
+        /**
+         * ArtifactRestoreResponse
+         * @description Response for POST restore and POST import.
+         */
+        ArtifactRestoreResponse: {
+            /** Artefakt */
+            artefakt: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ArtifactVersionInfo
+         * @description Single version entry in the version history list.
+         */
+        ArtifactVersionInfo: {
+            /** Version */
+            version: number;
+            /** Erstellt Am */
+            erstellt_am: string;
+            /** Created By */
+            created_by: string;
+        };
+        /**
+         * ArtifactVersionsResponse
+         * @description Response for GET /api/projects/{id}/artifacts/{typ}/versions (FR-B-10).
+         */
+        ArtifactVersionsResponse: {
+            /** Versions */
+            versions: components["schemas"]["ArtifactVersionInfo"][];
+        };
+        /**
+         * ArtifactsResponse
+         * @description Response for GET /api/projects/{id}/artifacts (FR-B-06).
+         */
+        ArtifactsResponse: {
+            /** Exploration */
+            exploration: {
+                [key: string]: unknown;
+            };
+            /** Struktur */
+            struktur: {
+                [key: string]: unknown;
+            };
+            /** Algorithmus */
+            algorithmus: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DownloadResponse
+         * @description Response for GET /api/projects/{id}/download (FR-B-07).
+         */
+        DownloadResponse: {
+            /** Exploration */
+            exploration: {
+                [key: string]: unknown;
+            };
+            /** Struktur */
+            struktur: {
+                [key: string]: unknown;
+            };
+            /** Algorithmus */
+            algorithmus: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ErrorResponse
+         * @description Standard error response body.
+         */
+        ErrorResponse: {
+            /** Detail */
+            detail: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HealthResponse */
+        HealthResponse: {
+            /** Status */
+            status: string;
+        };
+        /**
+         * ProjectCompleteResponse
+         * @description Response for POST /api/projects/{id}/complete (FR-G-04).
+         */
+        ProjectCompleteResponse: {
+            project: components["schemas"]["ProjectResponse"];
+        };
+        /**
+         * ProjectCreateRequest
+         * @description Request body for POST /api/projects (FR-G-01).
+         */
+        ProjectCreateRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Beschreibung
+             * @default
+             */
+            beschreibung: string;
+        };
+        /**
+         * ProjectDeleteBatchRequest
+         * @description Request body for DELETE /api/projects/batch.
+         */
+        ProjectDeleteBatchRequest: {
+            /** Projekt Ids */
+            projekt_ids: string[];
+        };
+        /**
+         * ProjectDeleteBatchResponse
+         * @description Response for DELETE /api/projects/batch.
+         */
+        ProjectDeleteBatchResponse: {
+            /** Deleted Count */
+            deleted_count: number;
+        };
+        /**
+         * ProjectListResponse
+         * @description Response for GET /api/projects (FR-G-02).
+         */
+        ProjectListResponse: {
+            /** Projects */
+            projects: components["schemas"]["ProjectResponse"][];
+        };
+        /**
+         * ProjectResponse
+         * @description Project metadata — all SDD 7.2.1 fields.
+         */
+        ProjectResponse: {
+            /** Projekt Id */
+            projekt_id: string;
+            /** Name */
+            name: string;
+            /** Beschreibung */
+            beschreibung: string;
+            /**
+             * Erstellt Am
+             * Format: date-time
+             */
+            erstellt_am: string;
+            /**
+             * Zuletzt Geaendert
+             * Format: date-time
+             */
+            zuletzt_geaendert: string;
+            aktive_phase: components["schemas"]["Projektphase"];
+            /** Aktiver Modus */
+            aktiver_modus: string;
+            projektstatus: components["schemas"]["Projektstatus"];
+        };
+        /**
+         * Projektphase
+         * @description Aktive Phase des Projekts.
+         * @enum {string}
+         */
+        Projektphase: "exploration" | "strukturierung" | "spezifikation" | "validierung" | "abgeschlossen";
+        /**
+         * Projektstatus
+         * @description Gesamtstatus des Projekts (SDD 8.4, 6.4).
+         * @enum {string}
+         */
+        Projektstatus: "aktiv" | "pausiert" | "abgeschlossen";
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
     };
-    /**
-     * ArtifactImportRequest
-     * @description Request body for POST /api/projects/{id}/import (FR-B-07, FR-C-04).
-     */
-    ArtifactImportRequest: {
-      /**
-       * Typ
-       * @enum {string}
-       */
-      typ: "exploration" | "struktur" | "algorithmus";
-      /** Artefakt */
-      artefakt: {
-        [key: string]: unknown;
-      };
-    };
-    /**
-     * ArtifactRestoreRequest
-     * @description Request body for POST /api/projects/{id}/artifacts/{typ}/restore.
-     */
-    ArtifactRestoreRequest: {
-      /** Version */
-      version: number;
-    };
-    /**
-     * ArtifactRestoreResponse
-     * @description Response for POST restore and POST import.
-     */
-    ArtifactRestoreResponse: {
-      /** Artefakt */
-      artefakt: {
-        [key: string]: unknown;
-      };
-    };
-    /**
-     * ArtifactVersionInfo
-     * @description Single version entry in the version history list.
-     */
-    ArtifactVersionInfo: {
-      /** Version */
-      version: number;
-      /** Erstellt Am */
-      erstellt_am: string;
-      /** Created By */
-      created_by: string;
-    };
-    /**
-     * ArtifactVersionsResponse
-     * @description Response for GET /api/projects/{id}/artifacts/{typ}/versions (FR-B-10).
-     */
-    ArtifactVersionsResponse: {
-      /** Versions */
-      versions: components["schemas"]["ArtifactVersionInfo"][];
-    };
-    /**
-     * ArtifactsResponse
-     * @description Response for GET /api/projects/{id}/artifacts (FR-B-06).
-     */
-    ArtifactsResponse: {
-      /** Exploration */
-      exploration: {
-        [key: string]: unknown;
-      };
-      /** Struktur */
-      struktur: {
-        [key: string]: unknown;
-      };
-      /** Algorithmus */
-      algorithmus: {
-        [key: string]: unknown;
-      };
-    };
-    /**
-     * DownloadResponse
-     * @description Response for GET /api/projects/{id}/download (FR-B-07).
-     */
-    DownloadResponse: {
-      /** Exploration */
-      exploration: {
-        [key: string]: unknown;
-      };
-      /** Struktur */
-      struktur: {
-        [key: string]: unknown;
-      };
-      /** Algorithmus */
-      algorithmus: {
-        [key: string]: unknown;
-      };
-    };
-    /**
-     * ErrorResponse
-     * @description Standard error response body.
-     */
-    ErrorResponse: {
-      /** Detail */
-      detail: string;
-    };
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][];
-    };
-    /** HealthResponse */
-    HealthResponse: {
-      /** Status */
-      status: string;
-    };
-    /**
-     * ProjectCompleteResponse
-     * @description Response for POST /api/projects/{id}/complete (FR-G-04).
-     */
-    ProjectCompleteResponse: {
-      project: components["schemas"]["ProjectResponse"];
-    };
-    /**
-     * ProjectCreateRequest
-     * @description Request body for POST /api/projects (FR-G-01).
-     */
-    ProjectCreateRequest: {
-      /** Name */
-      name: string;
-      /**
-       * Beschreibung
-       * @default
-       */
-      beschreibung: string;
-    };
-    /**
-     * ProjectListResponse
-     * @description Response for GET /api/projects (FR-G-02).
-     */
-    ProjectListResponse: {
-      /** Projects */
-      projects: components["schemas"]["ProjectResponse"][];
-    };
-    /**
-     * ProjectResponse
-     * @description Project metadata — all SDD 7.2.1 fields.
-     */
-    ProjectResponse: {
-      /** Projekt Id */
-      projekt_id: string;
-      /** Name */
-      name: string;
-      /** Beschreibung */
-      beschreibung: string;
-      /**
-       * Erstellt Am
-       * Format: date-time
-       */
-      erstellt_am: string;
-      /**
-       * Zuletzt Geaendert
-       * Format: date-time
-       */
-      zuletzt_geaendert: string;
-      aktive_phase: components["schemas"]["Projektphase"];
-      /** Aktiver Modus */
-      aktiver_modus: string;
-      projektstatus: components["schemas"]["Projektstatus"];
-    };
-    /**
-     * Projektphase
-     * @description Aktive Phase des Projekts.
-     * @enum {string}
-     */
-    Projektphase:
-      | "exploration"
-      | "strukturierung"
-      | "spezifikation"
-      | "validierung"
-      | "abgeschlossen";
-    /**
-     * Projektstatus
-     * @description Gesamtstatus des Projekts (SDD 8.4, 6.4).
-     * @enum {string}
-     */
-    Projektstatus: "aktiv" | "pausiert" | "abgeschlossen";
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-      /** Input */
-      input?: unknown;
-      /** Context */
-      ctx?: Record<string, never>;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  list_projects_api_projects_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    list_projects_api_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectListResponse"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    create_project_api_projects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["ProjectListResponse"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreateRequest"];
+            };
         };
-      };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
     };
-  };
-  create_project_api_projects_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    get_project_api_projects__projekt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ProjectCreateRequest"];
-      };
+    delete_project_api_projects__projekt_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown;
+    get_artifacts_api_projects__projekt_id__artifacts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["ProjectResponse"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactsResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Unprocessable Content */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
     };
-  };
-  get_project_api_projects__projekt_id__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-      };
-      cookie?: never;
+    download_project_api_projects__projekt_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    delete_projects_batch_api_projects_batch_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["ProjectResponse"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectDeleteBatchRequest"];
+            };
         };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectDeleteBatchResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  get_artifacts_api_projects__projekt_id__artifacts_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-      };
-      cookie?: never;
+    complete_project_api_projects__projekt_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectCompleteResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    list_artifact_versions_api_projects__projekt_id__artifacts__typ__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+                typ: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["ArtifactsResponse"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactVersionsResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  download_project_api_projects__projekt_id__download_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-      };
-      cookie?: never;
+    restore_artifact_version_api_projects__projekt_id__artifacts__typ__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+                typ: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactRestoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactRestoreResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    import_artifact_api_projects__projekt_id__import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["DownloadResponse"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactImportRequest"];
+            };
         };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactRestoreResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  complete_project_api_projects__projekt_id__complete_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-      };
-      cookie?: never;
+    debug_advance_phase_api_projects__projekt_id__debug_advance_phase_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projekt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdvancePhaseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    health_check_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["ProjectCompleteResponse"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
         };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  list_artifact_versions_api_projects__projekt_id__artifacts__typ__versions_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-        typ: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ArtifactVersionsResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Unprocessable Content */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  restore_artifact_version_api_projects__projekt_id__artifacts__typ__restore_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-        typ: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ArtifactRestoreRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ArtifactRestoreResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Unprocessable Content */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  import_artifact_api_projects__projekt_id__import_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ArtifactImportRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ArtifactRestoreResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description Unprocessable Content */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  debug_advance_phase_api_projects__projekt_id__debug_advance_phase_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        projekt_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["AdvancePhaseResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  health_check_health_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HealthResponse"];
-        };
-      };
-    };
-  };
 }

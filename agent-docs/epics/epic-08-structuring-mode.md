@@ -361,9 +361,9 @@ So that frontend and backend stay in sync per ADR-001.
 
 **Definition of Done:**
 
-- [ ] `api-contract/openapi.json` updated with new endpoints and schema
-- [ ] `frontend/src/generated/api.d.ts` regenerated
-- [ ] Both files committed together
-- [ ] `npm run typecheck` passes
-- [ ] Backend DoD passes: `ruff check`, `ruff format --check`, `mypy`, `pytest`
-- [ ] Frontend DoD passes: `npm run lint`, `npm run format:check`, `npm run typecheck`
+- [x] `api-contract/openapi.json` updated with new DELETE endpoints and schemas
+- [x] `frontend/src/generated/api.d.ts` regenerated
+- [x] Both files committed together (this commit)
+- [x] `npm run typecheck` passes
+- [x] Backend DoD passes: `ruff check`, `ruff format --check`, `mypy`, `pytest`
+- [x] Frontend DoD passes: `npm run lint`, `npm run format:check`, `npm run typecheck`
