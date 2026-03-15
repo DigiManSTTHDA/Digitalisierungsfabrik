@@ -199,16 +199,43 @@ Avoid overly complex fixtures.
 Each test should create only the data it needs.
 
 ------------------------------------------------
-ANTI-PATTERNS
+ANTI-PATTERNS — TAUTOLOGICAL TEST DETECTION
 ------------------------------------------------
 
-Reject tests that:
+For EVERY test, apply Rule T-1: "What code change would make this fail?"
+If the answer is "nothing reasonable", the test is tautological.
 
-- only check that code runs
-- only check types
-- assert trivial truths
-- duplicate the implementation logic
+Reject and **rewrite** tests that:
+
+- only check that code runs without verifying the result
+- only check types or isinstance
+- assert trivial truths (enum values equal themselves, constructor defaults)
+- duplicate the implementation logic (bug mirroring)
 - rely on fragile internal details
+- only verify serialization round-trips without domain logic
+- check enum member count (`len(MyEnum) == N`)
+- verify that a constructor returns the values passed to it
+
+**Action when found:** Do NOT leave tautological tests in place. Rewrite the
+assertions to test real, falsifiable behaviour. Keep the test function name
+and location — replace the body with meaningful assertions.
+
+Example — BEFORE (tautological):
+```python
+def test_artifact_default():
+    art = ExplorationArtifact()
+    assert art.slots == {}  # just tests constructor default
+```
+
+Example — AFTER (hardened):
+```python
+def test_artifact_empty_slots_counted_as_zero_completeness():
+    art = ExplorationArtifact()
+    calc = CompletenessCalculator()
+    _, filled, known = calc.calculate(art, StructureArtifact(), AlgorithmArtifact())
+    assert filled == 0
+    assert known == 0
+```
 
 ------------------------------------------------
 AI TEST PITFALL: BUG MIRRORING
@@ -288,15 +315,20 @@ Examples:
 STRICT PROHIBITIONS
 ------------------------------------------------
 
-Never weaken existing tests.
+Never weaken existing tests. Never delete tests to make the suite green.
 
 Do NOT:
 
-- delete tests
+- delete tests to suppress failures
 - mark tests as skipped
-- weaken assertions
+- weaken assertions (e.g. `== 5` → `>= 0`)
 - remove negative test cases
 - reduce coverage
+
+You MUST however **harden** tautological tests (Rule T-1 violations).
+Rewriting a trivial assertion into a stricter, falsifiable one is not
+"weakening" — it is fixing a defective test. The test function stays,
+the body gets stronger assertions that test real behaviour.
 
 ------------------------------------------------
 EPIC LOG UPDATE

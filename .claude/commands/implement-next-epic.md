@@ -92,17 +92,37 @@ For each Story in order:
 2. Identify the SDD section it implements — read only that section
    (use offset/limit on the SDD file, not the full document).
 3. Run the library search (Step 2) for this story's logic.
-4. Write failing tests first (TDD — red phase).
-5. Write the minimum implementation to make tests pass (green phase).
-6. Refactor if needed — keep tests green (refactor phase).
-7. Check file size: if any touched file exceeds 300 lines, split it now.
-8. Run all DoD commands — every command must exit 0.
-9. **Run Critic review** (see STEP 3a below).
-10. Fix any issues raised by the Critic.
-11. Re-run DoD commands — must still pass.
-12. Run Mini-Audit (see STEP 3b below).
-13. Fix any issues found.
-14. Mark all DoD checkboxes in the epic document.
+4. **Design tests before writing them (test design phase).**
+   Before writing any test code, list 3–8 behaviours this story must
+   guarantee. Each behaviour is one sentence starting with "It must …"
+   or "When … then …". Focus on:
+   - What happens on valid input (happy path with **specific** expected values)
+   - What happens on invalid/missing/boundary input (error paths)
+   - What state changes are observable after the operation
+   - What side effects occur (DB writes, mode switches, flag emissions)
+
+   Do NOT list:
+   - "Constructor creates object" — that is language-guaranteed
+   - "Enum has values" — that is definition, not behaviour
+   - "Serialization round-trips" — unless the story specifically requires
+     cross-system serialization
+
+   Each behaviour becomes one test. If a test cannot be linked to a
+   behaviour in this list, it should not exist.
+5. Write failing tests for the behaviours listed above (TDD — red phase).
+   Every test must assert on **observable outcomes** (returned values,
+   DB state after reload, HTTP status + response body, emitted events).
+   Never assert only on in-memory constructor state.
+6. Write the minimum implementation to make tests pass (green phase).
+7. Refactor if needed — keep tests green (refactor phase).
+8. Check file size: if any touched file exceeds 300 lines, split it now.
+9. Run all DoD commands — every command must exit 0.
+10. **Run Critic review** (see STEP 3a below).
+11. Fix any issues raised by the Critic.
+12. Re-run DoD commands — must still pass.
+13. Run Mini-Audit (see STEP 3b below).
+14. Fix any issues found.
+15. Mark all DoD checkboxes in the epic document.
 15. Commit with a meaningful message referencing the story.
 
 **DoD commands (run from backend/ with venv active):**
@@ -132,6 +152,16 @@ Read the implementation you just wrote and actively look for:
 - Overly complex solutions where simpler ones exist
 - Tests that only assert `is not None` or `len > 0` (too weak)
 - Missing negative test cases
+- **Tautological tests (Rule T-1):** For each test, ask: "What code change
+  would make this fail?" If the answer is "nothing reasonable", the test
+  MUST be rewritten. Common offenders:
+  - Asserting enum values equal themselves (`assert Flag.x == "x"`)
+  - Asserting constructor defaults (`assert obj.field == default`)
+  - Asserting serialization round-trips without domain logic
+  - Asserting `isinstance` on freshly constructed objects
+  - Asserting `len(SomeEnum) == N`
+  Rewrite each into a test that exercises real behaviour and would break
+  if the corresponding production code had a bug.
 
 Produce a short Critic Report:
 

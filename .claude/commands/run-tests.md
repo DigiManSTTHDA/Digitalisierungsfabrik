@@ -82,16 +82,37 @@ After all tests pass, verify infrastructure correctness:
 3. Verify error messages in error responses are non-empty.
 
 ------------------------------------------------
+STEP 5 — TAUTOLOGICAL TEST CHECK (Rule T-1)
+------------------------------------------------
+
+After all tests pass, scan every test added or modified in this Epic.
+
+For each test, ask: "What production code change would make this fail?"
+
+If the answer is "nothing reasonable", the test is tautological.
+
+Common tautological patterns:
+- Asserting enum values equal themselves
+- Asserting constructor returns passed values / defaults
+- Asserting isinstance on freshly constructed objects
+- Asserting serialization round-trips without domain logic
+- Asserting len(SomeEnum) == N
+
+Action: Rewrite the test body to assert on real, observable behaviour.
+This is not "weakening" — it is hardening a defective test.
+
+------------------------------------------------
 FINAL VERIFICATION
 ------------------------------------------------
 
 Verify:
 
-- no tests were deleted
+- no tests were deleted to suppress failures
 - no tests were skipped
 - no assertions were weakened
 - all checks pass
 - resource cleanup is tested (Rule T-5)
+- no tautological tests remain (Rule T-1)
 
 ------------------------------------------------
 EPIC LOG UPDATE

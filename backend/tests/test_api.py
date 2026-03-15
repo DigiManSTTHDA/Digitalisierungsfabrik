@@ -58,9 +58,9 @@ def test_create_project(client: TestClient) -> None:
     assert data["name"] == "Test"
     assert data["beschreibung"] == "Desc"
     assert data["aktive_phase"] == "exploration"
-    # FR-D-11: After creation, moderator greeting runs immediately,
-    # then handoff to exploration — so mode is already "exploration"
-    assert data["aktiver_modus"] == "exploration"
+    # FR-D-11: Project starts in moderator mode. Greeting and handoff
+    # happen over WebSocket, not synchronously at creation time.
+    assert data["aktiver_modus"] == "moderator"
     assert data["projektstatus"] == "aktiv"
     # Verify timestamps are valid ISO 8601 strings
     from datetime import datetime
@@ -112,7 +112,7 @@ def test_get_project(client: TestClient) -> None:
     assert data["name"] == "Proj"
     assert data["beschreibung"] == "D"
     assert data["aktive_phase"] == "exploration"
-    assert data["aktiver_modus"] == "exploration"  # FR-D-11: greeting already done
+    assert data["aktiver_modus"] == "moderator"  # FR-D-11: greeting on WS, not REST
     assert data["projektstatus"] == "aktiv"
     # Verify timestamps are parseable ISO strings
     from datetime import datetime

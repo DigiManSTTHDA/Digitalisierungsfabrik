@@ -40,8 +40,10 @@ export function connectWebSocket(
 
   // Guard: only dispatch error if THIS connection is still the active one.
   // Prevents React 18 StrictMode's first (discarded) connection from showing errors.
+  // Also suppresses transient errors during connect/disconnect that cause
+  // rapid state updates and keyboard lag.
   newWs.onerror = () => {
-    if (ws === newWs && currentDispatch) {
+    if (ws === newWs && currentDispatch && newWs.readyState === WebSocket.OPEN) {
       currentDispatch({
         type: "SET_ERROR",
         error: "WebSocket-Verbindungsfehler",

@@ -397,10 +397,11 @@ async def test_mode_switch_on_escalate_flag() -> None:
 
 
 async def test_no_mode_switch_without_trigger_flags() -> None:
-    """aktiver_modus stays 'exploration' when no trigger flag is set."""
+    """aktiver_modus stays unchanged when no trigger flag is set."""
     db = _make_db()
     repo = _make_repo(db)
     project = repo.create("Test-Projekt")
+    _set_exploration_mode(repo, project)
     orchestrator = _make_orchestrator(repo)
 
     await orchestrator.process_turn(project.projekt_id, TurnInput(text="Weiter"))
@@ -861,5 +862,31 @@ async def test_moderator_return_to_mode_restores_previous() -> None:
     result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Nein, bleib"))
     assert result.error is None
     reloaded = repo.load(project.projekt_id)
+    assert reloaded.aktiver_modus == "exploration"
+    assert reloaded.working_memory.vorheriger_modus is None
+
+
+@pytest.mark.asyncio
+async def test_moderator_return_to_mode_without_previous_uses_phase_primary() -> None:
+    """FR-D-11: return_to_mode with no vorheriger_modus switches to phase primary mode."""
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Start-Handoff-Test")
+
+    # Project starts in moderator mode with no previous mode (system start)
+    assert project.working_memory.aktiver_modus == "moderator"
+    assert project.working_memory.vorheriger_modus is None
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={
+            "exploration": ExplorationMode(),
+            "moderator": ReturnToModeMode(),  # signals return_to_mode
+        },
+    )
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Los gehts"))
+    assert result.error is None
+    reloaded = repo.load(project.projekt_id)
+    # With no vorheriger_modus, return_to_mode defaults to phase primary mode
     assert reloaded.aktiver_modus == "exploration"
     assert reloaded.working_memory.vorheriger_modus is None

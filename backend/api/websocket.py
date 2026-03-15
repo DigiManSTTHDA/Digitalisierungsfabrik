@@ -7,6 +7,7 @@ defined in core/events.py (Epic 04, ADR-003).
 
 from __future__ import annotations
 
+import asyncio
 import json
 
 import structlog
@@ -26,6 +27,10 @@ from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
 logger = structlog.get_logger()
+
+# Guard against React 18 StrictMode double-mount triggering duplicate greetings.
+# Tracks project IDs with an in-flight greeting to prevent concurrent LLM calls.
+_greeting_in_progress: set[str] = set()
 
 
 def _build_orchestrator(repo: ProjectRepository, settings: Settings) -> Orchestrator:
@@ -90,6 +95,55 @@ async def _send_turn_events(
     )
 
 
+async def _replay_last_assistant_message(
+    ws: WebSocket,
+    repo: ProjectRepository,
+    project_id: str,
+) -> None:
+    """Replay the most recent assistant message from dialog history."""
+    history = repo.load_dialog_history(project_id, last_n=1)
+    if history and history[0].get("role") == "assistant":
+        msg = history[0].get("inhalt", "")
+        if msg:
+            await _send_event(ws, ChatDoneEvent(message=msg))
+
+
+async def _handle_greeting(
+    ws: WebSocket,
+    orchestrator: Orchestrator,
+    repo: ProjectRepository,
+    project_id: str,
+    log: structlog.stdlib.BoundLogger,
+) -> None:
+    """Handle moderator greeting for fresh projects (FR-D-11).
+
+    Guards against React 18 StrictMode double-mount:
+    - First connection runs the greeting via LLM and sends events.
+    - Second connection (if first is still in-flight) waits for completion
+      then replays from dialog history.
+    """
+    if project_id not in _greeting_in_progress:
+        # First connection — run the greeting turn
+        _greeting_in_progress.add(project_id)
+        try:
+            output = await orchestrator.process_turn(
+                project_id, TurnInput(text="[Systemstart]")
+            )
+            await _send_turn_events(ws, output, repo, project_id)
+        except Exception:
+            log.exception("websocket.greeting_error")
+        finally:
+            _greeting_in_progress.discard(project_id)
+    else:
+        # Another connection is already handling the greeting (StrictMode).
+        # Wait for it to complete, then replay from dialog history.
+        for _ in range(50):  # up to 10 seconds
+            await asyncio.sleep(0.2)
+            if project_id not in _greeting_in_progress:
+                break
+        await _replay_last_assistant_message(ws, repo, project_id)
+
+
 async def websocket_session(ws: WebSocket, project_id: str) -> None:
     """Handle a WebSocket session for a project (HLA 3.2)."""
     await ws.accept()
@@ -100,7 +154,7 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
 
     # Validate project exists before allocating resources
     try:
-        repo.load(project_id)
+        project = repo.load(project_id)
     except ValueError:
         await _send_event(
             ws,
@@ -112,16 +166,19 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
 
     orchestrator = _build_orchestrator(repo, settings)
 
-    # FR-D-11: If project has a moderator greeting in dialog history (turn 1),
-    # send it as chat_done event so the user sees it in the chat pane.
-    # The greeting itself is triggered by the REST endpoint (router.py) at project
-    # creation time, not here — this avoids React StrictMode double-mount issues.
-    project = repo.load(project_id)
-    greeting_history = repo.load_dialog_history(project_id, last_n=1)
-    if greeting_history and greeting_history[0].get("role") == "assistant":
-        first_msg = greeting_history[0].get("inhalt", "")
-        if first_msg:
-            await _send_event(ws, ChatDoneEvent(message=first_msg))
+    # FR-D-11: Handle greeting for fresh projects.
+    # If the project is in moderator mode and has no dialog history yet,
+    # run the greeting turn. The moderator STAYS in moderator mode (no auto-handoff).
+    greeting_needed = (
+        project.working_memory.aktiver_modus == "moderator"
+        and project.working_memory.letzter_dialogturn == 0
+    )
+
+    if greeting_needed:
+        await _handle_greeting(ws, orchestrator, repo, project_id, log)
+    elif project.working_memory.letzter_dialogturn > 0:
+        # Existing project or project with history: replay last assistant message
+        await _replay_last_assistant_message(ws, repo, project_id)
 
     try:
         while True:

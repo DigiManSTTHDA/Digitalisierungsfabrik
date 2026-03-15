@@ -178,26 +178,19 @@ class Orchestrator:
                 log.info("orchestrator.phase_advanced", new_phase=wm.aktive_phase.value)
 
         # Moderator signals: return to previous mode (FR-D-09 AC#4)
-        if Flag.return_to_mode in active_flags and wm.vorheriger_modus:
-            wm.aktiver_modus = wm.vorheriger_modus
-            wm.vorheriger_modus = None
+        # Also handles system start: if no vorheriger_modus, switch to
+        # the current phase's primary mode (FR-D-11).
+        if Flag.return_to_mode in active_flags:
+            if wm.vorheriger_modus:
+                wm.aktiver_modus = wm.vorheriger_modus
+                wm.vorheriger_modus = None
+            else:
+                # System start or no previous mode: switch to phase primary mode
+                from core.phase_transition import PHASE_TO_MODE
+
+                wm.aktiver_modus = PHASE_TO_MODE.get(wm.aktive_phase, "exploration")
             project.aktiver_modus = wm.aktiver_modus
             log.info("orchestrator.return_to_mode", mode=wm.aktiver_modus)
-
-        # FR-D-11: After Moderator greeting at system start (no flags, no
-        # vorheriger_modus, first turn), hand off to the phase's primary mode.
-        if (
-            mode_key == "moderator"
-            and not active_flags
-            and wm.vorheriger_modus is None
-            and wm.letzter_dialogturn == 1
-        ):
-            from core.phase_transition import PHASE_TO_MODE
-
-            target = PHASE_TO_MODE.get(wm.aktive_phase, "exploration")
-            wm.aktiver_modus = target
-            project.aktiver_modus = target
-            log.info("orchestrator.moderator_handoff", to_mode=target)
 
         project.working_memory = wm
         project.aktiver_modus = wm.aktiver_modus

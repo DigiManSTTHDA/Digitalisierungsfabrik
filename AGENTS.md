@@ -299,13 +299,56 @@ These rules exist to prevent tests that pass trivially without proving anything.
 
 **Rule T-1 — Every test must be falsifiable.**
 Before committing a test, ask: "What code change would make this test fail?" If the answer
-is "nothing reasonable", the test is not a test — it is noise. Replace it or delete it.
+is "nothing reasonable", the test is not a test — it is noise. **Harden it** by replacing
+the trivial assertion with one that tests real logic, or delete it if no meaningful
+assertion exists.
 
 Tautological tests that must never be written:
 - Tests that verify a property guaranteed by the language or framework (e.g. that a `StrEnum`
   member is a `str`, that Pydantic rejects a wrong type)
 - Tests that call a function and only assert it does not raise, without checking the result
 - Tests whose docstring describes behaviour X but whose assertions do not actually verify X
+- Tests that only verify a constructor returns the values passed to it
+- Tests that only verify serialization round-trips (`model_dump` → `model_validate`) without
+  testing any domain logic
+- Tests that check enum member count (`len(MyEnum) == N`) or enum values equal themselves
+
+**Concrete examples — BAD vs. GOOD:**
+
+BAD (tautological — no code change can break this):
+```python
+def test_flag_enum_values_match_sdd():
+    assert Flag.phase_complete == "phase_complete"  # StrEnum guarantees this
+```
+
+GOOD (falsifiable — breaks if transition logic changes):
+```python
+def test_phase_complete_flag_triggers_moderator_switch():
+    # ... set up orchestrator with mode that emits phase_complete ...
+    assert reloaded.aktiver_modus == "moderator"
+```
+
+BAD (tautological — only tests Pydantic constructor):
+```python
+def test_exploration_artifact_default():
+    art = ExplorationArtifact()
+    assert art.slots == {}
+    assert art.version == 0
+```
+
+GOOD (falsifiable — breaks if persistence serialization diverges):
+```python
+def test_exploration_artifact_persists_with_filled_slots():
+    art = ExplorationArtifact(slots={"s1": slot_with_content}, version=3)
+    repo.save(project)
+    reloaded = repo.load(project.projekt_id)
+    assert reloaded.exploration_artifact.slots["s1"].inhalt == "expected content"
+    assert reloaded.exploration_artifact.version == 3
+```
+
+**When you encounter an existing tautological test:** Do not leave it as-is. Rewrite it
+to test real behaviour. The test function name and file location may stay — the assertions
+must change to be falsifiable.
 
 **Rule T-2 — Test the contract in both directions.**
 Every component that accepts or rejects input needs both a happy-path test and a negative
