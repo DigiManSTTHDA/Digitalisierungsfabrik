@@ -149,3 +149,28 @@ All stories passed Critic review and Mini-Audit inline. No significant issues fo
 - `router.py` (343) and `project_repository.py` (326) slightly exceed 300 lines — pre-existing for router, new CRUD methods cohesive with existing code
 
 ---
+
+## STEP 4 — Test Validation
+
+**Date:** 2026-03-15
+
+### Gaps Discovered
+
+| # | Issue | Severity | Fix |
+|---|---|---|---|
+| 1 | prozesszusammenfassung test was pure round-trip (T-1 tautological) | HIGH | Rewritten to test through persistence |
+| 2 | _compute_phasenstatus with `vollstaendig` status untested | MEDIUM | Added `test_compute_phasenstatus_vollstaendig_is_phase_complete` |
+| 3 | tool_choice not verified in LLM call | MEDIUM | Added `test_structuring_llm_called_with_tool_choice` |
+| 4 | prozesszusammenfassung in context_assembler output untested | MEDIUM | Added `test_prompt_context_summary_contains_prozesszusammenfassung_status` |
+| 5 | Delete idempotency not tested | LOW | Added `test_delete_idempotent_second_call_returns_404` |
+
+### Tests Added
+
+- +1 rewritten (persistence round-trip instead of model_dump round-trip)
+- +4 new tests (vollstaendig path, tool_choice, context summary, idempotency)
+
+### Test Count After Validation
+
+- **301 passing** (was 297 after implementation)
+
+---
