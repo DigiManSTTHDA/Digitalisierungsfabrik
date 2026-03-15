@@ -90,3 +90,62 @@ No escalations needed:
 **Proceeding to implementation.**
 
 ---
+
+## STEP 3 — Implementation
+
+**Date:** 2026-03-15
+
+### Stories Implemented
+
+| ID | Commit | Tests Added | Key Changes |
+|---|---|---|---|
+| 08-01 | 836a220 | +3 | `prozesszusammenfassung` field + template path + context summary |
+| 08-02 | a00fdd5 | 0 (tests in 08-03) | Full LLM StructuringMode + German system prompt |
+| 08-03 | f57f9e4 | +11 | Mocked multi-turn tests, phase status, error propagation |
+| 08-04 | 68b6b65 | 0 (tests in 08-05) | `delete()` / `delete_many()` + DELETE endpoints |
+| 08-05 | ad8de2b | +7 | Deletion tests — single, batch, isolation, data removal |
+| 08-06 | 150cce7 | 0 (frontend) | ArtifactTab: type badges, sorted steps, prozesszusammenfassung |
+| 08-07 | f1d978f | 0 (frontend) | ConfirmDialog, delete button, multi-select, bulk delete |
+| 08-08 | de053b2 | 0 (regen) | OpenAPI spec + TypeScript types regenerated |
+
+### Modules Created/Modified
+
+| File | Action | Lines |
+|---|---|---|
+| `backend/artifacts/models.py` | Modified — added `prozesszusammenfassung` | ~170 |
+| `backend/artifacts/template_schema.py` | Modified — added path pattern | ~210 |
+| `backend/core/context_assembler.py` | Modified — added summary line | ~112 |
+| `backend/modes/structuring.py` | Rewritten — full LLM implementation | 148 |
+| `backend/prompts/structuring.md` | Created — German system prompt | ~60 |
+| `backend/persistence/project_repository.py` | Modified — delete methods | ~326 |
+| `backend/api/router.py` | Modified — DELETE endpoints | ~343 |
+| `backend/api/schemas.py` | Modified — batch schemas | ~172 |
+| `backend/tests/test_structuring_mode.py` | Created — 11 tests | ~280 |
+| `backend/tests/test_project_deletion.py` | Created — 7 tests | ~150 |
+| `backend/tests/test_models.py` | Modified — 3 new tests | ~510 |
+| `frontend/src/components/ArtifactTab.tsx` | Rewritten — structure rendering | ~210 |
+| `frontend/src/components/ConfirmDialog.tsx` | Created — reusable modal | ~85 |
+| `frontend/src/App.tsx` | Modified — deletion UI | ~240 |
+| `frontend/src/store/session.ts` | Modified — delete actions | ~290 |
+
+### Test Counts
+
+- **Before Epic 08:** 276 passing (+ 1 flaky e2e)
+- **After Epic 08:** 297 passing (+ 1 flaky e2e)
+- **New tests added:** +21 (3 model, 11 structuring mode, 7 deletion)
+
+### Critic + Mini-Audit Summary
+
+All stories passed Critic review and Mini-Audit inline. No significant issues found beyond formatting corrections applied automatically by ruff/prettier.
+
+### Libraries Used vs Custom Code
+
+- No new libraries needed
+- StructuringMode follows ExplorationMode pattern exactly
+- Delete operations use standard SQLite DELETE with transaction
+
+### File Size Notes
+
+- `router.py` (343) and `project_repository.py` (326) slightly exceed 300 lines — pre-existing for router, new CRUD methods cohesive with existing code
+
+---
