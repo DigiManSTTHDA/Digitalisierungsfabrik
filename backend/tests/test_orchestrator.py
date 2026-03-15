@@ -725,7 +725,7 @@ async def test_process_turn_save_failure_propagates() -> None:
     # Corrupt the DB connection to cause save() to fail
     db.close()
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match=r".+"):  # must propagate with a message
         await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
 
 

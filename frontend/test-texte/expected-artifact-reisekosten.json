@@ -1,0 +1,59 @@
+{
+  "slots": {
+    "prozessausloeser": {
+      "slot_id": "prozessausloeser",
+      "titel": "Prozessauslöser",
+      "inhalt": "Formaler Auslöser: Genehmigter Reiseantrag über SharePoint-Formular im Intranet (Genehmigung durch Vorgesetzten). Tatsächlicher Auslöser in der Praxis: Mitarbeiter kehrt von Dienstreise zurück und hat erstattungsfähige Kosten. Viele Mitarbeiter stellen keinen vorherigen Reiseantrag und reichen direkt nach der Reise ein. Zusätzlicher Auslöser: Direkte Hotelrechnungen, die auf die Firma laufen und zugeordnet werden müssen.",
+      "completeness_status": "vollstaendig"
+    },
+    "prozessziel": {
+      "slot_id": "prozessziel",
+      "titel": "Prozessziel",
+      "inhalt": "Korrekte und vollständige Erstattung der Reisekosten an den Mitarbeiter. Buchhalterisch saubere Verbuchung für Jahresabschluss und steuerliche Compliance. Strategisches Ziel (Vorstandsvorgabe): Reduktion der Durchlaufzeit von aktuell bis zu 6 Wochen auf unter 2 Wochen.",
+      "completeness_status": "vollstaendig"
+    },
+    "prozessbeschreibung": {
+      "slot_id": "prozessbeschreibung",
+      "titel": "Prozessbeschreibung",
+      "inhalt": "1. Reiseantrag: Mitarbeiter stellt vor der Reise einen Antrag über SharePoint-Formular (veraltet, SharePoint 2016, hängt sich regelmäßig auf). Vorgesetzter genehmigt. Bei Reisen über 500 EUR zusätzlich Genehmigung durch Bereichsleiter erforderlich (wird häufig nicht eingehalten, da kaum bekannt). In der Praxis wird der Antrag oft übersprungen.\n\n2. Belegsammlung: Nach der Reise sammelt der Mitarbeiter Belege — Hotelrechnungen, Bahntickets, Taxiquittungen, Bewirtungsbelege. Bewirtungsbelege erfordern Angabe von Anlass und Teilnehmern, was häufig vergessen wird und zu Rückfragen führt.\n\n3. SAP-Erfassung: Belege werden in SAP FI erfasst (Reisekostenmaske). Entweder durch den Mitarbeiter selbst oder durch Assistenz. Zeitaufwand: ca. 20 Min (erfahrene Nutzer wie Frau Schmidt/Assistenz GF) bis über 1 Stunde (unerfahrene Nutzer). Manche Mitarbeiter sortieren Belege vorab in Excel vor. Belege werden teilweise mit Scanner (ScanSnap o.ä.) digitalisiert und auf Netzlaufwerk abgelegt. Häufige Fehler bei der Kontierung durch SAP-unerfahrene Mitarbeiter.\n\n4. Prüfung Buchhaltung: Buchhaltung prüft Vollständigkeit der Belege, Beträge, korrekte Kostenstelle. Zeitaufwand: ca. 15-20 Min pro Abrechnung bei fehlerfreier Einreichung. Bei Mängeln Rückfrage per E-Mail an Mitarbeiter — kann sich über Tage ziehen, 2-3 Iterationen keine Seltenheit. Frau Weber (Buchhaltung) besonders gründlich, seit Betriebsprüfung im Vorjahr mit Beanstandungen bei Bewirtungsbelegen verschärfte Kontrolle.\n\n5. Erstattung: Nach erfolgreicher Prüfung Anweisung über Kreditorenbuchhaltung, Auszahlung mit nächstem Gehaltslauf. Durchlaufzeit aktuell 4-6 Wochen. Kein Statustracking für Mitarbeiter — keinerlei Rückmeldung nach Einreichung (kein Eingangsbestätigung, kein Tracking), führt zu Rückfragen per Telefon.\n\n6. Archivierung: Vorgang wird durch Buchhaltung archiviert, für Fachabteilung nicht sichtbar.\n\nMengen: Ca. 120 Abrechnungen/Monat firmenweit (60-80 davon aus dem Vertrieb). Starke Schwankung: Herbst (Messezeit) deutlich mehr, August (Urlaubszeit) kaum Abrechnungen. Frau Weber schätzt ca. 30% ihrer Arbeitszeit für Reisekosten.\n\nBeteiligte Rollen: Reisender Mitarbeiter, Assistenz (z.B. Frau Schmidt für GF), Vorgesetzter (Genehmigung), Bereichsleiter (bei >500 EUR), Buchhaltung (Frau Weber), Kreditorenbuchhaltung.\n\nSchmerzpunkte: Veraltetes SharePoint-Formular, fehlende SAP-Kenntnisse vieler Mitarbeiter, unvollständige Bewirtungsbelege, lange Durchlaufzeit, kein Statustracking, Belege werden verspätet eingereicht (trotz 30-Tage-Frist), Genehmigungspflicht >500 EUR kaum bekannt.",
+      "completeness_status": "vollstaendig"
+    },
+    "scope": {
+      "slot_id": "scope",
+      "titel": "Scope",
+      "inhalt": "Beginn: Einreichung des Reiseantrags bzw. bei fehlendem Antrag die Rückkehr des Mitarbeiters von der Dienstreise mit erstattungsfähigen Kosten. Ende: Auszahlung der Erstattung über Gehaltslauf und Archivierung des Vorgangs durch die Buchhaltung. Nicht im Scope: Reiseplanung und -buchung (vorgelagerter Prozess, teilweise über Reisebüro). Nicht im Scope: Detailprozess Auslandsreisen (Tagessätze, Wechselkurse — eigenes Thema, Ansprechpartner: Herr Fischer, Vertrieb).",
+      "completeness_status": "vollstaendig"
+    },
+    "beteiligte_systeme": {
+      "slot_id": "beteiligte_systeme",
+      "titel": "Beteiligte Systeme",
+      "inhalt": "SAP FI: Reisekostenerfassung und -buchung, Kreditorenbuchhaltung, Auszahlung. SharePoint (Version 2016, on-premise): Reiseantragsformular, veraltet und instabil. Microsoft Outlook: E-Mail-Kommunikation für Genehmigungen (als Fallback wenn SharePoint ausfällt) und Rückfragen der Buchhaltung. Microsoft Excel: Inoffizielle Vorsortierung von Belegen durch Mitarbeiter. Dokumentenscanner (ScanSnap o.ä.): Digitalisierung von Belegen, zumindest durch Assistenz. Netzlaufwerk: Ablage gescannter Belege. VPN: Zugang bei Remote-Arbeit. Schnittstelle Scanner/Netzlaufwerk → SAP unklar (möglicherweise manueller Upload).",
+      "completeness_status": "teilweise"
+    },
+    "umgebung": {
+      "slot_id": "umgebung",
+      "titel": "Umgebung",
+      "inhalt": "Organisation: Ca. 450 Mitarbeiter, davon ca. 280 am Hauptsitz Frankfurt. Weitere Niederlassungen in München und Hamburg (eigene Buchhalterin in München, Prozess möglicherweise leicht abweichend). Hauptsächlich betroffene Abteilungen: Vertrieb (höchstes Reiseaufkommen), Geschäftsführung, grundsätzlich alle Abteilungen. Technische Umgebung: Windows-Arbeitsplätze, SAP on-premise (kein Cloud-Umzug bisher, obwohl von IT geplant), SharePoint 2016 on-premise. Fachabteilungsperspektive — tiefere technische Details bei IT-Abteilung.",
+      "completeness_status": "teilweise"
+    },
+    "randbedingungen": {
+      "slot_id": "randbedingungen",
+      "titel": "Randbedingungen",
+      "inhalt": "Steuerliche Vorgaben: Bewirtungsbelege müssen Anlass und Teilnehmer enthalten. Aufbewahrungspflicht: ca. 8-10 Jahre (genaue Frist bei Frau Weber/Buchhaltung). DSGVO: Belege dürfen nicht unkontrolliert zugänglich sein, Datenschutzanforderungen bei Ablage und Archivierung. Interne Reisekostenrichtlinie (Stand 2019, möglicherweise veraltet): Hotel max. 150 EUR/Nacht, Business Class Flüge nur ab Vorstandsebene, Belegeinreichung innerhalb von 30 Tagen nach Reiseende (wird häufig nicht eingehalten). Genehmigungsschwelle: Reisen über 500 EUR erfordern zusätzlich Unterschrift des Bereichsleiters. Betriebsprüfung im Vorjahr ergab Beanstandungen bei Bewirtungsbelegen — seitdem verschärfte Prüfung. Praktikanten und Werkstudenten dürfen keine eigenen Reisekosten einreichen, Abrechnung läuft über deren Betreuer.",
+      "completeness_status": "vollstaendig"
+    },
+    "ausnahmen": {
+      "slot_id": "ausnahmen",
+      "titel": "Ausnahmen",
+      "inhalt": "Auslandsreisen: Eigene Pauschalen (Tagessätze), jährlich angepasst, Wechselkurse zu berücksichtigen. Pflege der Pauschalen in SAP durch unbekannte Zuständigkeit. PKW-Nutzung: Privatfahrzeug mit 0,30 EUR/km, erfordert vorherige Genehmigung. Ohne Genehmigung Konfliktfall — in der Praxis manchmal durch Vorgesetzte nachträglich genehmigt. Belegverlust: Eigenbelegerklärung möglich bis 50 EUR. Über 50 EUR problematisch, kein definierter Prozess. Stornierte Reisen: Bereits angefallene Stornogebühren müssen abgerechnet werden, Zuordnung im Prozess unklar. Verspätete Einreichung: Belege werden trotz 30-Tage-Frist teils Monate später eingereicht, werden in der Praxis trotzdem bearbeitet. Reise ohne vorherigen Antrag: Kommt regelmäßig vor, Kosten werden trotzdem erstattet (Soll-Ist-Abweichung). Praktikanten/Werkstudenten: Keine eigenständige Einreichung, Abrechnung über Betreuer.",
+      "completeness_status": "vollstaendig"
+    },
+    "prozesszusammenfassung": {
+      "slot_id": "prozesszusammenfassung",
+      "titel": "Prozesszusammenfassung",
+      "inhalt": "Die Reisekostenabrechnung umfasst den Weg von der Belegeinreichung nach einer Dienstreise bis zur Auszahlung der Erstattung über den Gehaltslauf. Mitarbeiter stellen (optional) einen Reiseantrag über ein veraltetes SharePoint-Formular, sammeln nach der Reise ihre Belege und erfassen diese in SAP FI. Die Buchhaltung prüft Vollständigkeit und korrekte Kontierung, was häufig zu mehrfachen Rückfragen führt. Zentrale Probleme sind die lange Durchlaufzeit von 4-6 Wochen, fehlendes Statustracking, mangelnde SAP-Kenntnisse der Mitarbeiter, unvollständige Bewirtungsbelege und eine veraltete Reisekostenrichtlinie. Bei ca. 120 Abrechnungen monatlich für rund 450 Mitarbeiter an drei Standorten bindet der Prozess erhebliche Kapazitäten insbesondere in der Buchhaltung.",
+      "completeness_status": "vollstaendig"
+    }
+  },
+  "version": 25
+}

@@ -70,13 +70,69 @@ def _build_slot_status(context: ModeContext) -> str:
     lines: list[str] = []
     for slot_id, titel in PFLICHT_SLOTS.items():
         slot = context.exploration_artifact.slots.get(slot_id)
-        if slot is None:
-            lines.append(f"- {titel} [leer]: (leer)")
+        if slot is None or not slot.inhalt:
+            lines.append(f"- {titel} ({slot_id}) [LEER — braucht Informationen]")
         else:
             status = slot.completeness_status.value
-            inhalt_preview = slot.inhalt[:80] + "..." if len(slot.inhalt) > 80 else slot.inhalt
-            lines.append(f"- {titel} [{status}]: {inhalt_preview or '(leer)'}")
+            lines.append(f"- {titel} ({slot_id}) [{status}]: {slot.inhalt}")
     return "\n".join(lines)
+
+
+def _next_empty_slot(context: ModeContext) -> tuple[str, str] | None:
+    """Return (slot_id, titel) of the first empty/partial Pflicht-Slot, or None."""
+    for slot_id, titel in PFLICHT_SLOTS.items():
+        if slot_id == "prozesszusammenfassung":
+            continue  # Zusammenfassung kommt zuletzt
+        slot = context.exploration_artifact.slots.get(slot_id)
+        if slot is None or not slot.inhalt or slot.completeness_status == CompletenessStatus.leer:
+            return slot_id, titel
+    # Check prozesszusammenfassung last
+    slot = context.exploration_artifact.slots.get("prozesszusammenfassung")
+    if slot is None or not slot.inhalt or slot.completeness_status == CompletenessStatus.leer:
+        return "prozesszusammenfassung", "Prozesszusammenfassung"
+    return None
+
+
+def _merge_slot_patches(
+    patches: list[dict],  # type: ignore[type-arg]
+    context: ModeContext,
+) -> list[dict]:  # type: ignore[type-arg]
+    """Post-process LLM patches: merge new content with existing slot content.
+
+    Instead of requiring the LLM to copy-paste existing content into replace
+    values, the code handles merging. The LLM only needs to write NEW facts.
+    This is critical for smaller/weaker models that can't reliably consolidate.
+    """
+    merged: list[dict] = []  # type: ignore[type-arg]
+    for patch in patches:
+        path = patch.get("path", "")
+        op = patch.get("op", "")
+        value = patch.get("value", "")
+
+        # Only merge inhalt patches — let completeness_status patches through as-is
+        if (
+            op == "replace"
+            and path.endswith("/inhalt")
+            and isinstance(value, str)
+            and value.strip()
+        ):
+            # Extract slot_id from path like /slots/prozessziel/inhalt
+            parts = path.strip("/").split("/")
+            if len(parts) == 3 and parts[0] == "slots":
+                slot_id = parts[1]
+                slot = context.exploration_artifact.slots.get(slot_id)
+                existing = slot.inhalt.strip() if slot and slot.inhalt else ""
+
+                if existing and value.strip() != existing:
+                    # Check if the new value already contains the old content
+                    # (LLM followed the instruction). If not, prepend it.
+                    if existing[:50] not in value:
+                        merged_value = existing + " " + value.strip()
+                        merged.append({"op": "replace", "path": path, "value": merged_value})
+                        continue
+
+        merged.append(patch)
+    return merged
 
 
 def _translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type: ignore[type-arg]
@@ -132,6 +188,29 @@ class ExplorationMode(BaseMode):
         system_prompt = system_prompt.replace("{context_summary}", context_summary)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
 
+        # Deterministic next-question hint — helps weaker models stay on track
+        next_slot = _next_empty_slot(context)
+        if next_slot:
+            hint = (
+                f"\n\n## Nächste Frage\n"
+                f"Stelle eine Frage zum Slot **{next_slot[1]}** ({next_slot[0]}) — "
+                f"dieser ist noch leer oder unvollständig.\n\n"
+                f"WICHTIG: Auch wenn du eine Frage zu einem bestimmten Slot stellst, "
+                f"extrahiere trotzdem ALLE neuen Informationen aus der Nutzernachricht "
+                f"und schreibe Patches für ALLE betroffenen Slots."
+            )
+        else:
+            hint = (
+                "\n\n## Nächste Frage\n"
+                "Alle Pflicht-Slots sind befüllt. Frage den Nutzer gezielt nach Details "
+                "die noch fehlen könnten oder ob er Ergänzungen hat.\n\n"
+                "WICHTIG: Auch wenn alle Slots befüllt sind — extrahiere WEITERHIN alle "
+                "neuen Informationen aus jeder Nutzernachricht und schreibe Patches. "
+                "Der Nutzer liefert oft wichtige Details in Nebensätzen. "
+                "Jede neue Information muss in den passenden Slot geschrieben werden."
+            )
+        system_prompt += hint
+
         # Build messages from dialog history
         messages = _translate_dialog_history(context.dialog_history)
 
@@ -143,8 +222,9 @@ class ExplorationMode(BaseMode):
             tool_choice={"type": "tool", "name": "apply_patches"},
         )
 
-        # Combine init patches + LLM patches
+        # Combine init patches + LLM patches (with auto-merge of existing content)
         llm_patches = response.tool_input.get("patches", [])
+        llm_patches = _merge_slot_patches(llm_patches, context)
         all_patches = init_patches + llm_patches
 
         # Compute phase status

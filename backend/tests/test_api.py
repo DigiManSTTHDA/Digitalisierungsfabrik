@@ -270,13 +270,15 @@ def test_download_not_found(client: TestClient) -> None:
 
 
 def test_list_versions_version_metadata_complete(client: TestClient) -> None:
-    """GET versions returns all ArtifactVersionInfo fields."""
+    """GET versions returns all ArtifactVersionInfo fields with valid values."""
+    from datetime import datetime
+
     pid = client.post("/api/projects", json={"name": "VM"}).json()["projekt_id"]
     resp = client.get(f"/api/projects/{pid}/artifacts/exploration/versions")
     v = resp.json()["versions"][0]
     assert v["version"] == 0
-    assert isinstance(v["erstellt_am"], str)
-    assert len(v["erstellt_am"]) > 0
+    # Validate ISO 8601 format (not just non-empty string)
+    datetime.fromisoformat(v["erstellt_am"])
     assert v["created_by"] == "system"
 
 

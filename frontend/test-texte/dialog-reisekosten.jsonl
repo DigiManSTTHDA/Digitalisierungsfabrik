@@ -1,0 +1,176 @@
+[
+  {
+    "turn": 1,
+    "role": "user",
+    "description": "Initialer Rambling-Input (aus user-rambling.txt)",
+    "message": "Also, der Prozess den ich beschreiben will ist unsere Reisekostenabrechnung. Das ist eigentlich ganz einfach, aber trotzdem geht da ständig was schief. Letzte Woche hat der Müller aus dem Vertrieb wieder seinen ganzen Ordner mit Belegen gebracht, komplett unsortiert, manche sogar noch vom letzten Jahr. Naja, egal.\n\nAlso es fängt damit an dass ein Mitarbeiter eine Dienstreise macht. Vorher muss er eigentlich einen Reiseantrag stellen, das macht aber nicht jeder. Der Meier zum Beispiel fährt einfach los und reicht dann hinterher alles ein. Das ist natürlich nicht so gedacht. Der Reiseantrag geht an den Vorgesetzten der muss das genehmigen. Wir haben da so ein Formular im Intranet, das ist aber total veraltet, läuft noch auf dem alten SharePoint. Manchmal hängt sich das auch einfach auf.\n\nNach der Reise sammelt der Mitarbeiter seine Belege. Hotelrechnung, Bahntickets, Taxiquittungen, Bewirtungsbelege wenn er Kunden eingeladen hat. Die Bewirtungsbelege sind immer ein Drama weil da der Anlass und die Teilnehmer drauf müssen, das vergessen die Leute ständig. Dann müssen wir nachfragen und das zieht sich dann.\n\nDie Belege werden dann in SAP erfasst, da gibt es eine Maske für Reisekosten. Das macht entweder der Mitarbeiter selbst oder seine Assistenz. Die Frau Schmidt macht das zum Beispiel für die ganze Geschäftsführung, die kennt sich da super aus. Andere Mitarbeiter kennen sich in SAP überhaupt nicht aus und machen ständig Fehler bei der Kontierung.\n\nDann prüft die Buchhaltung. Die schauen ob die Belege vollständig sind, ob die Beträge stimmen, ob die Kostenstelle richtig ist. Wenn was fehlt geht das zurück. Das kann auch zwei drei Mal hin und her gehen. Die Kollegin in der Buchhaltung, die Frau Weber, die ist da sehr genau. Manchmal vielleicht zu genau, aber lieber so als anders.\n\nWenn alles stimmt wird die Erstattung angewiesen, das läuft dann über die normale Kreditorenbuchhaltung und wird mit dem nächsten Gehaltslauf ausgezahlt. Dauert manchmal vier bis sechs Wochen, da beschweren sich die Leute natürlich.\n\nAch ja, und es gibt Sonderregeln für Auslandsreisen, da kommen noch Tagessätze dazu und Wechselkurse. Das ist nochmal ein eigenes Thema. Und bei Reisen über 500 Euro muss auch noch der Bereichsleiter unterschreiben, nicht nur der direkte Vorgesetzte. Das weiß aber kaum jemand."
+  },
+
+  {
+    "turn": 2,
+    "role": "explorer",
+    "expected_question_about": "scope",
+    "description": "Explorer fragt nach Prozessgrenzen",
+    "message": "[Wird vom System generiert — erwartet: Frage nach Scope/Abgrenzung des Prozesses]"
+  },
+  {
+    "turn": 3,
+    "role": "user",
+    "description": "Vage Antwort auf Scope-Frage, driftet ab in Beschwerde",
+    "message": "Hmm, also wo der Prozess anfängt... naja, eigentlich wenn jemand sagt er muss irgendwo hin. Aber das ist ja noch vor dem Antrag. Also eigentlich beim Reiseantrag. Oder, warten Sie, manche Leute stellen ja gar keinen Antrag, die reisen einfach. Ist das dann trotzdem der Anfang? Ich finde halt das ganze Antragsding müsste man mal vereinfachen, das benutzt doch keiner freiwillig das SharePoint-Formular.\n\nEnde ist wenn das Geld auf dem Konto ist, das ist klar. Obwohl, eigentlich ist es erst fertig wenn die Buchhaltung den Vorgang archiviert hat. Aber das kriegen wir als Fachabteilung gar nicht mit, das passiert irgendwo im Hintergrund."
+  },
+
+  {
+    "turn": 4,
+    "role": "explorer",
+    "expected_question_about": "umgebung",
+    "description": "Explorer fragt nach organisatorischer Umgebung",
+    "message": "[Wird vom System generiert — erwartet: Frage nach Abteilung, Standort, organisatorische Einbettung]"
+  },
+  {
+    "turn": 5,
+    "role": "user",
+    "description": "Gibt Teilinfos, wird persönlich, vergisst die Hälfte",
+    "message": "Wir sitzen in Frankfurt, Hauptsitz. Es gibt noch Niederlassungen in München und Hamburg, die machen das aber glaube ich genauso. Oder vielleicht doch ein bisschen anders, in München haben die eine eigene Buchhalterin die das macht... wie heißt die nochmal... ist auch egal.\n\nDie Reisekostenabrechnung betrifft eigentlich alle Abteilungen, aber hauptsächlich den Vertrieb, die reisen am meisten. Und die Geschäftsführung natürlich. Ach so, wir sind so 450 Mitarbeiter insgesamt, falls das relevant ist. In Frankfurt sind davon vielleicht 280."
+  },
+
+  {
+    "turn": 6,
+    "role": "explorer",
+    "expected_question_about": "prozessziel",
+    "description": "Explorer fragt nach dem konkreten Prozessziel",
+    "message": "[Wird vom System generiert — erwartet: Frage nach gewünschtem Endergebnis / Zielzustand]"
+  },
+  {
+    "turn": 7,
+    "role": "user",
+    "description": "Offensichtliche Antwort + neues Detail + Frustration",
+    "message": "Naja das Ziel ist natürlich dass der Mitarbeiter sein Geld zurückbekommt. Was soll es denn sonst sein? Und dass das korrekt verbucht ist, klar, für die Buchhaltung und den Jahresabschluss und so. Steuerlich muss das ja auch alles sauber sein.\n\nAber wenn Sie mich fragen was das EIGENTLICHE Ziel sein sollte: Dass das Ganze in unter zwei Wochen durch ist und nicht wie jetzt teilweise sechs Wochen dauert. Der Vorstand hat da letztens auch was gesagt, die wollen die Durchlaufzeit runter kriegen. Moment, ich hab da irgendwo noch ne Mail... ne, find ich jetzt nicht."
+  },
+
+  {
+    "turn": 8,
+    "role": "explorer",
+    "expected_question_about": "randbedingungen",
+    "description": "Explorer fragt nach weiteren Regeln/Einschränkungen",
+    "message": "[Wird vom System generiert — erwartet: Frage nach Compliance, Fristen, gesetzlichen Vorgaben]"
+  },
+  {
+    "turn": 9,
+    "role": "user",
+    "description": "Gibt ein paar Regeln, ist sich bei anderen unsicher, verweist auf jemand anderen",
+    "message": "Ja also steuerlich gibt es natürlich Vorgaben, Bewirtungsbelege müssen bestimmte Angaben haben, das hab ich ja schon gesagt. Und die Aufbewahrungspflicht, 10 Jahre glaub ich? Oder waren es 8? Da müssten Sie die Frau Weber fragen, die kennt sich da besser aus.\n\nIntern haben wir eine Reisekostenrichtlinie, die ist von 2019. Steht da alles drin. Hotel maximal 150 Euro pro Nacht, Business Class Flüge nur ab Vorstandsebene, sowas halt. Aber ob die noch aktuell ist... puh. Der Mayer hat mal gesagt die müsste überarbeitet werden aber da ist nie was passiert.\n\nAch und ganz wichtig: Belege müssen innerhalb von 30 Tagen nach Reiseende eingereicht werden. Das steht in der Richtlinie. Hält sich aber auch keiner dran, wie gesagt der Müller kommt mit Sachen vom letzten Jahr."
+  },
+
+  {
+    "turn": 10,
+    "role": "explorer",
+    "expected_question_about": "ausnahmen",
+    "description": "Explorer fragt nach weiteren Sonderfällen/Fehlerpfaden",
+    "message": "[Wird vom System generiert — erwartet: Frage nach Ausnahmen, Eskalationen, Workarounds]"
+  },
+  {
+    "turn": 11,
+    "role": "user",
+    "description": "Erzählt Anekdoten statt strukturiert zu antworten",
+    "message": "Sonderfälle... puh, da gibt es einige. Also erstmal die Auslandsreisen, das hab ich schon erwähnt. Da gibt es Pauschalen, die ändern sich auch jedes Jahr, das pflegt irgendwer in SAP ein, ich weiß nicht wer.\n\nDann hatten wir letztens einen Fall, da hat ein Mitarbeiter seinen privaten PKW genommen und wollte die Kilometer abrechnen. Sind 0,30 Euro pro Kilometer. Aber der hatte keine Genehmigung für den PKW, eigentlich hätte er Bahn fahren müssen. Da gab es dann ein riesen Hin und Her, letztendlich hat sein Chef das dann irgendwie durchgedrückt.\n\nUnd wenn jemand seinen Beleg verliert, was öfter vorkommt als man denkt, dann muss er eine Eigenbelegerklärung schreiben. Bis 50 Euro geht das, darüber wird es schwierig. Einmal hatte jemand eine Hotelrechnung über 800 Euro verloren, das war echt ein Problem.\n\nAch ja, und Stornos! Wenn eine Reise storniert wird, sind manchmal schon Kosten angefallen, Stornogebühren zum Beispiel. Das ist auch immer komisch abzurechnen."
+  },
+
+  {
+    "turn": 12,
+    "role": "explorer",
+    "expected_question_about": "beteiligte_systeme",
+    "description": "Explorer fragt nach weiteren IT-Systemen",
+    "message": "[Wird vom System generiert — erwartet: Frage nach allen beteiligten Systemen, Schnittstellen]"
+  },
+  {
+    "turn": 13,
+    "role": "user",
+    "description": "Unvollständige Aufzählung, unsicher bei Details, erwähnt beiläufig was Neues",
+    "message": "SAP hab ich ja gesagt, SAP FI für die Buchhaltung. Und das SharePoint-Formular für den Reiseantrag. Dann benutzen manche Leute noch Excel, um ihre Belege vorzusortieren, bevor sie die in SAP eintippen. Ist nicht offiziell aber macht halt jeder so.\n\nE-Mail natürlich, ganz viel E-Mail. Die Genehmigungen laufen teilweise per Mail wenn das SharePoint nicht geht. Und die Rückfragen von der Buchhaltung kommen auch per Mail.\n\nAch stimmt, und die Frau Schmidt benutzt glaube ich noch irgend so ein Tool um die Belege einzuscannen. ScanSnap oder so? Und die landen dann auf einem Netzlaufwerk. Ob die von da in SAP kommen weiß ich ehrlich gesagt nicht, das müssten Sie die fragen."
+  },
+
+  {
+    "turn": 14,
+    "role": "explorer",
+    "expected_question_about": "prozessbeschreibung_vertiefung",
+    "description": "Explorer fragt nach Mengen/Häufigkeiten/Zeitaufwänden",
+    "message": "[Wird vom System generiert — erwartet: Vertiefungsfrage zu Mengen, Durchsätzen, zeitlichen Aspekten]"
+  },
+  {
+    "turn": 15,
+    "role": "user",
+    "description": "Schätzt grob, korrigiert sich, gibt zu dass er es nicht genau weiß",
+    "message": "Pro Monat? Puh. Also im Vertrieb sind das bestimmt... ich sag mal 60 bis 80 Abrechnungen? Für die ganze Firma vielleicht 120? Aber das schwankt stark, im Herbst ist Messezeit, da ist viel mehr. Im August fast nichts weil alle im Urlaub sind.\n\nZeitaufwand... also der Mitarbeiter braucht vielleicht eine Stunde um alles zusammenzusuchen und in SAP einzugeben, wenn er sich auskennt. Wenn nicht, länger. Die Frau Schmidt schafft eine Abrechnung in 20 Minuten, die ist aber auch ein Profi.\n\nDie Buchhaltung braucht dann nochmal... keine Ahnung, pro Abrechnung vielleicht 15-20 Minuten für die Prüfung? Wenn alles stimmt. Wenn was fehlt natürlich viel mehr weil dann die Rückfrage läuft und das kann sich über Tage ziehen. Frau Weber sagt die verbringt gut 30% ihrer Arbeitszeit nur mit Reisekosten, aber ob das stimmt..."
+  },
+
+  {
+    "turn": 16,
+    "role": "explorer",
+    "expected_question_about": "prozessausloeser_vertiefung",
+    "description": "Explorer vertieft den Prozessauslöser",
+    "message": "[Wird vom System generiert — erwartet: Klärung ob Dienstreise oder Reiseantrag der tatsächliche Auslöser ist]"
+  },
+  {
+    "turn": 17,
+    "role": "user",
+    "description": "Denkt laut nach, widerspricht sich leicht, kommt dann zum Punkt",
+    "message": "Gute Frage eigentlich. Also offiziell ist der Auslöser natürlich der genehmigte Reiseantrag. So steht das in der Richtlinie. Aber in der Praxis... naja, der tatsächliche Auslöser ist eher dass jemand von einer Reise zurückkommt und Kosten hatte. Ob er vorher einen Antrag gestellt hat oder nicht, die Kosten sind ja trotzdem da und müssen abgerechnet werden.\n\nAlso wenn Sie es formal wollen: genehmigter Reiseantrag. Wenn Sie wissen wollen wie es wirklich läuft: Mitarbeiter kommt mit Belegen und will sein Geld zurück. Und manchmal kriegen wir auch direkt Rechnungen von Hotels die auf die Firma laufen, die muss ja auch jemand zuordnen."
+  },
+
+  {
+    "turn": 18,
+    "role": "explorer",
+    "expected_question_about": "scope_vertiefung",
+    "description": "Explorer fragt ob Reiseplanung/Buchung auch zum Scope gehört",
+    "message": "[Wird vom System generiert — erwartet: Klärungsfrage zur Abgrenzung, z.B. gehört die Reisebuchung dazu?]"
+  },
+  {
+    "turn": 19,
+    "role": "user",
+    "description": "Kurze knappe Antwort, eher genervt von zu vielen Fragen",
+    "message": "Ne, die Buchung ist ein eigener Prozess. Manche buchen selber, manche gehen übers Reisebüro. Ist nicht Teil von dem was ich hier beschreibe. Mir geht es wirklich nur um den Teil ab dem die Kosten anfallen bis das Geld ausgezahlt ist. Die Buchung ist vorgelagert."
+  },
+
+  {
+    "turn": 20,
+    "role": "explorer",
+    "expected_question_about": "umgebung_vertiefung",
+    "description": "Explorer fragt nach technischer Infrastruktur",
+    "message": "[Wird vom System generiert — erwartet: Frage nach technischer Umgebung, Infrastruktur]"
+  },
+  {
+    "turn": 21,
+    "role": "user",
+    "description": "Gibt zu wenig Ahnung zu haben, verweist auf IT-Abteilung",
+    "message": "Technisch? Also SAP läuft irgendwo auf einem Server, fragen Sie mich nicht wo. On-premise glaub ich, wir sind noch nicht in der Cloud. Die IT wollte da mal was machen aber das ist noch nicht passiert. SharePoint ist auch noch die alte Version, 2016 oder so?\n\nMehr kann ich Ihnen dazu nicht sagen, ich bin aus dem Fachbereich, nicht aus der IT. Was ich weiß ist dass wir alle Windows-Rechner haben und Outlook für Mail benutzen. Und VPN braucht man wenn man von zuhause arbeitet, aber das ist ja für alles."
+  },
+
+  {
+    "turn": 22,
+    "role": "explorer",
+    "expected_question_about": "letzte_details",
+    "description": "Explorer fragt nach letzten offenen Punkten vor Zusammenfassung",
+    "message": "[Wird vom System generiert — erwartet: Abschlussfrage ob noch etwas fehlt oder ergänzt werden soll]"
+  },
+  {
+    "turn": 23,
+    "role": "user",
+    "description": "Fällt noch was ein, erzählt nebenbei, signalisiert dann Abschluss",
+    "message": "Ach eins fällt mir noch ein: Wir hatten letztes Jahr eine Betriebsprüfung und da gab es Beanstandungen wegen der Bewirtungsbelege. Seitdem ist die Frau Weber da besonders streng. Und der Datenschutz spielt auch eine Rolle, wir dürfen die Belege ja nicht ewig überall rumliegen lassen, DSGVO und so.\n\nUnd was mich persönlich am meisten nervt: Es gibt keinen Status. Der Mitarbeiter reicht ein und hört dann wochenlang nichts. Kein Tracking, keine Mail dass es angekommen ist, nichts. Der ruft dann bei uns an und fragt wo sein Geld bleibt. Das kostet uns auch wieder Zeit.\n\nAber sonst... ne, ich glaub das war es soweit. Die Details zu Auslandsreisen könnte der Herr Fischer aus dem Vertrieb Ihnen besser erklären, der reist am meisten international. Aber für den Grundprozess sollte das reichen, oder?"
+  },
+
+  {
+    "turn": 24,
+    "role": "moderator",
+    "expected_action": "phase_complete",
+    "description": "Moderator schlägt Phasenübergang vor",
+    "message": "[Wird vom System generiert — erwartet: Zusammenfassung der Exploration und Vorschlag zur Strukturierungsphase]"
+  },
+  {
+    "turn": 25,
+    "role": "user",
+    "description": "Stimmt zu aber hat noch einen Nachtrag",
+    "message": "Ja können wir machen. Aber eins noch schnell: Ich hab vergessen zu erwähnen dass Praktikanten und Werkstudenten keine Reisekosten einreichen dürfen, das läuft über deren Betreuer. Weiß nicht ob das wichtig ist. Okay, weiter."
+  }
+]

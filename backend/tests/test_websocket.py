@@ -100,7 +100,9 @@ def test_websocket_turn_error(ws_setup) -> None:  # type: ignore[no-untyped-def]
                     event = ws.receive_json()
     assert event["event"] == "error"
     assert event["recoverable"] is True
-    assert len(event["message"]) > 0  # QA: error message must not be empty
+    # Error message must be non-empty and contain actionable info (Rule T-6)
+    assert isinstance(event["message"], str)
+    assert len(event["message"]) >= 5, "Error message must be descriptive, not just a word"
     assert "Fehler" in event["message"] or "Interner" in event["message"]
 
 

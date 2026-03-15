@@ -1,0 +1,216 @@
+{
+  "projekt_id": "25ab29c8-e10b-4f5c-be7c-94320c8d1670",
+  "verdict": "BEFRIEDIGEND",
+  "average_score": 0.419,
+  "total_duration_seconds": 63.8,
+  "turns_successful": 13,
+  "turns_total": 13,
+  "responses": [
+    {
+      "user_turn": 1,
+      "user_description": "Initialer Rambling-Input (aus user-rambling.txt)",
+      "system_response": "Vielen Dank für die ausführliche Beschreibung. Was genau löst den Prozess typischerweise aus? Ist es immer eine Dienstreise oder gibt es auch andere Auslöser?",
+      "error": null,
+      "elapsed_seconds": 8.5
+    },
+    {
+      "user_turn": 3,
+      "user_description": "Vage Antwort auf Scope-Frage, driftet ab in Beschwerde",
+      "system_response": "Wann ein Reiseantrag gestellt wird, variiert, und in einigen Fällen überspringen Mitarbeiter diesen Schritt und beginnen die Reise einfach. Der formale Anfang des Prozesses ist der Reiseantrag, auch wenn dieser Schritt oft nicht korrekt eingehalten wird. Das Ende des Prozesses ist formell, wenn die Zahlung erfolgt ist, obwohl die Archivierung in der Buchhaltung auch eine Rolle spielen könnte. Was sind die spezifischen Ziele dieses Prozesses?",
+      "error": null,
+      "elapsed_seconds": 5.9
+    },
+    {
+      "user_turn": 5,
+      "user_description": "Gibt Teilinfos, wird persönlich, vergisst die Hälfte",
+      "system_response": "Was ist das spezifische Ziel des Prozesses der Reisekostenabrechnung?",
+      "error": null,
+      "elapsed_seconds": 5.9
+    },
+    {
+      "user_turn": 7,
+      "user_description": "Offensichtliche Antwort + neues Detail + Frustration",
+      "system_response": "Danke für die Informationen. Gibt es bestimmte Regeln oder Fristen, die unbedingt eingehalten werden müssen, um steuerliche oder andere Anforderungen zu erfüllen?",
+      "error": null,
+      "elapsed_seconds": 3.9
+    },
+    {
+      "user_turn": 9,
+      "user_description": "Gibt ein paar Regeln, ist sich bei anderen unsicher, verweist auf jemand anderen",
+      "system_response": "Gibt es bestimmte Punkte im Prozess, an denen häufig Probleme auftreten oder es zu Verzögerungen kommt?",
+      "error": null,
+      "elapsed_seconds": 4.0
+    },
+    {
+      "user_turn": 11,
+      "user_description": "Erzählt Anekdoten statt strukturiert zu antworten",
+      "system_response": "Welche IT-Systeme oder Tools werden für die Reisekostenabrechnung und die Kommunikation darüber verwendet?",
+      "error": null,
+      "elapsed_seconds": 6.7
+    },
+    {
+      "user_turn": 13,
+      "user_description": "Unvollständige Aufzählung, unsicher bei Details, erwähnt beiläufig was Neues",
+      "system_response": "Welche Systeme oder Tools werden speziell für das Scannen und Speichern von Belegen verwendet? Gibt es bekannte Schmerzpunkte in diesen Bereichen?",
+      "error": null,
+      "elapsed_seconds": 3.5
+    },
+    {
+      "user_turn": 15,
+      "user_description": "Schätzt grob, korrigiert sich, gibt zu dass er es nicht genau weiß",
+      "system_response": "Welche Systeme oder Tools werden speziell für das Scannen und Speichern von Belegen verwendet? Gibt es bekannte Schmerzpunkte in diesen Bereichen?",
+      "error": null,
+      "elapsed_seconds": 2.6
+    },
+    {
+      "user_turn": 17,
+      "user_description": "Denkt laut nach, widerspricht sich leicht, kommt dann zum Punkt",
+      "system_response": "Vielen Dank für Ihre Angaben. Wo sehen Sie aktuell die größten Herausforderungen oder Verbesserungspotenziale im Prozess der Reisekostenabrechnung?",
+      "error": null,
+      "elapsed_seconds": 3.7
+    },
+    {
+      "user_turn": 19,
+      "user_description": "Kurze knappe Antwort, eher genervt von zu vielen Fragen",
+      "system_response": "Könnten Sie eine kompakte Zusammenfassung des gesamten Prozesses geben? Wir wollen sicherstellen, dass wir den gesamten Ablauf klar umrissen haben.",
+      "error": null,
+      "elapsed_seconds": 2.7
+    },
+    {
+      "user_turn": 21,
+      "user_description": "Gibt zu wenig Ahnung zu haben, verweist auf IT-Abteilung",
+      "system_response": "Zusammenfassend ist der formale Auslöser des Prozesses der genehmigte Reiseantrag, in der Praxis jedoch oft die Rückkehr von einer Reise mit anfallenden Kosten. Herausforderungen liegen unter anderem in den veralteten Systemen, den variierenden Kenntnissen der Mitarbeiter in SAP sowie in den Verzögerungen durch unvollständige Belege. Gibt es spezifische Verbesserungsvorschläge oder bereits geplante Maßnahmen zur Prozessoptimierung?",
+      "error": null,
+      "elapsed_seconds": 2.5
+    },
+    {
+      "user_turn": 23,
+      "user_description": "Fällt noch was ein, erzählt nebenbei, signalisiert dann Abschluss",
+      "system_response": "Vielen Dank für die zusätzlichen Informationen, besonders zur Betriebsprüfung und den aktuellen Herausforderungen. Gibt es schon Überlegungen oder Konzepte zur Verbesserung des Prozesses, wie zum Beispiel die Einführung eines Tracking-Systems? Oder gibt es andere Ideen?",
+      "error": null,
+      "elapsed_seconds": 4.8
+    },
+    {
+      "user_turn": 25,
+      "user_description": "Stimmt zu aber hat noch einen Nachtrag",
+      "system_response": "Gibt es schon Überlegungen oder Konzepte zur Verbesserung des Prozesses, wie etwa die Einführung eines Tracking-Systems oder andere Optimierungsideen?",
+      "error": null,
+      "elapsed_seconds": 8.4
+    }
+  ],
+  "slot_comparison": {
+    "ausnahmen": {
+      "status": "schlecht",
+      "score": 0.253,
+      "similarity": 0.033,
+      "keyword_coverage": 0.4,
+      "status_match": true,
+      "missing_aspects": [
+        "Auslandsreisen: Eigene Pauschalen (Tagessätze), jährlich angepasst, Wechselkurse zu berücksichtigen",
+        "Pflege der Pauschalen in SAP durch unbekannte Zuständigkeit",
+        "Über 50 EUR problematisch, kein definierter Prozess",
+        "Stornierte Reisen: Bereits angefallene Stornogebühren müssen abgerechnet werden, Zuordnung im Prozess unklar",
+        "Verspätete Einreichung: Belege werden trotz 30-Tage-Frist teils Monate später eingereicht, werden in der Praxis trotzdem",
+        "Reise ohne vorherigen Antrag: Kommt regelmäßig vor, Kosten werden trotzdem erstattet (Soll-Ist-Abweichung)"
+      ]
+    },
+    "beteiligte_systeme": {
+      "status": "teilweise",
+      "score": 0.413,
+      "similarity": 0.034,
+      "keyword_coverage": 0.667,
+      "status_match": false,
+      "missing_aspects": [
+        "SAP FI: Reisekostenerfassung und -buchung, Kreditorenbuchhaltung, Auszahlung",
+        "SharePoint (Version 2016, on-premise): Reiseantragsformular, veraltet und instabil",
+        "Schnittstelle Scanner/Netzlaufwerk → SAP unklar (möglicherweise manueller Upload)"
+      ]
+    },
+    "prozessausloeser": {
+      "status": "schlecht",
+      "score": 0.291,
+      "similarity": 0.354,
+      "keyword_coverage": 0.25,
+      "status_match": true,
+      "missing_aspects": [
+        "Formaler Auslöser: Genehmigter Reiseantrag über SharePoint-Formular im Intranet (Genehmigung durch Vorgesetzten)",
+        "Tatsächlicher Auslöser in der Praxis: Mitarbeiter kehrt von Dienstreise zurück und hat erstattungsfähige Kosten",
+        "Zusätzlicher Auslöser: Direkte Hotelrechnungen, die auf die Firma laufen und zugeordnet werden müssen"
+      ]
+    },
+    "prozessbeschreibung": {
+      "status": "teilweise",
+      "score": 0.503,
+      "similarity": 0.026,
+      "keyword_coverage": 0.821,
+      "status_match": true,
+      "missing_aspects": [
+        "Manche Mitarbeiter sortieren Belege vorab in Excel vor",
+        ") digitalisiert und auf Netzlaufwerk abgelegt",
+        "Bei Mängeln Rückfrage per E-Mail an Mitarbeiter — kann sich über Tage ziehen, 2-3 Iterationen keine Seltenheit",
+        "120 Abrechnungen/Monat firmenweit (60-80 davon aus dem Vertrieb)",
+        "Starke Schwankung: Herbst (Messezeit) deutlich mehr, August (Urlaubszeit) kaum Abrechnungen"
+      ]
+    },
+    "prozessziel": {
+      "status": "teilweise",
+      "score": 0.676,
+      "similarity": 0.189,
+      "keyword_coverage": 1.0,
+      "status_match": true,
+      "missing_aspects": []
+    },
+    "prozesszusammenfassung": {
+      "status": "teilweise",
+      "score": 0.506,
+      "similarity": 0.065,
+      "keyword_coverage": 0.8,
+      "status_match": true,
+      "missing_aspects": [
+        "Die Buchhaltung prüft Vollständigkeit und korrekte Kontierung, was häufig zu mehrfachen Rückfragen führt"
+      ]
+    },
+    "randbedingungen": {
+      "status": "teilweise",
+      "score": 0.497,
+      "similarity": 0.243,
+      "keyword_coverage": 0.667,
+      "status_match": true,
+      "missing_aspects": [
+        "8-10 Jahre (genaue Frist bei Frau Weber/Buchhaltung)",
+        "Genehmigungsschwelle: Reisen über 500 EUR erfordern zusätzlich Unterschrift des Bereichsleiters",
+        "Praktikanten und Werkstudenten dürfen keine eigenen Reisekosten einreichen, Abrechnung läuft über deren Betreuer"
+      ]
+    },
+    "scope": {
+      "status": "schlecht",
+      "score": 0.251,
+      "similarity": 0.027,
+      "keyword_coverage": 0.4,
+      "status_match": true,
+      "missing_aspects": [
+        "Beginn: Einreichung des Reiseantrags bzw",
+        "Nicht im Scope: Reiseplanung und -buchung (vorgelagerter Prozess, teilweise über Reisebüro)",
+        "Nicht im Scope: Detailprozess Auslandsreisen (Tagessätze, Wechselkurse — eigenes Thema, Ansprechpartner: Herr Fischer, V"
+      ]
+    },
+    "umgebung": {
+      "status": "schlecht",
+      "score": 0.383,
+      "similarity": 0.1,
+      "keyword_coverage": 0.571,
+      "status_match": false,
+      "missing_aspects": [
+        "Organisation: Ca",
+        "Technische Umgebung: Windows-Arbeitsplätze, SAP on-premise (kein Cloud-Umzug bisher, obwohl von IT geplant), SharePoint ",
+        "Fachabteilungsperspektive — tiefere technische Details bei IT-Abteilung"
+      ]
+    },
+    "_summary": {
+      "average_score": 0.419,
+      "total_slots_evaluated": 9,
+      "slots_in_actual": 9,
+      "slots_in_expected": 9
+    }
+  }
+}

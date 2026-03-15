@@ -156,3 +156,49 @@ All 5 stories include 4 required backend DoD commands. Story 07-04 also includes
 - npm run typecheck: pass
 
 ---
+
+## STEP 4 — Test Validation
+
+**Date:** 2026-03-15
+**Validator:** Claude Opus 4.6
+
+### Gaps Discovered
+
+| File | Gap | Severity | Rule |
+|---|---|---|---|
+| test_output_validator.py | No test for non-dict patch input | High | T-2 |
+| test_output_validator.py | No test for missing/invalid path key | High | T-2 |
+| test_output_validator.py | No test for template=None code path | Medium | T-4 |
+| test_phase_transition.py | No test for invalid phase (abgeschlossen) | Medium | T-2 |
+| test_phase_transition.py | PHASE_TO_MODE values not verified (only key existence) | Medium | T-3 |
+| test_phase_transition.py | advance_phase vorheriger_modus reset untested | Medium | T-4 |
+| test_phase_transition.py | No full sequence traversal test | Medium | T-7 |
+| test_api.py | erstellt_am only checked as non-empty string (weak) | Medium | T-3 |
+| test_websocket.py | Error message assertion too weak (len>0) | Low | T-3 |
+| test_orchestrator.py | pytest.raises(Exception) too broad | Low | T-3 |
+| test_moderator.py | isinstance(dict) is tautological (Pydantic guarantees) | Low | T-1 |
+
+### Tests Added
+
+| File | Tests Added | Description |
+|---|---|---|
+| test_output_validator.py | +6 | Non-dict patch, missing path, non-string path, path without slash, None template (positive + negative) |
+| test_phase_transition.py | +4 | Invalid phase input, mode value correctness, vorheriger_modus reset, full sequence traversal |
+
+### Assertions Strengthened
+
+| File | Change |
+|---|---|
+| test_api.py | `erstellt_am`: replaced `isinstance(str) + len>0` with `datetime.fromisoformat()` |
+| test_websocket.py | Error message: added minimum length check (>=5 chars) |
+| test_orchestrator.py | Narrowed `pytest.raises(Exception)` to require non-empty message |
+| test_moderator.py | Replaced tautological `isinstance(dict)` with `== {}` (exact value check) + added field-level assertions |
+
+### Result
+
+- **275 tests passing** (was 265, +10 new)
+- ruff check: 0 errors
+- ruff format: all files formatted
+- mypy: 0 issues in 59 files
+
+---

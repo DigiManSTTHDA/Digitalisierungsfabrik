@@ -108,10 +108,14 @@ async def test_moderator_receives_full_context() -> None:
     assert isinstance(ctx.algorithm_artifact, AlgorithmArtifact)
     assert ctx.working_memory.projekt_id == "test-id"
     assert ctx.working_memory.befuellte_slots == 5
+    assert ctx.working_memory.bekannte_slots == 9
     assert len(ctx.dialog_history) == 1
     assert ctx.dialog_history[0]["role"] == "user"
-    assert isinstance(ctx.completeness_state, dict)
+    assert ctx.dialog_history[0]["inhalt"] == "Hallo"
+    # completeness_state defaults to empty dict for ModeContext without completeness calc
+    assert ctx.completeness_state == {}
     assert ctx.aktive_phase == Projektphase.exploration
+    assert ctx.aktiver_modus == "moderator"
 
 
 @pytest.mark.asyncio

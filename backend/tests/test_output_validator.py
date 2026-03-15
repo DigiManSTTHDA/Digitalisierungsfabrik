@@ -186,3 +186,56 @@ def test_algorithm_template_invalid_path_rejected() -> None:
     """Path from exploration template is rejected by algorithm template."""
     output = _make_output([{"op": "replace", "path": "/slots/s01/inhalt", "value": "wrong"}])
     assert validate(output, ALGORITHM_TEMPLATE) is False
+
+
+# ---------------------------------------------------------------------------
+# Gap: patch is not a dict → rejected (covers output_validator.py lines 43-45)
+# ---------------------------------------------------------------------------
+
+
+def test_non_dict_patch_fails_validation() -> None:
+    """A patch that is not a dict (e.g. a string) is rejected by the validator."""
+    output = _make_output([])
+    # Bypass Pydantic to inject a non-dict patch (simulates corrupted LLM output)
+    object.__setattr__(output, "patches", ["not a dict"])
+    assert validate(output, EXPLORATION_TEMPLATE) is False
+
+
+# ---------------------------------------------------------------------------
+# Gap: patch without path key / non-string path → rejected (lines 60-62)
+# ---------------------------------------------------------------------------
+
+
+def test_patch_missing_path_key_fails_validation() -> None:
+    """A patch dict without a 'path' key is rejected."""
+    output = _make_output([{"op": "add", "value": "test"}])
+    assert validate(output, EXPLORATION_TEMPLATE) is False
+
+
+def test_patch_with_non_string_path_fails_validation() -> None:
+    """A patch dict with a non-string path is rejected."""
+    output = _make_output([{"op": "add", "path": 123, "value": "test"}])
+    assert validate(output, EXPLORATION_TEMPLATE) is False
+
+
+def test_patch_with_path_not_starting_with_slash_fails() -> None:
+    """A path not starting with '/' is rejected."""
+    output = _make_output([{"op": "add", "path": "slots/s1/inhalt", "value": "test"}])
+    assert validate(output, EXPLORATION_TEMPLATE) is False
+
+
+# ---------------------------------------------------------------------------
+# Gap: validation without template (None) — only RFC 6902 syntax checked
+# ---------------------------------------------------------------------------
+
+
+def test_validation_without_template_accepts_any_valid_path() -> None:
+    """Without a template, any syntactically valid RFC 6902 patch passes."""
+    output = _make_output([{"op": "replace", "path": "/any/arbitrary/path", "value": "test"}])
+    assert validate(output, artifact_template=None) is True
+
+
+def test_validation_without_template_still_rejects_invalid_op() -> None:
+    """Without a template, invalid ops are still rejected."""
+    output = _make_output([{"op": "copy", "path": "/any/path", "value": "test"}])
+    assert validate(output, artifact_template=None) is False

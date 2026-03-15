@@ -97,3 +97,44 @@ def test_phase_to_mode_covers_all_phases() -> None:
     """Every phase in PHASE_ORDER has a mode mapping."""
     for phase in PHASE_ORDER:
         assert phase in PHASE_TO_MODE
+
+
+def test_next_phase_for_abgeschlossen_returns_none() -> None:
+    """next_phase for 'abgeschlossen' (not in PHASE_ORDER) returns None."""
+    assert next_phase(Projektphase.abgeschlossen) is None
+
+
+def test_phase_to_mode_values_are_correct() -> None:
+    """Each phase maps to the correct mode name (not just key existence)."""
+    assert PHASE_TO_MODE[Projektphase.exploration] == "exploration"
+    assert PHASE_TO_MODE[Projektphase.strukturierung] == "structuring"
+    assert PHASE_TO_MODE[Projektphase.spezifikation] == "specification"
+    assert PHASE_TO_MODE[Projektphase.validierung] == "validation"
+
+
+def test_advance_phase_resets_vorheriger_modus_to_none() -> None:
+    """advance_phase clears vorheriger_modus (no stale reference after transition)."""
+    project = _make_project(Projektphase.exploration)
+    wm = project.working_memory
+    wm.vorheriger_modus = "moderator"  # simulates coming from moderator
+    result = advance_phase(project, wm)
+    assert result is True
+    assert wm.vorheriger_modus is None
+
+
+def test_advance_phase_through_all_phases() -> None:
+    """advance_phase can advance through the full sequence exploration→validierung."""
+    project = _make_project(Projektphase.exploration)
+    wm = project.working_memory
+
+    expected_phases = [
+        Projektphase.strukturierung,
+        Projektphase.spezifikation,
+        Projektphase.validierung,
+    ]
+    for expected in expected_phases:
+        assert advance_phase(project, wm) is True
+        assert wm.aktive_phase == expected
+
+    # At validierung, advance returns False
+    assert advance_phase(project, wm) is False

@@ -23,7 +23,8 @@ APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
                 "type": "string",
                 "description": (
                     "Deine Antwort an den Nutzer — wird im Chatbereich angezeigt. "
-                    "Muss immer eine gezielte Folgefrage oder Zusammenfassung enthalten. "
+                    "Muss eine gezielte Folgefrage enthalten. "
+                    "KEINE Zusammenfassung, KEINE Paraphrase des Gesagten. "
                     "Pflichtfeld, darf nicht leer sein."
                 ),
             },

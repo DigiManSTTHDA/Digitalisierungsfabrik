@@ -351,8 +351,8 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
     assert "nicht initialisiert" not in status, (
         "_build_slot_status must not use 'nicht initialisiert' — use 'leer' instead"
     )
-    assert "leer" in status, (
-        "Uninitialized Pflicht-Slots must appear as 'leer' in the slot status string"
+    assert "LEER" in status or "leer" in status, (
+        "Uninitialized Pflicht-Slots must appear as 'leer'/'LEER' in the slot status string"
     )
     # All 9 Pflicht-Slots must be listed by their German title
     for titel in (
