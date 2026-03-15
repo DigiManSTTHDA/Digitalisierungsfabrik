@@ -254,14 +254,14 @@ So that deletion logic and API endpoints are verified.
 
 **Definition of Done:**
 
-- [ ] `backend/tests/test_project_deletion.py` exists
-- [ ] At least 7 test functions covering scenarios above
-- [ ] Tests use real SQLite (`:memory:`) — not mocks
-- [ ] Both happy-path and negative tests included
-- [ ] `ruff check backend/` passes
-- [ ] `ruff format --check backend/` passes
-- [ ] `python -m mypy backend/ --explicit-package-bases` passes
-- [ ] `pytest backend/tests/test_project_deletion.py --tb=short -q` passes with 0 failures
+- [x] `backend/tests/test_project_deletion.py` exists
+- [x] At least 7 test functions — exactly 7 tests
+- [x] Tests use real SQLite (`:memory:`) via FastAPI TestClient
+- [x] Both happy-path and negative tests included
+- [x] `ruff check backend/` passes
+- [x] `ruff format --check backend/` passes
+- [x] `python -m mypy backend/ --explicit-package-bases` passes (no new errors)
+- [x] `pytest backend/tests/test_project_deletion.py --tb=short -q` — 7 passed
 
 ---
 
