@@ -80,9 +80,33 @@ async def create_project(
     body: ProjectCreateRequest,
     repo: RepoDep,
 ) -> ProjectResponse:
-    """Neues Projekt anlegen (FR-G-01)."""
+    """Neues Projekt anlegen (FR-G-01) + Moderator-Begrüßung (FR-D-11).
+
+    Per SDD 6.1.0: Der Moderator begrüßt den Nutzer bei neuem Projekt.
+    The greeting turn runs synchronously at creation time so it is
+    available in dialog history before the WebSocket connects.
+    """
     project = repo.create(name=body.name, beschreibung=body.beschreibung)
     logger.info("project_created", projekt_id=project.projekt_id)
+
+    # FR-D-11: Run moderator greeting turn immediately
+    try:
+        from api.websocket import _build_orchestrator
+        from config import get_settings
+        from core.orchestrator import TurnInput
+
+        settings = get_settings()
+        orchestrator = _build_orchestrator(repo, settings)
+        await orchestrator.process_turn(
+            project.projekt_id, TurnInput(text="[Systemstart]")
+        )
+        # Reload after greeting turn (mode switched to exploration)
+        project = repo.load(project.projekt_id)
+        logger.info("moderator_greeting_done", projekt_id=project.projekt_id)
+    except Exception:
+        logger.exception("moderator_greeting_failed", projekt_id=project.projekt_id)
+        # Continue without greeting — project is still usable
+
     return _project_to_response(project)
 
 

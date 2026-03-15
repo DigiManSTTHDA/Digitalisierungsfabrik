@@ -112,21 +112,16 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
 
     orchestrator = _build_orchestrator(repo, settings)
 
-    # FR-D-11: If project starts in moderator mode (fresh project, no dialog yet),
-    # send greeting automatically before waiting for user input.
+    # FR-D-11: If project has a moderator greeting in dialog history (turn 1),
+    # send it as chat_done event so the user sees it in the chat pane.
+    # The greeting itself is triggered by the REST endpoint (router.py) at project
+    # creation time, not here — this avoids React StrictMode double-mount issues.
     project = repo.load(project_id)
-    if project.aktiver_modus == "moderator" and project.working_memory.letzter_dialogturn == 0:
-        try:
-            greeting_input = TurnInput(text="[Systemstart]")
-            output = await orchestrator.process_turn(project_id, greeting_input)
-            await _send_turn_events(ws, output, repo, project_id)
-            log.info("websocket.moderator_greeting_sent")
-        except Exception:
-            log.exception("websocket.greeting_error")
-            await _send_event(
-                ws,
-                ErrorEvent(message="Fehler bei der Begrüßung", recoverable=True),
-            )
+    greeting_history = repo.load_dialog_history(project_id, last_n=1)
+    if greeting_history and greeting_history[0].get("role") == "assistant":
+        first_msg = greeting_history[0].get("inhalt", "")
+        if first_msg:
+            await _send_event(ws, ChatDoneEvent(message=first_msg))
 
     try:
         while True:
