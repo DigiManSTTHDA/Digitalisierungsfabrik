@@ -187,14 +187,14 @@ So that I can verify the mode correctly populates the Structure Artifact across 
 
 **Definition of Done:**
 
-- [ ] `backend/tests/test_structuring_mode.py` exists
-- [ ] At least 9 test functions covering the scenarios above (including error propagation)
-- [ ] All tests use mocked LLM client
-- [ ] Tests verify patches, phasenstatus, and flags
-- [ ] `ruff check backend/` passes
-- [ ] `ruff format --check backend/` passes
-- [ ] `python -m mypy backend/ --explicit-package-bases` passes
-- [ ] `pytest backend/tests/test_structuring_mode.py --tb=short -q` passes with 0 failures
+- [x] `backend/tests/test_structuring_mode.py` exists
+- [x] At least 9 test functions — 11 tests (9 async + 2 unit for _compute_phasenstatus)
+- [x] All tests use mocked LLM client
+- [x] Tests verify patches, phasenstatus, and flags
+- [x] `ruff check backend/` passes
+- [x] `ruff format --check backend/` passes
+- [x] `python -m mypy backend/ --explicit-package-bases` passes (no new errors)
+- [x] `pytest backend/tests/test_structuring_mode.py --tb=short -q` — 11 passed
 
 ---
 
