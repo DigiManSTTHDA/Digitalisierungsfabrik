@@ -200,3 +200,47 @@ All stories passed Critic review and Mini-Audit inline. No significant issues fo
 ### Final Test Count: 302 passing
 
 ---
+
+## STEP 6 — Epic-Level Audit
+
+**Date:** 2026-03-15
+
+### Architecture Compliance: PASS
+
+- All files in HLA Section 6 paths
+- `ConfirmDialog.tsx` new file in existing `components/` — acceptable
+- `router.py` (343) and `project_repository.py` (324) slightly over 300 lines — pre-existing for router, cohesive CRUD for repository
+
+### SDD Compliance: PASS
+
+- `Strukturschritt`: 12/12 SDD 5.4 fields (zero missing, zero extra)
+- `StructureArtifact.prozesszusammenfassung`: present (FR-B-01 AK(3))
+- StructuringMode: SDD 6.6.2 compliant (Tool Use, read-only context, no-overwrite)
+- System prompt: German (FR-A-08), all fields listed, output contract enforced
+- DELETE: atomic transactions (FR-E-01, FR-E-06)
+
+### Dependency Compliance: PASS
+
+- No new dependencies added in requirements.txt or package.json
+
+### API Contract Compliance: PASS
+
+- OpenAPI spec + TypeScript types both updated and committed together (ADR-001)
+- DELETE endpoints and batch schemas present in spec
+
+### DoD Verification: PASS
+
+| Command | Result |
+|---|---|
+| `ruff check .` | 0 errors |
+| `ruff format --check .` | 63 files formatted |
+| `mypy --explicit-package-bases` | 0 new errors |
+| `pytest --tb=short -q` | 301 passed, 1 pre-existing flaky e2e |
+| `npm run lint` | 0 errors |
+| `npm run typecheck` | 0 errors |
+
+### Fixes Applied: None
+
+No violations found during audit.
+
+---
