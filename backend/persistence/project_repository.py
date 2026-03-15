@@ -285,6 +285,36 @@ class ProjectRepository:
             for row in rows
         ]
 
+    def delete(self, projekt_id: str) -> bool:
+        """Delete a project and all related data atomically. Returns True if found."""
+        with self._db.transaction() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM projects WHERE projekt_id = ?", (projekt_id,)
+            ).fetchone()
+            if row is None:
+                return False
+            conn.execute("DELETE FROM dialog_history WHERE projekt_id = ?", (projekt_id,))
+            conn.execute("DELETE FROM artifact_versions WHERE projekt_id = ?", (projekt_id,))
+            conn.execute("DELETE FROM working_memory WHERE projekt_id = ?", (projekt_id,))
+            conn.execute("DELETE FROM projects WHERE projekt_id = ?", (projekt_id,))
+        return True
+
+    def delete_many(self, projekt_ids: list[str]) -> int:
+        """Delete multiple projects atomically. Returns count of actually deleted."""
+        if not projekt_ids:
+            return 0
+        deleted = 0
+        with self._db.transaction() as conn:
+            for pid in projekt_ids:
+                row = conn.execute("SELECT 1 FROM projects WHERE projekt_id = ?", (pid,)).fetchone()
+                if row is not None:
+                    conn.execute("DELETE FROM dialog_history WHERE projekt_id = ?", (pid,))
+                    conn.execute("DELETE FROM artifact_versions WHERE projekt_id = ?", (pid,))
+                    conn.execute("DELETE FROM working_memory WHERE projekt_id = ?", (pid,))
+                    conn.execute("DELETE FROM projects WHERE projekt_id = ?", (pid,))
+                    deleted += 1
+        return deleted
+
     def _load_working_memory(self, conn: sqlite3.Connection, projekt_id: str) -> WorkingMemory:
         row = conn.execute(
             "SELECT inhalt FROM working_memory WHERE projekt_id = ?", (projekt_id,)

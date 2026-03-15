@@ -221,15 +221,15 @@ So that users can remove projects they no longer need.
 
 **Definition of Done:**
 
-- [ ] `backend/persistence/project_repository.py` — `delete()` and `delete_many()` methods exist
-- [ ] `backend/api/schemas.py` — `ProjectDeleteBatchRequest` and `ProjectDeleteBatchResponse` exist
-- [ ] `backend/api/router.py` — `DELETE /api/projects/{projekt_id}` endpoint returns 204/404
-- [ ] `backend/api/router.py` — `DELETE /api/projects/batch` endpoint returns `ProjectDeleteBatchResponse`
-- [ ] Deletion is atomic (single transaction)
-- [ ] `ruff check backend/` passes
-- [ ] `ruff format --check backend/` passes
-- [ ] `python -m mypy backend/ --explicit-package-bases` passes
-- [ ] `pytest backend/ --tb=short -q` passes with 0 failures
+- [x] `backend/persistence/project_repository.py` — `delete()` and `delete_many()` methods exist
+- [x] `backend/api/schemas.py` — `ProjectDeleteBatchRequest` and `ProjectDeleteBatchResponse` exist
+- [x] `backend/api/router.py` — `DELETE /api/projects/{projekt_id}` endpoint returns 204/404
+- [x] `backend/api/router.py` — `DELETE /api/projects/batch` endpoint returns `ProjectDeleteBatchResponse`
+- [x] Deletion is atomic (single transaction)
+- [x] `ruff check backend/` passes
+- [x] `ruff format --check backend/` passes
+- [x] `python -m mypy backend/ --explicit-package-bases` passes (no new errors)
+- [x] `pytest backend/ --tb=short -q` — 290 passed (1 pre-existing flaky e2e excluded)
 
 ---
 

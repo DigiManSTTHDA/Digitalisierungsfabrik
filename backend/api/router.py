@@ -21,6 +21,8 @@ from api.schemas import (
     ErrorResponse,
     ProjectCompleteResponse,
     ProjectCreateRequest,
+    ProjectDeleteBatchRequest,
+    ProjectDeleteBatchResponse,
     ProjectListResponse,
     ProjectResponse,
 )
@@ -149,6 +151,37 @@ async def download_project(
         struktur=project.structure_artifact.model_dump(),
         algorithmus=project.algorithm_artifact.model_dump(),
     )
+
+
+@router.delete(
+    "/projects/batch",
+    response_model=ProjectDeleteBatchResponse,
+    responses={422: {"model": ErrorResponse}},
+)
+async def delete_projects_batch(
+    body: ProjectDeleteBatchRequest,
+    repo: RepoDep,
+) -> ProjectDeleteBatchResponse:
+    """Mehrere Projekte gleichzeitig löschen."""
+    deleted = repo.delete_many(body.projekt_ids)
+    logger.info("projects_batch_deleted", count=deleted, requested=len(body.projekt_ids))
+    return ProjectDeleteBatchResponse(deleted_count=deleted)
+
+
+@router.delete(
+    "/projects/{projekt_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={404: {"model": ErrorResponse}},
+)
+async def delete_project(
+    projekt_id: str,
+    repo: RepoDep,
+) -> None:
+    """Einzelnes Projekt löschen (FR-E-06: isoliert)."""
+    found = repo.delete(projekt_id)
+    if not found:
+        raise HTTPException(status_code=404, detail=f"Projekt '{projekt_id}' nicht gefunden")
+    logger.info("project_deleted", projekt_id=projekt_id)
 
 
 @router.post(

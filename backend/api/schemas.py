@@ -54,6 +54,18 @@ class ProjectCompleteResponse(BaseModel):
     project: ProjectResponse
 
 
+class ProjectDeleteBatchRequest(BaseModel):
+    """Request body for DELETE /api/projects/batch."""
+
+    projekt_ids: list[str] = Field(min_length=1)
+
+
+class ProjectDeleteBatchResponse(BaseModel):
+    """Response for DELETE /api/projects/batch."""
+
+    deleted_count: int
+
+
 # ---------------------------------------------------------------------------
 # Artifacts
 # ---------------------------------------------------------------------------
