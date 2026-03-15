@@ -291,15 +291,15 @@ So that users can see process steps, decision points, and flow connections in re
 
 **Definition of Done:**
 
-- [ ] `frontend/src/components/ArtifactTab.tsx` renders Strukturschritt fields
-- [ ] Steps sorted by `reihenfolge`
-- [ ] Type badge per step (aktion/entscheidung/schleife/ausnahme)
-- [ ] `prozesszusammenfassung` rendered above step list
-- [ ] `spannungsfeld` shown as warning when present
-- [ ] Invalidated steps visually distinct (FR-F-05)
-- [ ] `npm run lint` passes
-- [ ] `npm run format:check` passes
-- [ ] `npm run typecheck` passes
+- [x] `frontend/src/components/ArtifactTab.tsx` renders Strukturschritt fields
+- [x] Steps sorted by `reihenfolge`
+- [x] Type badge per step (aktion/entscheidung/schleife/ausnahme) with distinct colors
+- [x] `prozesszusammenfassung` rendered above step list in blue box
+- [x] `spannungsfeld` shown as warning (amber background)
+- [x] Invalidated steps visually distinct (FR-F-05) — red left border + status text
+- [x] `npm run lint` passes
+- [x] `npm run format:check` passes
+- [x] `npm run typecheck` passes
 
 ---
 
