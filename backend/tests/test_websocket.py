@@ -51,6 +51,11 @@ def ws_setup():  # type: ignore[no-untyped-def]
     """Provide app, db, repo, project_id for WebSocket tests."""
     app, db, repo = _make_test_app()  # type: ignore[no-untyped-call]
     project = repo.create(name="WS-Test")
+    # Skip moderator greeting for unit tests — set to exploration directly
+    project.aktiver_modus = "exploration"
+    project.working_memory.aktiver_modus = "exploration"
+    project.working_memory.letzter_dialogturn = 1  # pretend greeting already happened
+    repo.save(project)
     yield app, db, repo, project.projekt_id
     db.close()
 

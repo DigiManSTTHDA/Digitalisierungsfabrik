@@ -112,6 +112,22 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
 
     orchestrator = _build_orchestrator(repo, settings)
 
+    # FR-D-11: If project starts in moderator mode (fresh project, no dialog yet),
+    # send greeting automatically before waiting for user input.
+    project = repo.load(project_id)
+    if project.aktiver_modus == "moderator" and project.working_memory.letzter_dialogturn == 0:
+        try:
+            greeting_input = TurnInput(text="[Systemstart]")
+            output = await orchestrator.process_turn(project_id, greeting_input)
+            await _send_turn_events(ws, output, repo, project_id)
+            log.info("websocket.moderator_greeting_sent")
+        except Exception:
+            log.exception("websocket.greeting_error")
+            await _send_event(
+                ws,
+                ErrorEvent(message="Fehler bei der Begrüßung", recoverable=True),
+            )
+
     try:
         while True:
             raw = await ws.receive_text()

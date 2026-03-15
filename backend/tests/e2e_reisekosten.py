@@ -343,15 +343,25 @@ def main() -> None:
     print("  PHASE 1: MODERATOR-BEGRUESSUNG (FR-D-11)")
     print(f"{'─' * 72}")
 
+    # The greeting is sent automatically when connecting to a fresh project.
+    greeting_text: str | None = None
+    greeting_error: str | None = None
     with client.websocket_connect(f"/ws/session/{projekt_id}") as ws:
-        greeting = send_one_turn(
-            ws, "Hallo, ich möchte einen Prozess beschreiben.", "Moderator Greeting"
-        )
+        for _ in range(EVENTS_PER_TURN):
+            try:
+                event = ws.receive_json()
+                if event.get("event") == "chat_done":
+                    greeting_text = event.get("message", "")
+                elif event.get("event") == "error":
+                    greeting_error = event.get("message", "")
+                    break
+            except Exception:
+                break
 
-    assert greeting["system_response"], "Moderator muss eine Begruessung senden"
-    assert not greeting["error"], f"Moderator Greeting Error: {greeting['error']}"
-    print("\n  Moderator Greeting: OK")
-    print(f"  Antwort: {greeting['system_response'][:200]}")
+    assert greeting_text, f"Moderator muss automatisch begruessen, got error: {greeting_error}"
+    assert not greeting_error, f"Moderator Greeting Error: {greeting_error}"
+    print("\n  Moderator Greeting: OK (automatisch bei Connect)")
+    print(f"  Antwort: {greeting_text[:200]}")
 
     # Check that mode switched to exploration after greeting
     proj_after_greeting = client.get(f"/api/projects/{projekt_id}").json()
@@ -454,9 +464,7 @@ def main() -> None:
     print(f"\n{'=' * 72}")
     print("  GESAMTERGEBNIS")
     print(f"{'=' * 72}")
-    print(
-        f"  Moderator Greeting:     {'OK' if greeting['system_response'] and not greeting['error'] else 'FAIL'}"
-    )
+    print(f"  Moderator Greeting:     {'OK' if greeting_text and not greeting_error else 'FAIL'}")
     print(f"  Modus-Handoff:          {'OK' if modus_after == 'exploration' else 'FAIL'}")
     print(f"  Explorer Dialog:        {successful}/{len(responses)} Turns OK")
     print(f"  Artifact Score:         {avg:.0%} ({verdict})")
