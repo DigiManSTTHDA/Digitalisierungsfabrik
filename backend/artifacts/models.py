@@ -118,8 +118,14 @@ class Strukturschritt(BaseModel):
 
 
 class StructureArtifact(BaseModel):
-    """Strukturartefakt — Kontrollfluss-Graph als dict-keyed Schritt-Map."""
+    """Strukturartefakt — Kontrollfluss-Graph als dict-keyed Schritt-Map.
 
+    SDD 5.4: Das Artefakt besteht aus zwei Teilen:
+    1. Prozesszusammenfassung — Freitext, für Fachanwender lesbar
+    2. Prozessstruktur — geordnete Liste von Strukturschritten
+    """
+
+    prozesszusammenfassung: str = ""  # SDD 5.4, FR-B-01 AK(3): Pflichtslot
     schritte: dict[str, Strukturschritt] = Field(default_factory=dict)
     version: int = 0
 

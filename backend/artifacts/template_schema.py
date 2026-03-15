@@ -73,6 +73,11 @@ STRUCTURE_TEMPLATE = ArtifactTemplate(
     artifact_type="structure",
     path_patterns=[
         TemplatePathPattern(
+            pattern=r"/prozesszusammenfassung",
+            allowed_ops=["replace"],
+            description="Prozesszusammenfassung setzen (SDD 5.4, FR-B-01 AK(3))",
+        ),
+        TemplatePathPattern(
             pattern=r"/schritte/[^/]+",
             allowed_ops=["add", "remove"],
             description="Gesamten Strukturschritt hinzufügen oder entfernen",

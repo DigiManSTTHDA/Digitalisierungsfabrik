@@ -96,10 +96,15 @@ def prompt_context_summary(context: ModeContext) -> str:
     spannungsfelder = wm.spannungsfelder
     spannungsfelder_text = ", ".join(spannungsfelder) if spannungsfelder else "keine"
 
+    # Prozesszusammenfassung status
+    zusammenfassung = context.structure_artifact.prozesszusammenfassung
+    zusammenfassung_status = "befüllt" if zusammenfassung.strip() else "leer"
+
     lines = [
         f"Aktive Phase: {wm.aktive_phase.value}",
         f"Aktiver Modus: {wm.aktiver_modus}",
         f"Explorations-Slots: {filled_slots}/{total_slots} befüllt",
+        f"Prozesszusammenfassung: {zusammenfassung_status}",
         f"Strukturschritte: {filled_schritte}/{total_schritte} befüllt",
         f"Spannungsfelder: {spannungsfelder_text}",
     ]
