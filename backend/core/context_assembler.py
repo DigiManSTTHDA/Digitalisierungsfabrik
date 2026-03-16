@@ -7,7 +7,7 @@ SDD-Referenz: 6.5 (Context Engineering), 6.5.3 (Kontext-Bestandteile).
 
 from __future__ import annotations
 
-from artifacts.models import CompletenessStatus, Projektphase
+from artifacts.models import CompletenessStatus, EmmaAktionstyp, Projektphase
 from artifacts.template_schema import TEMPLATES, ArtifactTemplate
 from config import Settings
 from core.models import Project
@@ -100,13 +100,67 @@ def prompt_context_summary(context: ModeContext) -> str:
     zusammenfassung = context.structure_artifact.prozesszusammenfassung
     zusammenfassung_status = "befüllt" if zusammenfassung.strip() else "leer"
 
+    # Algorithm artifact slot counts
+    total_abschnitte = len(context.algorithm_artifact.abschnitte)
+    filled_abschnitte = sum(
+        1
+        for a in context.algorithm_artifact.abschnitte.values()
+        if a.completeness_status != CompletenessStatus.leer
+    )
+
+    # Algorithm prozesszusammenfassung status
+    algo_zusammenfassung = context.algorithm_artifact.prozesszusammenfassung
+    algo_zusammenfassung_status = "befüllt" if algo_zusammenfassung.strip() else "leer"
+
     lines = [
         f"Aktive Phase: {wm.aktive_phase.value}",
         f"Aktiver Modus: {wm.aktiver_modus}",
         f"Explorations-Slots: {filled_slots}/{total_slots} befüllt",
-        f"Prozesszusammenfassung: {zusammenfassung_status}",
+        f"Prozesszusammenfassung (Struktur): {zusammenfassung_status}",
         f"Strukturschritte: {filled_schritte}/{total_schritte} befüllt",
+        f"Algorithmusabschnitte: {filled_abschnitte}/{total_abschnitte} befüllt",
+        f"Prozesszusammenfassung (Algorithmus): {algo_zusammenfassung_status}",
         f"Spannungsfelder: {spannungsfelder_text}",
     ]
 
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# EMMA Action Catalog (SDD 8.3)
+# ---------------------------------------------------------------------------
+
+_EMMA_DESCRIPTIONS: dict[EmmaAktionstyp, str] = {
+    EmmaAktionstyp.FIND: "UI-Element auf dem Bildschirm finden",
+    EmmaAktionstyp.FIND_AND_CLICK: "UI-Element finden und anklicken",
+    EmmaAktionstyp.CLICK: "Auf ein bekanntes Element klicken",
+    EmmaAktionstyp.DRAG: "Element per Drag & Drop verschieben",
+    EmmaAktionstyp.SCROLL: "In einem Bereich scrollen",
+    EmmaAktionstyp.TYPE: "Text in ein Eingabefeld eingeben",
+    EmmaAktionstyp.READ: "Wert aus einem UI-Element auslesen",
+    EmmaAktionstyp.READ_FORM: "Mehrere Formularfelder auf einmal auslesen",
+    EmmaAktionstyp.GENAI: "Generative KI für Textverarbeitung einsetzen",
+    EmmaAktionstyp.EXPORT: "Daten aus einer Anwendung exportieren",
+    EmmaAktionstyp.IMPORT: "Daten in eine Anwendung importieren",
+    EmmaAktionstyp.FILE_OPERATION: "Dateioperationen durchführen (kopieren, verschieben, löschen)",
+    EmmaAktionstyp.SEND_MAIL: "E-Mail versenden",
+    EmmaAktionstyp.COMMAND: "Systembefehle oder Tastenkombinationen ausführen",
+    EmmaAktionstyp.LOOP: "Schleife über eine Menge von Elementen",
+    EmmaAktionstyp.DECISION: "Entscheidung basierend auf einer Bedingung",
+    EmmaAktionstyp.WAIT: "Auf ein Ereignis oder eine Zeitspanne warten",
+    EmmaAktionstyp.SUCCESS: "Erfolgreichen Abschluss einer Aktion markieren",
+}
+
+
+def emma_action_catalog_text() -> str:
+    """Return German-language listing of all 18 EMMA action types (SDD 8.3).
+
+    Raises KeyError if an EmmaAktionstyp member is not in the descriptions map.
+    """
+    lines: list[str] = []
+    for member in EmmaAktionstyp:
+        if member not in _EMMA_DESCRIPTIONS:
+            msg = f"EmmaAktionstyp.{member.name} has no description in _EMMA_DESCRIPTIONS"
+            raise KeyError(msg)
+        lines.append(f"- {member.value}: {_EMMA_DESCRIPTIONS[member]}")
     return "\n".join(lines)
