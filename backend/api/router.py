@@ -25,6 +25,8 @@ from api.schemas import (
     ProjectDeleteBatchResponse,
     ProjectListResponse,
     ProjectResponse,
+    ValidationBefundResponse,
+    ValidationReportResponse,
 )
 from artifacts.completeness import CompletenessCalculator
 from artifacts.models import (
@@ -332,6 +334,36 @@ async def debug_advance_phase(projekt_id: str, repo: RepoDep) -> AdvancePhaseRes
         raise HTTPException(status_code=400, detail="Bereits in der letzten Phase")
     repo.save(project)
     return AdvancePhaseResponse(project=_project_to_response(project))
+
+
+@router.get(
+    "/projects/{projekt_id}/validation",
+    response_model=ValidationReportResponse,
+    responses={404: {"model": ErrorResponse}},
+    tags=["projects"],
+)
+async def get_validation_report(projekt_id: str, repo: RepoDep) -> ValidationReportResponse:
+    """Aktuellen Validierungsbericht abrufen (SDD 6.6.4, FR-C-08)."""
+    project = _load_or_404(repo, projekt_id)
+    bericht = project.working_memory.validierungsbericht
+    if bericht is None:
+        raise HTTPException(status_code=404, detail="Kein Validierungsbericht vorhanden")
+    return ValidationReportResponse(
+        befunde=[
+            ValidationBefundResponse(
+                befund_id=b.befund_id,
+                schweregrad=b.schweregrad,
+                beschreibung=b.beschreibung,
+                betroffene_slots=b.betroffene_slots,
+                artefakttyp=b.artefakttyp,
+                empfehlung=b.empfehlung,
+            )
+            for b in bericht.befunde
+        ],
+        erstellt_am=bericht.erstellt_am,
+        durchlauf_nr=bericht.durchlauf_nr,
+        ist_bestanden=bericht.ist_bestanden,
+    )
 
 
 def _recalculate_completeness(project: Project) -> None:

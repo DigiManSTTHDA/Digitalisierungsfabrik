@@ -26,9 +26,16 @@ interface Slot {
   spannungsfeld?: string;
 }
 
+const SEVERITY_BORDER: Record<string, string> = {
+  kritisch: "#dc2626",
+  warnung: "#d97706",
+  hinweis: "#3b82f6",
+};
+
 interface ArtifactTabProps {
   artifact: Record<string, unknown>;
   type: "exploration" | "struktur" | "algorithmus";
+  flaggedSlots?: Record<string, string>;
 }
 
 function getSlots(
@@ -68,7 +75,15 @@ const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   ausnahme: { label: "Ausnahme", color: "#dc2626" },
 };
 
-function StructureSlotCard({ id, slot }: { id: string; slot: Slot }) {
+function StructureSlotCard({
+  id,
+  slot,
+  severity,
+}: {
+  id: string;
+  slot: Slot;
+  severity?: string;
+}) {
   const status = slot.completeness_status ?? "leer";
   const algoStatus = slot.algorithmus_status ?? "ausstehend";
   const isInvalidiert = algoStatus === "invalidiert";
@@ -76,11 +91,18 @@ function StructureSlotCard({ id, slot }: { id: string; slot: Slot }) {
     label: slot.typ ?? "?",
     color: "#6b7280",
   };
+  const borderColor = severity
+    ? SEVERITY_BORDER[severity]
+    : isInvalidiert
+      ? "#dc2626"
+      : undefined;
 
   return (
     <div
       className={`slot-card ${isInvalidiert ? "invalidiert" : ""}`}
-      style={isInvalidiert ? { borderLeft: "3px solid #dc2626" } : undefined}
+      style={
+        borderColor ? { borderLeft: `3px solid ${borderColor}` } : undefined
+      }
     >
       <div className="slot-header">
         <span className="slot-name">
@@ -155,7 +177,11 @@ function StructureSlotCard({ id, slot }: { id: string; slot: Slot }) {
   );
 }
 
-export function ArtifactTab({ artifact, type }: ArtifactTabProps) {
+export function ArtifactTab({
+  artifact,
+  type,
+  flaggedSlots = {},
+}: ArtifactTabProps) {
   const version = (artifact.version as number) ?? 0;
 
   // For structure artifacts: show prozesszusammenfassung and sort by reihenfolge
@@ -195,7 +221,12 @@ export function ArtifactTab({ artifact, type }: ArtifactTabProps) {
           </div>
         )}
         {sortedEntries.map(([id, slot]) => (
-          <StructureSlotCard key={id} id={id} slot={slot} />
+          <StructureSlotCard
+            key={id}
+            id={id}
+            slot={slot}
+            severity={flaggedSlots[id]}
+          />
         ))}
       </div>
     );
@@ -226,9 +257,19 @@ export function ArtifactTab({ artifact, type }: ArtifactTabProps) {
       {entries.map(([id, slot]) => {
         const status = slot.completeness_status ?? "leer";
         const content = slot.inhalt ?? "";
+        const slotSeverity = flaggedSlots[id];
+        const slotBorder = slotSeverity
+          ? SEVERITY_BORDER[slotSeverity]
+          : undefined;
 
         return (
-          <div key={id} className="slot-card">
+          <div
+            key={id}
+            className="slot-card"
+            style={
+              slotBorder ? { borderLeft: `3px solid ${slotBorder}` } : undefined
+            }
+          >
             <div className="slot-header">
               <span className="slot-name">
                 {slot.titel ?? slot.slot_id ?? id}

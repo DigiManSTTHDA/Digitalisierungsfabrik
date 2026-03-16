@@ -214,6 +214,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/projects/{projekt_id}/validation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Validation Report
+     * @description Aktuellen Validierungsbericht abrufen (SDD 6.6.4, FR-C-08).
+     */
+    get: operations["get_validation_report_api_projects__projekt_id__validation_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/health": {
     parameters: {
       query?: never;
@@ -439,6 +459,29 @@ export interface components {
      * @enum {string}
      */
     Projektstatus: "aktiv" | "pausiert" | "abgeschlossen";
+    /**
+     * Schweregrad
+     * @description Schweregrad eines Validierungsbefunds (SDD 6.6.4 Schweregradskala, ADR-007).
+     * @enum {string}
+     */
+    Schweregrad: "kritisch" | "warnung" | "hinweis";
+    /**
+     * ValidationBefundResponse
+     * @description Single validation finding in the report.
+     */
+    ValidationBefundResponse: {
+      /** Befund Id */
+      befund_id: string;
+      schweregrad: components["schemas"]["Schweregrad"];
+      /** Beschreibung */
+      beschreibung: string;
+      /** Betroffene Slots */
+      betroffene_slots: string[];
+      /** Artefakttyp */
+      artefakttyp: string;
+      /** Empfehlung */
+      empfehlung: string;
+    };
     /** ValidationError */
     ValidationError: {
       /** Location */
@@ -451,6 +494,23 @@ export interface components {
       input?: unknown;
       /** Context */
       ctx?: Record<string, never>;
+    };
+    /**
+     * ValidationReportResponse
+     * @description Full validation report (SDD 6.6.4).
+     */
+    ValidationReportResponse: {
+      /** Befunde */
+      befunde: components["schemas"]["ValidationBefundResponse"][];
+      /**
+       * Erstellt Am
+       * Format: date-time
+       */
+      erstellt_am: string;
+      /** Durchlauf Nr */
+      durchlauf_nr: number;
+      /** Ist Bestanden */
+      ist_bestanden: boolean;
     };
   };
   responses: never;
@@ -902,6 +962,46 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["AdvancePhaseResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_validation_report_api_projects__projekt_id__validation_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        projekt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ValidationReportResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
       /** @description Validation Error */
