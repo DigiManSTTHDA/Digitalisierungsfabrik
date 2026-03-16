@@ -14,7 +14,7 @@ Tracks open points from `hla_architecture.md` Section 9.
 | OP-12 | Project list in UI | open | Frontend component in Step 6 |
 | OP-14 | LLM log format | open | `logs` table in SQLite: `timestamp, modus, turn_id, input_tokens, output_tokens, input_json, output_json` |
 | OP-17 | Event log format | open | Prototype: free-text upload, no structured parsing |
-| OP-20 | Repeated output contract violations | open | Prototype: error message + user retry. Post-prototype: configurable retry limit + moderator escalation |
+| OP-20 | Repeated output contract violations | resolved | ADR-007: Prototype uses error message + user retry. No auto-retry. Configurable retry limit deferred to post-prototype. |
 
 ## Already resolved (in current HLA v0.2)
 
