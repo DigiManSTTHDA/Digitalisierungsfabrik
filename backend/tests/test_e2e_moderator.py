@@ -372,10 +372,10 @@ async def test_e2e_moderator_explorer_flow() -> None:
         f"  {'#':>3} | {'Input':6} | {'Before':12} | {'After':12} | {'Phase':15} | {'Flags':25} | {'Slots':5} | Antwort"
     )
     print(
-        f"  {'─' * 3}-+-{'─' * 6}-+-{'─' * 12}-+-{'─' * 12}-+-{'─' * 15}-+-{'─' * 25}-+-{'─' * 5}-+-{'─' * 40}"
+        f"  {'-' * 3}-+-{'-' * 6}-+-{'-' * 12}-+-{'-' * 12}-+-{'-' * 15}-+-{'-' * 25}-+-{'-' * 5}-+-{'-' * 40}"
     )
     for e in turn_log:
-        flags_str = ",".join(e["flags"]) if e["flags"] else "—"
+        flags_str = ",".join(e["flags"]) if e["flags"] else "-"
         slots_str = f"{e['befuellte_slots']}/{e['bekannte_slots']}"
         preview = e["nutzeraeusserung_preview"][:40].replace("\n", " ")
         print(
