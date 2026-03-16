@@ -77,3 +77,23 @@ No escalations needed:
 3. No new dependencies required
 
 ---
+
+## STEP 3 — Implementation
+
+**Date:** 2026-03-16
+
+### Stories Implemented
+
+| Story | Commit | Key Changes |
+|---|---|---|
+| 10-01 | c3f2225 | ADR-007, Schweregrad/Validierungsbefund/Validierungsbericht models, WM field, API schema |
+| 10-02 | 6d9d6ea | 9 tests: severity logic, persistence round-trip, durchlauf_nr |
+| 10-03 | 3a286b2 | Full ValidationMode (5 deterministic checks + LLM), system prompt, validation_checks.py split |
+| 10-04 | b52af56 | Orchestrator stores report in WM, terminal phase → abgeschlossen |
+| 10-05 | a1fb237 | 14 deterministic validation tests (clean/flawed/mixed/edge cases) |
+| 10-06+07 | 94d451e | Frontend severity badges, slot highlighting, GET /validation endpoint, OpenAPI + TS types |
+
+### Test Results
+
+- 351 backend tests passing (was 337 before Epic 10)
+- Frontend: lint, typecheck, format all pass
