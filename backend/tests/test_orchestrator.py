@@ -836,7 +836,8 @@ async def test_phase_complete_triggers_moderator_then_advance() -> None:
     assert result2.error is None
     reloaded2 = repo.load(project.projekt_id)
     assert reloaded2.aktive_phase == Projektphase.strukturierung
-    assert reloaded2.aktiver_modus == "structuring"
+    # Per SDD 6.1.2, moderator introduces the new phase; primary mode is in vorheriger_modus
+    assert reloaded2.aktiver_modus == "moderator"
 
 
 @pytest.mark.asyncio

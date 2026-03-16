@@ -71,16 +71,21 @@ def test_next_phase_from_validierung() -> None:
 
 
 def test_advance_phase_updates_wm_and_project() -> None:
-    """advance_phase updates both WM and project to the next phase."""
+    """advance_phase updates both WM and project to the next phase.
+
+    Per SDD 6.1.2, the moderator introduces each new phase, so aktiver_modus
+    is set to 'moderator' and vorheriger_modus carries the primary working mode.
+    """
     project = _make_project(Projektphase.exploration)
     wm = project.working_memory
     result = advance_phase(project, wm)
     assert result is True
     assert wm.aktive_phase == Projektphase.strukturierung
-    assert wm.aktiver_modus == "structuring"
+    assert wm.aktiver_modus == "moderator"
+    assert wm.vorheriger_modus == "structuring"
     assert wm.phasenstatus == Phasenstatus.in_progress
     assert project.aktive_phase == Projektphase.strukturierung
-    assert project.aktiver_modus == "structuring"
+    assert project.aktiver_modus == "moderator"
 
 
 def test_advance_phase_at_end_returns_false() -> None:
@@ -112,14 +117,19 @@ def test_phase_to_mode_values_are_correct() -> None:
     assert PHASE_TO_MODE[Projektphase.validierung] == "validation"
 
 
-def test_advance_phase_resets_vorheriger_modus_to_none() -> None:
-    """advance_phase clears vorheriger_modus (no stale reference after transition)."""
+def test_advance_phase_sets_vorheriger_modus_to_primary_mode() -> None:
+    """advance_phase sets vorheriger_modus to the new phase's primary mode.
+
+    Per SDD 6.1.2, after phase advance the moderator introduces the new phase.
+    vorheriger_modus carries the primary working mode so return_to_mode can
+    hand off to it once the moderator's intro turn is done.
+    """
     project = _make_project(Projektphase.exploration)
     wm = project.working_memory
-    wm.vorheriger_modus = "moderator"  # simulates coming from moderator
+    wm.vorheriger_modus = "moderator"  # stale value from previous turn
     result = advance_phase(project, wm)
     assert result is True
-    assert wm.vorheriger_modus is None
+    assert wm.vorheriger_modus == "structuring"
 
 
 def test_advance_phase_through_all_phases() -> None:
