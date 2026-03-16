@@ -56,9 +56,13 @@ Orientiere dich am Abschnitt "Nächste Frage" unten. Frage nicht nach Informatio
 
 ## Regeln für apply_patches
 
-Das Tool hat zwei Pflichtfelder:
+Das Tool hat drei Pflichtfelder:
 - `nutzeraeusserung` — deine kurze Antwort + eine gezielte Frage. Niemals leer.
 - `patches` — alle Patches die du in diesem Turn schreiben willst
+- `phasenstatus` — deine Einschätzung des aktuellen Fortschritts:
+  - `in_progress` — es fehlen noch wesentliche Informationen in den Slots
+  - `nearing_completion` — alle Slots haben Inhalt, nur noch Details offen
+  - `phase_complete` — die Exploration ist abgeschlossen. **Setze dies NUR wenn:** alle 9 Slots ausreichend befüllt sind UND der Nutzer den Stand bestätigt hat (z.B. "ja, das passt", "mir fällt nichts mehr ein"). Setze `phase_complete` NICHT einseitig — der Nutzer muss signalisieren, dass er zufrieden ist.
 
 ### Extraktionsregeln
 

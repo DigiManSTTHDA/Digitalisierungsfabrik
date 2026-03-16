@@ -26,6 +26,7 @@ from persistence.project_repository import ProjectRepository
 def _make_mock_llm(
     nutzeraeusserung: str = "Willkommen! Was ist der Auslöser Ihres Prozesses?",
     patches: list[dict] | None = None,  # type: ignore[type-arg]
+    phasenstatus: str = "in_progress",
 ) -> LLMClient:
     """Create a mock LLMClient that returns a valid apply_patches response."""
     if patches is None:
@@ -40,7 +41,7 @@ def _make_mock_llm(
     mock = AsyncMock(spec=LLMClient)
     mock.complete.return_value = LLMResponse(
         nutzeraeusserung=nutzeraeusserung,
-        tool_input={"patches": patches},
+        tool_input={"patches": patches, "phasenstatus": phasenstatus},
     )
     return mock
 
@@ -57,7 +58,8 @@ def _make_invalid_path_llm() -> LLMClient:
                     "path": "/slots/prozessausloeser/nonexistent_field",
                     "value": "test",
                 }
-            ]
+            ],
+            "phasenstatus": "in_progress",
         },
     )
     return mock
@@ -253,7 +255,8 @@ async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
         for slot_id, titel in PFLICHT_SLOTS.items()
     }
 
-    llm_mock = _make_mock_llm(patches=[])
+    # LLM says phase_complete — guardrail should allow it since all slots are filled
+    llm_mock = _make_mock_llm(patches=[], phasenstatus="phase_complete")
     mode = ExplorationMode(llm_client=llm_mock)
 
     now = datetime.now(tz=UTC)
@@ -278,7 +281,7 @@ async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
 
     output = await mode.call(context)
 
-    # All 9 Pflicht-Slots are vollstaendig → phase_complete (triggers Moderator)
+    # LLM says phase_complete + all slots filled → guardrail allows it
     assert output.phasenstatus == Phasenstatus.phase_complete
 
 
@@ -435,10 +438,13 @@ async def test_nearing_completion_escalates_to_phase_complete() -> None:
     project.exploration_artifact.version += 1
     repo.save(project)
 
-    # LLM returns no content patches (user said "I'm done")
+    # LLM returns no content patches, says nearing_completion (user said "I'm done").
+    # Guardrail should promote to phase_complete because all slots have content
+    # and no new content was written.
     llm = _make_mock_llm(
         nutzeraeusserung="Alles klar, wir können weitermachen.",
         patches=[],
+        phasenstatus="nearing_completion",
     )
     orchestrator = _make_orchestrator(repo, llm)
     result = await orchestrator.process_turn(

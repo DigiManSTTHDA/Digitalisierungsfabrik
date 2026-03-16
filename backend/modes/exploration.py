@@ -1,7 +1,10 @@
 """Explorationsmodus — erfasst implizites Prozesswissen des Nutzers (SDD 6.6.1).
 
 Calls the LLM via LLMClient to conduct a structured interview, filling the
-8 Pflicht-Slots of the ExplorationArtifact through dialog with the user.
+9 Pflicht-Slots of the ExplorationArtifact through dialog with the user.
+
+The LLM decides the phasenstatus (in_progress / nearing_completion / phase_complete).
+Deterministic guardrails prevent premature phase_complete when slots are still empty.
 
 SDD references: 6.6.1 (Explorationsmodus), FR-B-00 (Pflicht-Slots),
 FR-A-02 (Tool Use API), FR-A-08 (Systemsprache Deutsch).
@@ -17,7 +20,7 @@ from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput
 
-# 8 Pflicht-Slots per SDD 5.3 and FR-B-00
+# 9 Pflicht-Slots per SDD 5.3 and FR-B-00
 PFLICHT_SLOTS: dict[str, str] = {
     "prozessausloeser": "Prozessauslöser",
     "prozessziel": "Prozessziel",
@@ -30,7 +33,6 @@ PFLICHT_SLOTS: dict[str, str] = {
     "prozesszusammenfassung": "Prozesszusammenfassung",
 }
 
-# Path to the German system prompt
 _PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "exploration.md"
 
 
@@ -61,12 +63,7 @@ def _build_init_patches(existing_slot_ids: set[str]) -> list[dict]:  # type: ign
 
 
 def _build_slot_status(context: ModeContext) -> str:
-    """Build a German slot status string for the system prompt.
-
-    Always shows all 8 Pflicht-Slots. Slots not yet in the artifact are
-    shown as 'leer' — they will be initialized before LLM patches are applied,
-    so the LLM can safely use 'replace' on all sub-fields.
-    """
+    """Build a German slot status string for the system prompt."""
     lines: list[str] = []
     for slot_id, titel in PFLICHT_SLOTS.items():
         slot = context.exploration_artifact.slots.get(slot_id)
@@ -82,11 +79,10 @@ def _next_empty_slot(context: ModeContext) -> tuple[str, str] | None:
     """Return (slot_id, titel) of the first empty/partial Pflicht-Slot, or None."""
     for slot_id, titel in PFLICHT_SLOTS.items():
         if slot_id == "prozesszusammenfassung":
-            continue  # Zusammenfassung kommt zuletzt
+            continue
         slot = context.exploration_artifact.slots.get(slot_id)
         if slot is None or not slot.inhalt or slot.completeness_status == CompletenessStatus.leer:
             return slot_id, titel
-    # Check prozesszusammenfassung last
     slot = context.exploration_artifact.slots.get("prozesszusammenfassung")
     if slot is None or not slot.inhalt or slot.completeness_status == CompletenessStatus.leer:
         return "prozesszusammenfassung", "Prozesszusammenfassung"
@@ -97,26 +93,19 @@ def _merge_slot_patches(
     patches: list[dict],  # type: ignore[type-arg]
     context: ModeContext,
 ) -> list[dict]:  # type: ignore[type-arg]
-    """Post-process LLM patches: merge new content with existing slot content.
-
-    Instead of requiring the LLM to copy-paste existing content into replace
-    values, the code handles merging. The LLM only needs to write NEW facts.
-    This is critical for smaller/weaker models that can't reliably consolidate.
-    """
+    """Post-process LLM patches: merge new content with existing slot content."""
     merged: list[dict] = []  # type: ignore[type-arg]
     for patch in patches:
         path = patch.get("path", "")
         op = patch.get("op", "")
         value = patch.get("value", "")
 
-        # Only merge inhalt patches — let completeness_status patches through as-is
         if (
             op == "replace"
             and path.endswith("/inhalt")
             and isinstance(value, str)
             and value.strip()
         ):
-            # Extract slot_id from path like /slots/prozessziel/inhalt
             parts = path.strip("/").split("/")
             if len(parts) == 3 and parts[0] == "slots":
                 slot_id = parts[1]
@@ -124,8 +113,6 @@ def _merge_slot_patches(
                 existing = slot.inhalt.strip() if slot and slot.inhalt else ""
 
                 if existing and value.strip() != existing:
-                    # Check if the new value already contains the old content
-                    # (LLM followed the instruction). If not, prepend it.
                     if existing[:50] not in value:
                         merged_value = existing + " " + value.strip()
                         merged.append({"op": "replace", "path": path, "value": merged_value})
@@ -146,24 +133,29 @@ def _translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type
     return messages
 
 
-def _compute_phasenstatus_with_patches(
+def _apply_guardrails(
+    llm_phasenstatus: Phasenstatus,
     context: ModeContext,
     patches: list[dict],  # type: ignore[type-arg]
 ) -> Phasenstatus:
-    """Determine phase status accounting for patches this turn will apply.
+    """Deterministic guardrails on top of the LLM's phasenstatus decision.
 
-    Builds a projected view of slot completeness: starts from the current
-    artifact state, then overlays any completeness_status patches from the
-    LLM. This way, if the LLM marks the last slot as 'vollstaendig' in
-    this turn, we can immediately return phase_complete.
+    The LLM decides the phasenstatus, but we enforce two hard constraints:
+
+    1. BLOCK phase_complete if any Pflicht-Slot is still leer (no content).
+       The LLM might be overconfident. Can't complete with empty slots.
+
+    2. PROMOTE to phase_complete if the LLM says nearing_completion but all
+       slots have content and no new content was written this turn. This catches
+       LLMs that are too conservative and never say phase_complete even when
+       the user is clearly done.
     """
-    # Start with current statuses
+    # Build projected slot states (current + patches about to be applied)
     projected: dict[str, CompletenessStatus] = {}
     for slot_id in PFLICHT_SLOTS:
         slot = context.exploration_artifact.slots.get(slot_id)
         projected[slot_id] = slot.completeness_status if slot else CompletenessStatus.leer
 
-    # Overlay patches that set completeness_status
     for patch in patches:
         path = patch.get("path", "")
         if path.endswith("/completeness_status") and patch.get("op") == "replace":
@@ -173,34 +165,35 @@ def _compute_phasenstatus_with_patches(
                     projected[parts[1]] = CompletenessStatus(patch["value"])
                 except ValueError:
                     pass
-        # Also: if an inhalt patch exists for a slot that is currently leer,
-        # promote it to at least teilweise (the LLM wrote content).
         if path.endswith("/inhalt") and patch.get("op") == "replace" and patch.get("value"):
             parts = path.strip("/").split("/")
             if len(parts) == 3 and parts[0] == "slots" and parts[1] in PFLICHT_SLOTS:
                 if projected.get(parts[1]) == CompletenessStatus.leer:
                     projected[parts[1]] = CompletenessStatus.teilweise
 
-    # Evaluate
     has_leer = any(s == CompletenessStatus.leer for s in projected.values())
-    if has_leer:
+
+    # Guardrail 1: BLOCK — can't complete with empty slots
+    if llm_phasenstatus == Phasenstatus.phase_complete and has_leer:
         return Phasenstatus.in_progress
 
-    all_complete = all(
-        s in (CompletenessStatus.vollstaendig, CompletenessStatus.nutzervalidiert)
-        for s in projected.values()
-    )
-    if all_complete:
-        return Phasenstatus.phase_complete
-    return Phasenstatus.nearing_completion
+    # Guardrail 2: PROMOTE — LLM says nearing but user is done (no new content)
+    if llm_phasenstatus == Phasenstatus.nearing_completion and not has_leer:
+        content_patches = [
+            p for p in patches if p.get("path", "").endswith("/inhalt") and p.get("value")
+        ]
+        if not content_patches:
+            return Phasenstatus.phase_complete
+
+    return llm_phasenstatus
 
 
 class ExplorationMode(BaseMode):
     """Explorationsmodus (SDD 6.6.1) — real LLM implementation.
 
-    Conducts a structured interview via the LLM to fill the 8 Pflicht-Slots
-    of the ExplorationArtifact. On the first turn, initializes all missing
-    Pflicht-Slots with empty ExplorationSlot objects.
+    The LLM decides the phasenstatus. Deterministic guardrails prevent
+    premature completion (empty slots) and help conservative LLMs that
+    never signal phase_complete on their own.
     """
 
     def __init__(self, llm_client: LLMClient | None = None) -> None:
@@ -208,11 +201,9 @@ class ExplorationMode(BaseMode):
 
     async def call(self, context: ModeContext) -> ModeOutput:
         """Process one exploration turn via the LLM."""
-        # Build initialization patches for missing Pflicht-Slots (DEBT-01)
         existing_ids = set(context.exploration_artifact.slots.keys())
         init_patches = _build_init_patches(existing_ids)
 
-        # If no LLM client, return stub with init patches only
         if self._llm_client is None:
             return ModeOutput(
                 nutzeraeusserung="[ExplorationMode] Kein LLM-Client konfiguriert.",
@@ -228,7 +219,6 @@ class ExplorationMode(BaseMode):
         system_prompt = system_prompt.replace("{context_summary}", context_summary)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
 
-        # Deterministic next-question hint — helps weaker models stay on track
         next_slot = _next_empty_slot(context)
         if next_slot:
             hint = (
@@ -251,10 +241,8 @@ class ExplorationMode(BaseMode):
             )
         system_prompt += hint
 
-        # Build messages from dialog history
         messages = _translate_dialog_history(context.dialog_history)
 
-        # Call LLM
         response = await self._llm_client.complete(
             system=system_prompt,
             messages=messages,
@@ -262,26 +250,18 @@ class ExplorationMode(BaseMode):
             tool_choice={"type": "tool", "name": "apply_patches"},
         )
 
-        # Combine init patches + LLM patches (with auto-merge of existing content)
         llm_patches = response.tool_input.get("patches", [])
         llm_patches = _merge_slot_patches(llm_patches, context)
         all_patches = init_patches + llm_patches
 
-        # Compute phase status — must account for patches THIS turn will apply.
-        # Build a projected view of slot statuses after patches are applied.
-        phasenstatus = _compute_phasenstatus_with_patches(context, llm_patches)
+        # LLM decides phasenstatus, guardrails enforce hard constraints
+        raw_status = response.tool_input.get("phasenstatus", "in_progress")
+        try:
+            llm_phasenstatus = Phasenstatus(raw_status)
+        except ValueError:
+            llm_phasenstatus = Phasenstatus.in_progress
 
-        # Deterministic escalation: if all slots have content (nearing_completion)
-        # and the LLM returned no content patches this turn, the user is signalling
-        # completion. Promote to phase_complete so the Moderator can propose the
-        # phase transition. Without this, weaker LLMs that leave slots at "teilweise"
-        # would never trigger phase_complete.
-        if phasenstatus == Phasenstatus.nearing_completion:
-            content_patches = [
-                p for p in llm_patches if p.get("path", "").endswith("/inhalt") and p.get("value")
-            ]
-            if not content_patches:
-                phasenstatus = Phasenstatus.phase_complete
+        phasenstatus = _apply_guardrails(llm_phasenstatus, context, llm_patches)
 
         flags: list[Flag] = []
         if phasenstatus == Phasenstatus.phase_complete:

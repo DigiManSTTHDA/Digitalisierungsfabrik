@@ -3,6 +3,9 @@
 Calls the LLM via LLMClient to decompose the process from the Exploration
 Artifact into Strukturschritte with types, sequences, and decision points.
 
+The LLM decides the phasenstatus. Deterministic guardrails prevent premature
+phase_complete when no Strukturschritte exist yet.
+
 SDD references: 6.6.2 (Strukturierungsmodus), FR-B-01 (Strukturartefakt),
 FR-A-04 (Ausnahmen), FR-A-08 (Systemsprache Deutsch), FR-B-09 (RFC 6902).
 """
@@ -67,35 +70,28 @@ def _translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type
     return messages
 
 
-def _compute_phasenstatus(context: ModeContext) -> Phasenstatus:
-    """Determine phase status from structure artifact completeness (SDD 6.6.2).
+def _apply_guardrails(llm_phasenstatus: Phasenstatus, context: ModeContext) -> Phasenstatus:
+    """Deterministic guardrails on the LLM's phasenstatus decision.
 
-    - in_progress: no schritte yet, or any schritt is leer
-    - nearing_completion: all schritte have content but not all nutzervalidiert
-    - phase_complete: all schritte are vollstaendig or nutzervalidiert
+    BLOCK phase_complete if no Strukturschritte exist or any has leer status.
     """
     schritte = context.structure_artifact.schritte
     if not schritte:
-        return Phasenstatus.in_progress
+        if llm_phasenstatus == Phasenstatus.phase_complete:
+            return Phasenstatus.in_progress
+        return llm_phasenstatus
 
-    statuses = [s.completeness_status for s in schritte.values()]
+    has_leer = any(s.completeness_status == CompletenessStatus.leer for s in schritte.values())
+    if llm_phasenstatus == Phasenstatus.phase_complete and has_leer:
+        return Phasenstatus.nearing_completion
 
-    if any(s == CompletenessStatus.leer for s in statuses):
-        return Phasenstatus.in_progress
-
-    if all(
-        s in (CompletenessStatus.vollstaendig, CompletenessStatus.nutzervalidiert) for s in statuses
-    ):
-        return Phasenstatus.phase_complete
-
-    return Phasenstatus.nearing_completion
+    return llm_phasenstatus
 
 
 class StructuringMode(BaseMode):
     """Strukturierungsmodus (SDD 6.6.2) — real LLM implementation.
 
-    Decomposes the process from the Exploration Artifact into Strukturschritte
-    with types, sequences, decision points, loops, and exceptions.
+    The LLM decides the phasenstatus. Guardrails prevent premature completion.
     """
 
     def __init__(self, llm_client: LLMClient | None = None) -> None:
@@ -111,7 +107,6 @@ class StructuringMode(BaseMode):
                 flags=[],
             )
 
-        # Build system prompt with context
         context_summary = prompt_context_summary(context)
         exploration_content = _build_exploration_content(context)
         slot_status = _build_slot_status(context)
@@ -121,10 +116,8 @@ class StructuringMode(BaseMode):
         system_prompt = system_prompt.replace("{exploration_content}", exploration_content)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
 
-        # Build messages from dialog history
         messages = _translate_dialog_history(context.dialog_history)
 
-        # Call LLM with Tool Use (SDD 6.5.2)
         response = await self._llm_client.complete(
             system=system_prompt,
             messages=messages,
@@ -134,8 +127,15 @@ class StructuringMode(BaseMode):
 
         patches = response.tool_input.get("patches", [])
 
-        # Compute phase status from current artifact state
-        phasenstatus = _compute_phasenstatus(context)
+        # LLM decides phasenstatus, guardrails enforce hard constraints
+        raw_status = response.tool_input.get("phasenstatus", "in_progress")
+        try:
+            llm_phasenstatus = Phasenstatus(raw_status)
+        except ValueError:
+            llm_phasenstatus = Phasenstatus.in_progress
+
+        phasenstatus = _apply_guardrails(llm_phasenstatus, context)
+
         flags: list[Flag] = []
         if phasenstatus == Phasenstatus.phase_complete:
             flags.append(Flag.phase_complete)

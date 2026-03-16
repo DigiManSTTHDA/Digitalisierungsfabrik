@@ -27,7 +27,7 @@ from artifacts.models import (
 from core.working_memory import WorkingMemory
 from llm.base import LLMClient, LLMResponse
 from modes.base import Flag, ModeContext
-from modes.structuring import StructuringMode, _compute_phasenstatus
+from modes.structuring import StructuringMode, _apply_guardrails
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -92,6 +92,7 @@ def _make_schritt(
 def _make_mock_llm(
     nutzeraeusserung: str = "Ich habe den ersten Schritt identifiziert.",
     patches: list[dict] | None = None,  # type: ignore[type-arg]
+    phasenstatus: str = "in_progress",
 ) -> LLMClient:
     """Create a mock LLMClient returning a valid apply_patches response."""
     if patches is None:
@@ -99,7 +100,7 @@ def _make_mock_llm(
     mock = AsyncMock(spec=LLMClient)
     mock.complete.return_value = LLMResponse(
         nutzeraeusserung=nutzeraeusserung,
-        tool_input={"patches": patches},
+        tool_input={"patches": patches, "phasenstatus": phasenstatus},
     )
     return mock
 
@@ -254,13 +255,13 @@ async def test_structuring_decision_has_bedingung() -> None:
 
 
 @pytest.mark.asyncio
-async def test_structuring_phase_complete_when_all_validated() -> None:
-    """When all Strukturschritte are nutzervalidiert, return phase_complete + flag."""
+async def test_structuring_phase_complete_when_llm_signals() -> None:
+    """When LLM says phase_complete and schritte exist, mode emits Flag.phase_complete."""
     schritte = {
         "s1": _make_schritt("s1", status=CompletenessStatus.nutzervalidiert),
         "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.nutzervalidiert),
     }
-    mock_llm = _make_mock_llm()
+    mock_llm = _make_mock_llm(phasenstatus="phase_complete")
     mode = StructuringMode(llm_client=mock_llm)
     ctx = _make_context(schritte=schritte)
     result = await mode.call(ctx)
@@ -348,31 +349,36 @@ async def test_structuring_error_on_llm_failure() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_compute_phasenstatus_vollstaendig_is_phase_complete() -> None:
-    """When all schritte are vollstaendig (not nutzervalidiert), return phase_complete."""
-    schritte = {
-        "s1": _make_schritt("s1", status=CompletenessStatus.vollstaendig),
-        "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.vollstaendig),
-    }
-    ctx = _make_context(schritte=schritte)
-    assert _compute_phasenstatus(ctx) == Phasenstatus.phase_complete
+def test_guardrail_blocks_phase_complete_without_schritte() -> None:
+    """Guardrail blocks phase_complete if no Strukturschritte exist."""
+    ctx = _make_context(schritte={})
+    assert _apply_guardrails(Phasenstatus.phase_complete, ctx) == Phasenstatus.in_progress
 
 
-def test_compute_phasenstatus_nearing_completion() -> None:
-    """When all schritte are teilweise, return nearing_completion."""
-    schritte = {
-        "s1": _make_schritt("s1", status=CompletenessStatus.teilweise),
-        "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.teilweise),
-    }
-    ctx = _make_context(schritte=schritte)
-    assert _compute_phasenstatus(ctx) == Phasenstatus.nearing_completion
-
-
-def test_compute_phasenstatus_mixed_statuses() -> None:
-    """When one schritt is leer and another vollstaendig, return in_progress."""
+def test_guardrail_blocks_phase_complete_with_leer_schritte() -> None:
+    """Guardrail downgrades phase_complete to nearing_completion if any schritt is leer."""
     schritte = {
         "s1": _make_schritt("s1", status=CompletenessStatus.vollstaendig),
         "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.leer),
     }
     ctx = _make_context(schritte=schritte)
-    assert _compute_phasenstatus(ctx) == Phasenstatus.in_progress
+    assert _apply_guardrails(Phasenstatus.phase_complete, ctx) == Phasenstatus.nearing_completion
+
+
+def test_guardrail_allows_phase_complete_when_schritte_filled() -> None:
+    """Guardrail passes through phase_complete when schritte exist and none are leer."""
+    schritte = {
+        "s1": _make_schritt("s1", status=CompletenessStatus.teilweise),
+        "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.vollstaendig),
+    }
+    ctx = _make_context(schritte=schritte)
+    assert _apply_guardrails(Phasenstatus.phase_complete, ctx) == Phasenstatus.phase_complete
+
+
+def test_guardrail_passes_through_in_progress() -> None:
+    """Guardrail does not modify in_progress from LLM."""
+    schritte = {
+        "s1": _make_schritt("s1", status=CompletenessStatus.teilweise),
+    }
+    ctx = _make_context(schritte=schritte)
+    assert _apply_guardrails(Phasenstatus.in_progress, ctx) == Phasenstatus.in_progress

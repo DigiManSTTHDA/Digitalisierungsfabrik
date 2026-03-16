@@ -66,6 +66,10 @@ Du gibst pro Turn aus:
   - Neuen Schritt hinzufügen: `{"op": "add", "path": "/schritte/s1", "value": {...alle Felder...}}`
   - Feld aktualisieren: `{"op": "replace", "path": "/schritte/s1/beschreibung", "value": "..."}`
   - Zusammenfassung setzen: `{"op": "replace", "path": "/prozesszusammenfassung", "value": "..."}`
+- **phasenstatus**: Deine Einschätzung des Fortschritts:
+  - `in_progress` — es fehlen noch wesentliche Strukturschritte oder Details
+  - `nearing_completion` — Grundstruktur steht, nur noch Feinschliff
+  - `phase_complete` — alle Prozessschritte sind erfasst, Entscheidungslogik modelliert, der Nutzer hat den Stand bestätigt. **Setze dies NUR wenn der Nutzer zugestimmt hat.**
 
 ## Sprache
 

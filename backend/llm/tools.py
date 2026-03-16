@@ -3,6 +3,11 @@
 Defines the JSON schema sent to the Anthropic Messages API so the LLM
 can return structured RFC 6902 patch operations. Used by all cognitive modes.
 
+The LLM also reports its assessment of the phase status (SDD 6.4.1, 6.6.x):
+- in_progress: still working, more turns needed
+- nearing_completion: almost done, wrapping up
+- phase_complete: phase goal reached, ready for Moderator handoff
+
 SDD references: FR-B-09 (Schreibkontrolle via RFC 6902), SDD 6.5.2 (Output-Kontrakt).
 """
 
@@ -12,9 +17,8 @@ from __future__ import annotations
 APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
     "name": "apply_patches",
     "description": (
-        "Wendet RFC 6902 JSON Patch Operationen auf das aktive Artefakt an. "
-        "Jeder Patch muss 'op' (add/replace/remove), 'path' (RFC 6902 Pfad) "
-        "und bei add/replace einen 'value' enthalten."
+        "Wendet RFC 6902 JSON Patch Operationen auf das aktive Artefakt an "
+        "und meldet den Phasenstatus."
     ),
     "input_schema": {
         "type": "object",
@@ -50,7 +54,18 @@ APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
                     "required": ["op", "path"],
                 },
             },
+            "phasenstatus": {
+                "type": "string",
+                "enum": ["in_progress", "nearing_completion", "phase_complete"],
+                "description": (
+                    "Deine Einschätzung des Phasenstatus: "
+                    "'in_progress' = es fehlen noch wesentliche Informationen. "
+                    "'nearing_completion' = fast fertig, nur noch Feinschliff. "
+                    "'phase_complete' = alle Ziele der Phase sind erreicht, "
+                    "der Nutzer hat den Stand bestätigt, Übergabe an den Moderator."
+                ),
+            },
         },
-        "required": ["nutzeraeusserung", "patches"],
+        "required": ["nutzeraeusserung", "patches", "phasenstatus"],
     },
 }
