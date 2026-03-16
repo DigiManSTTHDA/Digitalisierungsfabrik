@@ -1,0 +1,364 @@
+{
+  "_doc": "End-to-End Testdialog: Explorer (komprimiert) → Moderator-Phasenwechsel → Structurer → Eskalation → Moderator → Structurer → Phase Complete → Moderator → Phasenwechsel zur Spezifikation. Prozess: Eingangsrechnungsverarbeitung. WICHTIG: user_inputs ist eine Queue — der Testrunner füttert die nächste Nachricht ein, egal welche Frage der Modus gerade gestellt hat.",
+
+  "exploration_seed": {
+    "_doc": "Vor-befülltes Explorationsartefakt. Wird direkt ins Projekt geladen, um den Explorer-Durchlauf zu verkürzen. Entspricht dem Ergebnis des Explorer-E2E-Tests (Eingangsrechnungsverarbeitung).",
+    "slots": {
+      "prozessausloeser": {
+        "slot_id": "prozessausloeser",
+        "titel": "Prozessauslöser",
+        "inhalt": "Eingang einer Lieferantenrechnung per Post (Papierrechnung) oder per E-Mail an das Sammelpostfach rechnungen@firma.de. In Einzelfällen auch direkte Zusendung an den Besteller (wird nicht zentral erfasst).",
+        "completeness_status": "vollstaendig"
+      },
+      "prozessziel": {
+        "slot_id": "prozessziel",
+        "titel": "Prozessziel",
+        "inhalt": "Fristgerechte, sachlich und rechnerisch korrekte Prüfung, Freigabe und Bezahlung von Eingangsrechnungen. Buchung in DATEV. Angestrebtes Nebenziel: Skonto-Ausnutzung (2% bei Zahlung innerhalb von 10 Tagen), wird aktuell meist nicht erreicht.",
+        "completeness_status": "vollstaendig"
+      },
+      "prozessbeschreibung": {
+        "slot_id": "prozessbeschreibung",
+        "titel": "Prozessbeschreibung",
+        "inhalt": "1. Rechnungseingang: Papierrechnungen werden im Sekretariat entgegengenommen und von Frau Becker morgens eingescannt. E-Mail-Rechnungen gehen an Sammelpostfach rechnungen@firma.de. Problem: Manche Lieferanten schicken Rechnungen direkt an den Besteller, diese werden nicht zentral erfasst.\n\n2. Erfassung und Prüfung: Sachbearbeiterin in der Buchhaltung prüft ob die Rechnung zu einer Bestellung passt (Bestellabgleich). Bei Rechnungen ohne Bestellnummer aufwändige manuelle Zuordnung ('Detektivarbeit').\n\n3. Freigabe (dreistufig): (a) Sachliche Prüfung durch Sachbearbeiterin, (b) Freigabe durch Kostenstellenverantwortlichen, (c) bei Rechnungen über 5.000 EUR zusätzlich Freigabe durch Geschäftsführung. Freigabe digital über ELO, aber manche Abteilungsleiter (z.B. Herr Krause) verweigern ELO, drucken aus und stempeln. Frau Becker muss gestempelte Ausdrucke erneut einscannen (Medienbruch, Doppelarbeit). Hauptproblem: Rechnungen bleiben in der Freigabe tagelang liegen.\n\n4. Buchung: Nach Freigabe Buchung in DATEV.\n\n5. Zahlung: Zahlungsanweisung, Ziel ist Skonto-Nutzung (2% bei 10 Tagen). Wird wegen langer Freigabezeiten meist verpasst — geschätzter Skontoverlust ca. 30.000 EUR/Jahr.\n\nMengen: 400-500 Rechnungen pro Monat.\n\nSchmerzpunkte: Lange Durchlaufzeiten durch Freigabe-Stau, verpasste Skonto-Fristen, Medienbruch durch ELO-Verweigerung, Rechnungen ohne Bestellnummer schwer zuzuordnen, Mahnungen.",
+        "completeness_status": "vollstaendig"
+      },
+      "scope": {
+        "slot_id": "scope",
+        "titel": "Scope",
+        "inhalt": "Beginn: Eingang der Rechnung (Post oder E-Mail). Ende: Zahlung an den Lieferanten. Nicht im Scope: Bestellprozess (vorgelagert), Lieferantenmanagement, Ausgangsrechnungen.",
+        "completeness_status": "vollstaendig"
+      },
+      "beteiligte_systeme": {
+        "slot_id": "beteiligte_systeme",
+        "titel": "Beteiligte Systeme",
+        "inhalt": "DATEV: Buchung und Zahlungsverkehr. ELO: Digitale Rechnungsfreigabe (Workflow), wird nicht von allen Abteilungsleitern genutzt. Microsoft Outlook: Sammelpostfach rechnungen@firma.de für E-Mail-Rechnungen. Scanner (Sekretariat): Digitalisierung von Papierrechnungen und gestempelten Ausdrucken.",
+        "completeness_status": "vollstaendig"
+      },
+      "umgebung": {
+        "slot_id": "umgebung",
+        "titel": "Umgebung",
+        "inhalt": "Mittelständisches Maschinenbauunternehmen, ca. 200 Mitarbeiter, ein Standort in Nürnberg. Buchhaltung besteht aus 4 Personen, davon eine fast ausschließlich für Eingangsrechnungen zuständig. Sekretariat (Frau Becker) übernimmt Scannen und Posteingang.",
+        "completeness_status": "vollstaendig"
+      },
+      "randbedingungen": {
+        "slot_id": "randbedingungen",
+        "titel": "Randbedingungen",
+        "inhalt": "Skonto-Frist: 2% bei Zahlung innerhalb von 10 Tagen (wird meist verpasst). Freigabeschwelle: Rechnungen über 5.000 EUR erfordern zusätzliche Geschäftsführungsfreigabe. Gesetzliche Aufbewahrungspflicht für Rechnungen. Ordnungsgemäße Buchführung nach HGB/Steuerrecht.",
+        "completeness_status": "vollstaendig"
+      },
+      "ausnahmen": {
+        "slot_id": "ausnahmen",
+        "titel": "Ausnahmen",
+        "inhalt": "Gutschriften: Umgekehrter Rechnungsprozess, muss korrekt gegengebucht werden. Teilrechnungen: Bei Großprojekten, müssen gegen Gesamtauftrag gegengerechnet werden. Rechnungen ohne Bestellnummer: Zuordnung unklar, manuelle Recherche. ELO-Verweigerung: Manche Abteilungsleiter nutzen Stempel-Freigabe statt digitalem Workflow. Direktzustellung an Besteller: Rechnung umgeht zentralen Posteingang. Mahnungen: Folge zu langer Bearbeitungszeit.",
+        "completeness_status": "vollstaendig"
+      },
+      "prozesszusammenfassung": {
+        "slot_id": "prozesszusammenfassung",
+        "titel": "Prozesszusammenfassung",
+        "inhalt": "Die Eingangsrechnungsverarbeitung umfasst den Weg einer Lieferantenrechnung vom Eingang (Post/E-Mail) über eine dreistufige Freigabe bis zur Bezahlung und Buchung in DATEV. Bei ca. 400-500 Rechnungen monatlich in einem 200-Mitarbeiter-Maschinenbauunternehmen sind die zentralen Herausforderungen die langen Freigabe-Durchlaufzeiten, die regelmäßig zum Verlust von Skonto-Vorteilen führen, sowie Medienbrüche durch ELO-Verweigerung einzelner Führungskräfte.",
+        "completeness_status": "vollstaendig"
+      }
+    },
+    "version": 12
+  },
+
+  "user_inputs": [
+    {
+      "id": "U1",
+      "phase": "moderator_strukturierung_intro",
+      "description": "User unsicher, fragt was jetzt kommt — kein algorithmisches Verständnis",
+      "message": "Und was machen wir jetzt? Ich hab doch schon alles erzählt. Müssen wir das nochmal durchgehen?",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren"
+    },
+    {
+      "id": "U2",
+      "phase": "moderator_strukturierung_intro",
+      "description": "User bestätigt explizit → Structurer startet",
+      "message": "Na gut, wenn Sie meinen. Dann fangen wir halt an.",
+      "expect_mode": "moderator",
+      "expect_action": "strukturierung_starten",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "structuring"
+    },
+    {
+      "id": "U3",
+      "phase": "structuring",
+      "description": "User beschreibt Freigabe-Unterschied anekdotisch statt algorithmisch — kein Wort 'Pfad' oder 'Entscheidungspunkt'",
+      "message": "Ja so ungefähr. Wobei, bei der Freigabe ist es so: Wenn die Rechnung unter 5000 Euro ist dann macht das nur der Abteilungsleiter. Aber wenn es mehr ist, muss der Chef auch noch drüber schauen. Das hat letzte Woche wieder ewig gedauert weil der Chef auf Dienstreise war.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["freigabe", "entscheidung", "betragsprüfung"]
+    },
+    {
+      "id": "U4",
+      "phase": "structuring",
+      "description": "User erzählt anekdotisch über Wiederholungen und Gutschriften — keine Fachtermini",
+      "message": "Ach ja, und manchmal stimmt was nicht auf der Rechnung, dann muss man beim Lieferanten nachfragen und warten bis die eine korrigierte schicken. Das geht manchmal zwei drei Mal hin und her. Und dann gibt es noch Gutschriften, die kommen auch per Post rein aber die werden nicht bezahlt sondern irgendwie verrechnet, das macht die Kollegin in DATEV anders rum.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["schleife", "ausnahme", "gutschrift"]
+    },
+    {
+      "id": "U5",
+      "phase": "structuring",
+      "description": "User beschreibt Bestellabgleich-Problem aus Alltagssicht, erwähnt Teilrechnungen nebenbei",
+      "message": "Das mit der Bestellnummer ist immer nervig. Wenn eine drauf steht ist es einfach, dann kann die Kollegin das sofort zuordnen. Aber manche Lieferanten schreiben keine drauf, dann muss man rumtelefonieren wer das bestellt hat. Das dauert manchmal Tage. Und bei den großen Maschinenteilen kommen oft drei vier Rechnungen für eine Bestellung, die muss man dann zusammenrechnen ob das stimmt.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["bestellabgleich", "entscheidung", "teilrechnung"]
+    },
+    {
+      "id": "U6",
+      "phase": "structuring",
+      "description": "User überfordert, versteht Fachbegriffe nicht → danach Panik-Button",
+      "message": "Moment mal, was meinen Sie mit Verzweigung? Und Kontrollfluss? Reden Sie deutsch mit mir, ich bin Sachbearbeiterin und kein Programmierer. Ich versteh nicht was Sie von mir wollen.",
+      "expect_mode": "structuring",
+      "triggers_after": "escalate_button",
+      "note": "Nach dieser Nachricht drückt der User den Panik-Button."
+    },
+    {
+      "id": "U7",
+      "phase": "moderator_eskalation",
+      "description": "User beschreibt Frustration beim Moderator — emotionaler, nicht analytisch",
+      "message": "Also der redet die ganze Zeit in so einem Computerdeutsch das ich nicht verstehe. Verzweigung, Kontrollfluss, Entscheidungsknoten — ich weiß nicht was das bedeuten soll. Ich will einfach nur meinen Prozess erklären, nicht Informatik studieren.",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren",
+      "note": "Moderator MUSS erst analysieren, NICHT sofort zurückschicken"
+    },
+    {
+      "id": "U8",
+      "phase": "moderator_eskalation",
+      "description": "User bestätigt Rückkehr mit klarer Ansage",
+      "message": "Ja, probieren wir es nochmal. Aber sagen Sie ihm er soll normale Wörter benutzen und immer nur eine Sache auf einmal fragen. Nicht so viel auf einmal.",
+      "expect_mode": "moderator",
+      "expect_action": "zurueck_zum_modus",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "structuring",
+      "establishes_agreement": "Structurer soll einfache Sprache verwenden und nur eine Sache auf einmal fragen"
+    },
+    {
+      "id": "U9",
+      "phase": "structuring_nach_eskalation",
+      "description": "User beschreibt Reihenfolge als Erzählung, nicht als Liste",
+      "message": "Also von Anfang an: Die Rechnung kommt rein, per Post oder Mail. Frau Becker scannt die ein. Dann schaut die Kollegin in der Buchhaltung ob es eine Bestellung dazu gibt. Wenn ja, prüft sie ob alles stimmt. Dann muss der Abteilungsleiter das freigeben, und wenns über 5000 ist auch noch der Chef. Dann wird es in DATEV gebucht und dann bezahlt. So läuft das normalerweise.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["reihenfolge", "normalfall"]
+    },
+    {
+      "id": "U10",
+      "phase": "structuring_nach_eskalation",
+      "description": "User erzählt über ELO-Problem als Ärgernis, nicht als Fachbegriff",
+      "message": "Was mich wirklich ärgert ist das mit dem ELO. Das ist eigentlich dafür da dass die Freigabe digital läuft. Aber der Herr Krause druckt sich alles aus und stempelt das, und dann muss Frau Becker den Zettel wieder einscannen. Das ist doppelte Arbeit und kostet extra Zeit. Können Sie das irgendwo vermerken dass das ein Problem ist?",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["spannungsfeld", "medienbruch"]
+    },
+    {
+      "id": "U11",
+      "phase": "structuring_abschluss",
+      "description": "User bestätigt — in Alltagssprache, ohne Fachbegriffe",
+      "message": "Ja ich glaub das passt so. Ich seh da alles was wir besprochen haben. Fällt mir nichts mehr ein was noch fehlt.",
+      "expect_mode": "structuring",
+      "expect_after": "Structurer meldet phase_complete",
+      "expect_mode_after": "moderator"
+    },
+    {
+      "id": "U12",
+      "phase": "moderator_phasenwechsel",
+      "description": "User bestätigt Phasenwechsel zur Spezifikation",
+      "message": "Ja, weiter zur nächsten Phase.",
+      "expect_mode": "moderator",
+      "expect_action": "phase_wechseln",
+      "expect_flag": "advance_phase",
+      "expect_mode_after": "specification",
+      "expect_phase_after": "spezifikation"
+    }
+  ],
+
+  "system_events": [
+    {
+      "id": "S0",
+      "when": "before_U1",
+      "event": "system_start_strukturierung",
+      "description": "System startet in Strukturierungsphase (nach Explorer-Completion + Moderator-Phasenwechsel). Moderator begrüßt und erklärt Strukturierung.",
+      "assertions": [
+        "aktiver_modus == 'moderator'",
+        "aktive_phase == 'strukturierung'",
+        "vorheriger_modus == null",
+        "Moderator erklärt die Strukturierungsphase"
+      ]
+    },
+    {
+      "id": "S1",
+      "when": "after_U6",
+      "event": "escalate_button",
+      "description": "User drückt Panik-Button. Moderator wird aktiviert.",
+      "assertions": [
+        "aktiver_modus wechselt auf 'moderator'",
+        "vorheriger_modus == 'structuring'",
+        "Strukturartefakt bleibt erhalten (alle bisherigen Patches)"
+      ]
+    },
+    {
+      "id": "S2",
+      "when": "after_U11",
+      "event": "phase_complete",
+      "description": "Structurer meldet phase_complete. Moderator wird aktiviert.",
+      "assertions": [
+        "aktiver_modus wechselt auf 'moderator'",
+        "Moderator fasst Strukturierung zusammen",
+        "Moderator fragt: 'Sollen wir mit der nächsten Phase fortfahren?'"
+      ]
+    }
+  ],
+
+  "test_checkpoints": {
+    "CP1_moderator_stays_on_question": {
+      "after": "U1",
+      "check": "aktiver_modus == 'moderator'. User hat nur eine Rückfrage gestellt.",
+      "verifies": "Moderator bleibt bei Rückfragen im Moderator-Modus"
+    },
+    "CP2_explicit_confirm_starts_structuring": {
+      "after": "U2",
+      "check": "aktiver_modus == 'structuring'. User hat explizit bestätigt.",
+      "verifies": "Moderator startet Strukturierung nur nach expliziter Bestätigung"
+    },
+    "CP3_structurer_reads_exploration": {
+      "after": "U3",
+      "check": "Structurer hat erstes Strukturartefakt erstellt. Mindestens 1 Strukturschritt vorhanden.",
+      "verifies": "Structurer liest Explorationsartefakt und erstellt initiale Struktur"
+    },
+    "CP4_entscheidung_modelliert": {
+      "after": "U5",
+      "check": "Mindestens ein Strukturschritt mit typ=entscheidung existiert.",
+      "verifies": "Structurer modelliert Entscheidungspunkte aus anekdotischer Nutzerbeschreibung (kein Fachterminus nötig)"
+    },
+    "CP5_artifact_survives_escalation": {
+      "after": "S1 (escalate)",
+      "check": "Alle Strukturschritte von vor der Eskalation sind noch vorhanden.",
+      "verifies": "Eskalation zerstört keine Strukturdaten"
+    },
+    "CP5_mod_no_write": {
+      "after": "S1 (escalate)",
+      "check": "Schritte-Anzahl ist identisch vor und nach Moderator-Aktivierung.",
+      "verifies": "SDD 6.6.5: Moderator verändert keine Artefakte direkt"
+    },
+    "CP6_moderator_analyzes_not_bounces": {
+      "after": "U7",
+      "check": "aktiver_modus == 'moderator'. Moderator hat nicht sofort zurückgeschickt.",
+      "verifies": "Moderator analysiert erst bei Eskalation"
+    },
+    "CP6_mod_no_write": {
+      "after": "U7",
+      "check": "Schritte-Anzahl unverändert nach Moderator-Turn.",
+      "verifies": "SDD 6.6.5: Moderator hat kein Artefakt verändert"
+    },
+    "CP7_return_to_structuring": {
+      "after": "U8",
+      "check": "aktiver_modus == 'structuring'. Vereinbarung (einfacher sprechen) ist im Kontext.",
+      "verifies": "Rückkehr zum Structurer nach Moderator-Intervention"
+    },
+    "CP7_mod_no_write": {
+      "after": "U8",
+      "check": "Schritte-Anzahl unverändert nach Moderator-Turn U8.",
+      "verifies": "SDD 6.6.5: Moderator-Rückkehr verändert kein Artefakt"
+    },
+    "CP8_structure_has_reihenfolge": {
+      "after": "U9",
+      "check": "Strukturschritte haben aufsteigende reihenfolge und sinnvolle nachfolger.",
+      "verifies": "Structurer modelliert Prozessreihenfolge korrekt"
+    },
+    "CP9_spannungsfeld_documented": {
+      "after": "U10",
+      "check": "Mindestens ein Strukturschritt hat ein nicht-leeres spannungsfeld mit Keywords zu ELO/Medienbruch/Stempel.",
+      "verifies": "Structurer dokumentiert Risiken und Spannungsfelder inhaltlich korrekt"
+    },
+    "CP10_phase_complete_structuring": {
+      "after": "U11",
+      "check": "Moderator aktiv (durch phase_complete). Strukturartefakt hat Prozesszusammenfassung und mindestens 5 Schritte.",
+      "verifies": "Structurer erreicht phase_complete mit vollständigem Artefakt"
+    },
+    "CP10_no_leer_schritte": {
+      "after": "U11",
+      "check": "Kein Strukturschritt hat completeness_status == 'leer'. SDD 6.6.2: Abbruchbedingung erfordert alle Pflichtfelder befüllt.",
+      "verifies": "phase_complete nur wenn kein Schritt im Leerzustand"
+    },
+    "CP10_beschreibung_filled": {
+      "after": "U11",
+      "check": "Alle Strukturschritte haben nicht-leere beschreibung (Pflichtfeld SDD 5.4).",
+      "verifies": "Pflichtfeld beschreibung ist für alle Schritte befüllt"
+    },
+    "CP10_nachfolger_valid": {
+      "after": "U11",
+      "check": "Alle nachfolger-IDs referenzieren existierende schritt_ids.",
+      "verifies": "Referenzielle Integrität der Nachfolger-Verweise"
+    },
+    "CP11_phase_transition_to_spezifikation": {
+      "after": "U12",
+      "check": "aktive_phase == 'spezifikation' AND aktiver_modus == 'specification'. Strukturartefakt vollständig erhalten.",
+      "verifies": "Sauberer Phasenwechsel zur Spezifikation ohne Datenverlust"
+    }
+  },
+
+  "expected_structure_artifact": {
+    "_doc": "Erwartetes Strukturartefakt nach Abschluss aller User-Inputs. Schritte sind SINNGEMÄSS zu prüfen — die IDs und exakten Formulierungen variieren je nach LLM-Antwort. Geprüft wird: Sind die richtigen Konzepte als Schritte modelliert? Stimmen die Typen? Gibt es Entscheidungspunkte? Gibt es Ausnahmen?",
+    "expected_concepts": [
+      {
+        "concept": "Rechnungseingang",
+        "expected_typ": "aktion",
+        "keywords": ["Rechnung", "Eingang", "Post", "E-Mail"],
+        "should_be_start": true
+      },
+      {
+        "concept": "Erfassung/Scannen",
+        "expected_typ": "aktion",
+        "keywords": ["Scan", "erfass", "digital"]
+      },
+      {
+        "concept": "Bestellabgleich",
+        "expected_typ": "entscheidung",
+        "keywords": ["Bestell", "Zuordnung", "Bestellnummer"],
+        "must_have_bedingung": true
+      },
+      {
+        "concept": "Sachliche Prüfung",
+        "expected_typ": "aktion",
+        "keywords": ["sachlich", "Prüfung", "prüf"]
+      },
+      {
+        "concept": "Freigabe/Kostenstellenfreigabe",
+        "expected_typ": "aktion",
+        "keywords": ["Freigabe", "Kostenstelle", "freigeb"]
+      },
+      {
+        "concept": "Betragsprüfung GF-Freigabe",
+        "expected_typ": "entscheidung",
+        "keywords": ["5.000", "5000", "Geschäftsführung", "Betrag"],
+        "must_have_bedingung": true
+      },
+      {
+        "concept": "Buchung DATEV",
+        "expected_typ": "aktion",
+        "keywords": ["DATEV", "Buchung", "buch"]
+      },
+      {
+        "concept": "Zahlung",
+        "expected_typ": "aktion",
+        "keywords": ["Zahlung", "bezahl", "Skonto"],
+        "should_be_end": true
+      },
+      {
+        "concept": "Gutschrift/Ausnahme",
+        "expected_typ": "ausnahme",
+        "keywords": ["Gutschrift", "Ausnahme", "Sonderfall", "gegengebuch"]
+      }
+    ],
+    "structural_requirements": {
+      "min_schritte": 5,
+      "must_have_types": ["aktion", "entscheidung"],
+      "should_have_types": ["ausnahme"],
+      "must_have_start_step": true,
+      "must_have_end_step": true,
+      "must_have_prozesszusammenfassung": true,
+      "entscheidung_must_have_bedingung": true,
+      "entscheidung_must_have_multiple_nachfolger": true
+    }
+  }
+}

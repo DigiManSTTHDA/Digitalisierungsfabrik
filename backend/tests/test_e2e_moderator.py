@@ -33,6 +33,7 @@ DIALOG_PATH = (
     Path(__file__).resolve().parent.parent.parent
     / "frontend"
     / "test-texte"
+    / "explorer"
     / "dialog-e2e-moderator.json"
 )
 
@@ -217,6 +218,7 @@ async def test_e2e_moderator_explorer_flow() -> None:
 
     # ── U8: User describes problem to Moderator ─────────────────────
     print("\n=== U8: Eskalation — Problem beschrieben ===")
+    art_before_u8 = {sid: s.inhalt for sid, s in get_project().exploration_artifact.slots.items()}
     turn_nr += 1
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[7]["message"]))
@@ -227,6 +229,13 @@ async def test_e2e_moderator_explorer_flow() -> None:
         entry["mode_after"] == "moderator",
         f"CP6: mode={entry['mode_after']}, expected moderator (should analyze, not bounce)",
     )
+    # SDD 6.6.5: Moderator darf keine Artefakte verändern
+    art_after_u8 = {sid: s.inhalt for sid, s in get_project().exploration_artifact.slots.items()}
+    check(
+        "CP6_mod_no_write",
+        art_before_u8 == art_after_u8,
+        f"CP6_mod_no_write: Moderator hat Exploration-Artefakt veraendert",
+    )
 
     # ── U9: User formulates wish ────────────────────────────────────
     print("\n=== U9: Vereinbarung 'kuerzer fragen' ===")
@@ -235,6 +244,13 @@ async def test_e2e_moderator_explorer_flow() -> None:
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[8]["message"]))
     entry = log_turn(turn_nr, "U9", mode_before, result)
     print(f"  [{entry['mode_after']}] {result.nutzeraeusserung[:150]}")
+    # SDD 6.6.5: Moderator darf keine Artefakte verändern
+    art_after_u9 = {sid: s.inhalt for sid, s in get_project().exploration_artifact.slots.items()}
+    check(
+        "CP6_mod_no_write_u9",
+        art_before_u8 == art_after_u9,
+        f"CP6_mod_no_write_u9: Moderator hat Exploration-Artefakt in U9 veraendert",
+    )
 
     # ── U10: User confirms return to Explorer ───────────────────────
     print("\n=== U10: 'Ja, zurueck zum Explorer' ===")
@@ -248,6 +264,13 @@ async def test_e2e_moderator_explorer_flow() -> None:
         "CP7",
         p7.aktiver_modus == "exploration",
         f"CP7: mode={p7.aktiver_modus}, expected exploration. Flags: {entry['flags']}",
+    )
+    # SDD 6.6.5: Moderator-Rückkehr darf Artefakt nicht verändern
+    art_after_u10 = {sid: s.inhalt for sid, s in p7.exploration_artifact.slots.items()}
+    check(
+        "CP7_mod_no_write",
+        art_before_u8 == art_after_u10,
+        f"CP7_mod_no_write: Moderator hat Exploration-Artefakt bei Rueckkehr veraendert",
     )
 
     # ── U11-U13: Explorer turns (post-escalation) ──────────────────
@@ -402,7 +425,10 @@ async def test_e2e_moderator_explorer_flow() -> None:
     db.close()
 
     # Assert all hard checkpoints pass
-    for cp_name in ["CP1", "CP2", "CP3", "CP5", "CP5_mode", "CP6", "CP7", "CP10"]:
+    for cp_name in [
+        "CP1", "CP2", "CP3", "CP5", "CP5_mode", "CP6", "CP7", "CP10",
+        "CP6_mod_no_write", "CP7_mod_no_write",
+    ]:
         if cp_name in checkpoint_results:
             assert checkpoint_results[cp_name], (
                 f"{cp_name} failed: {checkpoint_errors.get(cp_name, '?')}"
