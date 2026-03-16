@@ -144,6 +144,11 @@ ALGORITHM_TEMPLATE = ArtifactTemplate(
     artifact_type="algorithm",
     path_patterns=[
         TemplatePathPattern(
+            pattern=r"/prozesszusammenfassung",
+            allowed_ops=["replace"],
+            description="Prozesszusammenfassung setzen (SDD 5.5, FR-B-02 AK(2))",
+        ),
+        TemplatePathPattern(
             pattern=r"/abschnitte/[^/]+",
             allowed_ops=["add", "remove"],
             description="Gesamten Algorithmusabschnitt hinzufügen oder entfernen",

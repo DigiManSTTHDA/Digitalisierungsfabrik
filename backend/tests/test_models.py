@@ -276,9 +276,10 @@ class TestAlgorithmArtifact:
             AlgorithmusStatus,
             CompletenessStatus,
             EmmaAktion,
+            EmmaAktionstyp,
         )
 
-        aktion = EmmaAktion(aktion_id="a1", aktionstyp="READ_DATA")
+        aktion = EmmaAktion(aktion_id="a1", aktionstyp=EmmaAktionstyp.READ)
         abschnitt = Algorithmusabschnitt(
             abschnitt_id="ab1",
             titel="Daten lesen",
@@ -288,7 +289,7 @@ class TestAlgorithmArtifact:
             status=AlgorithmusStatus.ausstehend,
         )
         art = AlgorithmArtifact(abschnitte={"ab1": abschnitt})
-        assert art.abschnitte["ab1"].aktionen["a1"].aktionstyp == "READ_DATA"
+        assert art.abschnitte["ab1"].aktionen["a1"].aktionstyp == "READ"
 
     def test_roundtrip_via_model_dump(self) -> None:
         from artifacts.models import (
@@ -297,11 +298,12 @@ class TestAlgorithmArtifact:
             AlgorithmusStatus,
             CompletenessStatus,
             EmmaAktion,
+            EmmaAktionstyp,
         )
 
         aktion = EmmaAktion(
             aktion_id="a1",
-            aktionstyp="SEND_EMAIL",
+            aktionstyp=EmmaAktionstyp.SEND_MAIL,
             parameter={"empfaenger": "archiv@firma.de"},
             emma_kompatibel=True,
         )

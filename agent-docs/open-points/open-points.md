@@ -4,7 +4,7 @@ Tracks open points from `hla_architecture.md` Section 9.
 
 | ID | Topic | Status | Resolution |
 |---|---|---|---|
-| OP-02 | EMMA parameter definition | open | `EmmaAktion.parameter: dict[str, Any]` for prototype; full definition pending EMMA spec |
+| OP-02 | EMMA parameter definition | resolved | ADR-006: `EmmaAktionstyp` StrEnum (18 values), `parameter: dict[str, str]` for prototype, `nachfolger: list[str]` for branching |
 | OP-03 | Version history in UI | open | Resolve in frontend Step 6 |
 | OP-04 | Max version count | open | Prototype: unlimited. Configurable limit post-prototype |
 | OP-05 | Token thresholds | open | Placeholder values; calibrate after first test run |

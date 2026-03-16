@@ -80,3 +80,17 @@ Prerequisite: OP-02 (EMMA parameter schema) must be resolved via ADR.
 ### Architecture Compliance
 
 All story file paths match HLA Section 6. No new directories. `prompts/specification.md` is a new file in existing `prompts/` directory — acceptable without ADR.
+
+---
+
+## STEP 2.5 — Escalation Checkpoint
+
+**Date:** 2026-03-16
+
+No escalations needed:
+- SDD is unambiguous for all stories (5.5, 6.6.3, 8.3)
+- ADR-006 (OP-02 resolution) is the only design decision — included as Story 09-01
+- No new dependencies required
+- No new directories required
+
+**Proceeding to implementation.**
