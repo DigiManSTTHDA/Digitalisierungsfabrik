@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from artifacts.models import Phasenstatus, Projektphase
+from artifacts.models import Phasenstatus, Projektphase, Projektstatus
 from core.models import Project
 from core.phase_transition import PHASE_ORDER, PHASE_TO_MODE, advance_phase, next_phase
 from core.working_memory import WorkingMemory
@@ -88,14 +88,16 @@ def test_advance_phase_updates_wm_and_project() -> None:
     assert project.aktiver_modus == "moderator"
 
 
-def test_advance_phase_at_end_returns_false() -> None:
-    """advance_phase returns False when already at last phase."""
+def test_advance_phase_at_validierung_sets_abgeschlossen() -> None:
+    """advance_phase at validierung sets projektstatus to abgeschlossen (FR-G-04)."""
     project = _make_project(Projektphase.validierung)
     wm = project.working_memory
     wm.aktive_phase = Projektphase.validierung
     result = advance_phase(project, wm)
-    assert result is False
-    assert wm.aktive_phase == Projektphase.validierung  # unchanged
+    assert result is True
+    assert project.projektstatus == Projektstatus.abgeschlossen
+    assert wm.phasenstatus == Phasenstatus.phase_complete
+    assert wm.aktive_phase == Projektphase.validierung  # phase unchanged
 
 
 def test_phase_to_mode_covers_all_phases() -> None:
@@ -146,5 +148,6 @@ def test_advance_phase_through_all_phases() -> None:
         assert advance_phase(project, wm) is True
         assert wm.aktive_phase == expected
 
-    # At validierung, advance returns False
-    assert advance_phase(project, wm) is False
+    # At validierung, advance sets terminal state (abgeschlossen)
+    assert advance_phase(project, wm) is True
+    assert project.projektstatus == Projektstatus.abgeschlossen

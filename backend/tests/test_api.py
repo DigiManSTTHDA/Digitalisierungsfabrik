@@ -318,11 +318,16 @@ def test_debug_advance_phase(client: TestClient) -> None:
 
 
 def test_debug_advance_phase_at_end(client: TestClient) -> None:
-    """POST debug/advance-phase returns 400 at last phase."""
+    """POST debug/advance-phase returns 200 at validierung (terminal → abgeschlossen), then 400."""
     pid = client.post("/api/projects", json={"name": "APE"}).json()["projekt_id"]
-    # Advance through all phases
-    for _ in range(3):  # exploration→strukturierung→spezifikation→validierung
+    # Advance through all phases: exploration→strukturierung→spezifikation→validierung
+    for _ in range(3):
         client.post(f"/api/projects/{pid}/debug/advance-phase")
+    # 4th call: at validierung → sets abgeschlossen (terminal state)
+    resp = client.post(f"/api/projects/{pid}/debug/advance-phase")
+    assert resp.status_code == 200
+    assert resp.json()["project"]["projektstatus"] == "abgeschlossen"
+    # 5th call: already abgeschlossen → 400
     resp = client.post(f"/api/projects/{pid}/debug/advance-phase")
     assert resp.status_code == 400
     assert "letzten Phase" in resp.json()["detail"]

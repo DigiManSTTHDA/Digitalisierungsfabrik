@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import structlog
 
-from artifacts.models import Phasenstatus, Projektphase
+from artifacts.models import Phasenstatus, Projektphase, Projektstatus
 from core.models import Project
 from core.working_memory import WorkingMemory
 
@@ -46,10 +46,21 @@ def advance_phase(project: Project, wm: WorkingMemory) -> bool:
     """Advance the project to the next phase. Returns True if successful.
 
     Updates both the project metadata and the working memory.
-    Returns False if already at the last phase.
+    When called in the validierung phase (terminal), sets projektstatus to
+    abgeschlossen (FR-G-04) instead of trying to advance further.
+    Returns False if already at the last phase with no action taken.
     """
     new_phase = next_phase(wm.aktive_phase)
     if new_phase is None:
+        # Terminal phase: validierung → project complete (FR-G-04, SDD 6.1.3)
+        if (
+            wm.aktive_phase == Projektphase.validierung
+            and project.projektstatus != Projektstatus.abgeschlossen
+        ):
+            project.projektstatus = Projektstatus.abgeschlossen
+            wm.phasenstatus = Phasenstatus.phase_complete
+            logger.info("phase_transition.terminal", phase="validierung", status="abgeschlossen")
+            return True
         return False
 
     primary_mode = PHASE_TO_MODE[new_phase]
