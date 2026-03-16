@@ -46,7 +46,7 @@ questions; no technical knowledge is required from them.
 
 ## OpenAPI Contract Note
 
-This epic finalises the Algorithm Artifact schema in `backend/core/models.py`, including
+This epic finalises the Algorithm Artifact schema in `backend/artifacts/models.py`, including
 the resolution of OP-02 (EMMA parameter schema). The finalised schema directly affects the
 OpenAPI spec because the Algorithm Artifact is returned in `GET /api/projects/{id}/artifacts`.
 
@@ -78,14 +78,15 @@ so that the Specification Mode has a complete, well-defined data model to write 
 1. `agent-docs/decisions/ADR-006-emma-parameter-schema.md` exists with status `accepted`.
    - Documents the decision: `EmmaAktion.parameter` remains `dict[str, str]` for the prototype
      because the full EMMA parameter specification is not yet available (SDD 8.3, OP-02).
-   - Documents that `EmmaAktion.aktionstyp` uses a `StrEnum` `EmmaAktionstyp` with all 17
+   - Documents that `EmmaAktion.aktionstyp` uses a `StrEnum` `EmmaAktionstyp` with all 18
      values from SDD 8.3 (FIND, FIND_AND_CLICK, CLICK, DRAG, SCROLL, TYPE, READ, READ_FORM,
      GENAI, EXPORT, IMPORT, FILE_OPERATION, SEND_MAIL, COMMAND, LOOP, DECISION, WAIT, SUCCESS).
-   - Documents that `EmmaAktion.nachfolger` remains `list[str]` (not single string) to support
-     branching from DECISION actions.
+   - Documents deviation from SDD 5.5: `EmmaAktion.nachfolger` is `list[str]` instead of
+     SDD's `String` type — required to support branching from DECISION actions where
+     multiple successors are needed. This is a deliberate SDD interpretation.
 
 2. `backend/artifacts/models.py` — `EmmaAktion.aktionstyp` field changed from `str` to
-   `EmmaAktionstyp` (new StrEnum with all 17 SDD 8.3 values).
+   `EmmaAktionstyp` (new StrEnum with all 18 SDD 8.3 values).
 
 3. `backend/artifacts/models.py` — `AlgorithmArtifact` gains field
    `prozesszusammenfassung: str = ""` (SDD 5.5, FR-B-02 AK(2): "Prozesszusammenfassung —
@@ -108,7 +109,7 @@ so that the Specification Mode has a complete, well-defined data model to write 
 **Definition of Done:**
 
 - [ ] `agent-docs/decisions/ADR-006-emma-parameter-schema.md` exists with status `accepted`
-- [ ] `EmmaAktionstyp` StrEnum in `backend/artifacts/models.py` with all 17 SDD 8.3 values
+- [ ] `EmmaAktionstyp` StrEnum in `backend/artifacts/models.py` with all 18 SDD 8.3 values
 - [ ] `EmmaAktion.aktionstyp` typed as `EmmaAktionstyp` (not `str`)
 - [ ] `AlgorithmArtifact.prozesszusammenfassung: str = ""` field exists
 - [ ] `/prozesszusammenfassung` path in `ALGORITHM_TEMPLATE` with `allowed_ops=["replace"]`
@@ -130,7 +131,7 @@ so that the data model is verified before building the mode on top of it.
 **Acceptance Criteria:**
 
 1. `backend/tests/test_models.py` contains tests for:
-   - `EmmaAktionstyp` enum has exactly 17 members matching SDD 8.3 catalog.
+   - `EmmaAktionstyp` enum has exactly 18 members matching SDD 8.3 catalog.
    - `AlgorithmArtifact` with `prozesszusammenfassung` persists through repository
      save/load cycle (not just model_dump round-trip — test through `ProjectRepository`).
    - `Algorithmusabschnitt` with filled `aktionen` dict persists through repository
@@ -171,18 +172,31 @@ so that the SpecificationMode LLM has all necessary context.
    - These lines appear for all phases (general context awareness).
 
 2. A new helper function `emma_action_catalog_text() -> str` in `context_assembler.py`
-   that returns a German-language listing of all 17 EMMA action types with descriptions
+   that returns a German-language listing of all 18 EMMA action types with descriptions
    (from SDD 8.3). This text is used by the specification system prompt.
 
-3. The EMMA catalog text is derived from the `EmmaAktionstyp` enum — not hard-coded
-   as a separate string. If the enum changes, the catalog text changes.
+3. The EMMA catalog text uses `EmmaAktionstyp` enum members as keys with a
+   descriptions mapping. If the enum gains a new member, the catalog function
+   must be updated (or it raises an error for unmapped members).
+
+4. Tests in `backend/tests/test_context_assembler.py` (or `test_models.py` if
+   context assembler tests don't exist yet):
+   - `test_prompt_context_summary_contains_algorithm_counts` — verify algorithm
+     artifact slot counts appear in summary output.
+   - `test_prompt_context_summary_contains_algorithm_zusammenfassung_status` —
+     verify `prozesszusammenfassung` status appears.
+   - `test_emma_action_catalog_text_contains_all_types` — verify all 18 EMMA
+     action types appear in the catalog text.
+   - `test_emma_action_catalog_text_contains_descriptions` — verify descriptions
+     are non-empty for each type.
 
 **Definition of Done:**
 
 - [ ] `prompt_context_summary()` includes algorithm artifact slot counts
 - [ ] `prompt_context_summary()` includes algorithm `prozesszusammenfassung` status
-- [ ] `emma_action_catalog_text()` function exists and returns all 17 EMMA types
-- [ ] EMMA catalog derived from `EmmaAktionstyp` enum members
+- [ ] `emma_action_catalog_text()` function exists and returns all 18 EMMA types
+- [ ] EMMA catalog uses `EmmaAktionstyp` enum members as keys
+- [ ] 4+ tests for context assembler changes
 - [ ] `ruff check backend/` passes
 - [ ] `ruff format --check backend/` passes
 - [ ] `python -m mypy backend/ --explicit-package-bases` passes
@@ -208,8 +222,11 @@ via dialog with the user.
    - Calls `llm_client.complete()` with `tools=[APPLY_PATCHES_TOOL]` and
      `tool_choice={"type": "tool", "name": "apply_patches"}` (HLA 2.5, FR-B-09).
    - Parses patches and phasenstatus from LLM response.
-   - Applies deterministic guardrails: blocks `phase_complete` if any Strukturschritt
-     has no corresponding Algorithmusabschnitt with `completeness_status != leer`.
+   - Applies deterministic guardrails (SDD 6.6.3 Abbruchbedingung):
+     - Blocks `phase_complete` if no Algorithmusabschnitte exist yet.
+     - Blocks `phase_complete` if any Strukturschritt has no corresponding
+       Algorithmusabschnitt with `completeness_status == nutzervalidiert`.
+     - Downgrades `phase_complete` → `nearing_completion` when blocked.
    - Emits `Flag.phase_complete` when phasenstatus is `phase_complete`.
 
 2. `backend/prompts/specification.md` — German system prompt:
@@ -225,9 +242,14 @@ via dialog with the user.
    - Constraint: Never overwrite existing Algorithmusabschnitte without user confirmation
      (analogous to SDD 6.6.2 constraint for structuring).
 
-3. When called after ValidationMode: if `working_memory.validierungsbericht` is non-empty,
-   it is included in the system prompt context (SDD 6.6.3: "arbeitet den Validierungsbericht
-   gemeinsam mit dem Nutzer ab").
+3. Validation report integration (preparation for Epic 10):
+   - The system prompt includes a `{validierungsbericht}` placeholder.
+   - When the dialog history contains a validation report (passed from the Moderator
+     after a Validation → Specification transition), it is injected into the prompt.
+   - Note: `WorkingMemory` does not yet have a `validierungsbericht` field — the
+     ValidationMode (Epic 10) will define how the report is stored and passed.
+     In this epic, the placeholder is included but will render as empty.
+   - SDD 6.6.3: "arbeitet den Validierungsbericht gemeinsam mit dem Nutzer ab".
 
 **Definition of Done:**
 
@@ -239,7 +261,7 @@ via dialog with the user.
 - [ ] System prompt includes EMMA action catalog via `{emma_catalog}` placeholder
 - [ ] System prompt includes operationalisierbarkeit checklist (5 mandatory + 4 contextual)
 - [ ] System prompt includes output contract (patches on algorithm artifact)
-- [ ] Validierungsbericht included when present in working memory
+- [ ] System prompt includes `{validierungsbericht}` placeholder (Epic 10 preparation)
 - [ ] `ruff check backend/` passes
 - [ ] `ruff format --check backend/` passes
 - [ ] `python -m mypy backend/ --explicit-package-bases` passes
@@ -256,7 +278,7 @@ so that the mode's behavior is verified without real API calls.
 
 **Acceptance Criteria:**
 
-1. `backend/tests/test_specification_mode.py` contains 10+ tests:
+1. `backend/tests/test_specification_mode.py` contains 12+ tests:
    - `test_specification_produces_algorithm_patches` — LLM returns patches that add
      an Algorithmusabschnitt; verify patches in output.
    - `test_specification_uses_tool_choice` — verify `tool_choice={"type": "tool", "name": "apply_patches"}`
@@ -267,13 +289,16 @@ so that the mode's behavior is verified without real API calls.
      Structure Artifact read-only content.
    - `test_specification_system_prompt_contains_operationalisierbarkeit` — system prompt
      includes the 5 mandatory operationalisierbarkeit questions.
-   - `test_specification_guardrail_blocks_premature_phase_complete` — when Strukturschritte
-     exist without corresponding Algorithmusabschnitte, `phase_complete` is downgraded.
+   - `test_specification_guardrail_blocks_no_abschnitte` — when no Algorithmusabschnitte
+     exist, `phase_complete` is downgraded to `nearing_completion`.
+   - `test_specification_guardrail_blocks_non_validated` — when Algorithmusabschnitte exist
+     but not all have `completeness_status == nutzervalidiert`, `phase_complete` is downgraded.
    - `test_specification_guardrail_allows_phase_complete` — when all Strukturschritte have
-     corresponding non-leer Algorithmusabschnitte, `phase_complete` passes through.
+     corresponding Algorithmusabschnitte with `completeness_status == nutzervalidiert`,
+     `phase_complete` passes through (SDD 6.6.3 Abbruchbedingung).
    - `test_specification_phasenstatus_in_progress` — normal turn returns `in_progress`.
-   - `test_specification_includes_validierungsbericht` — when working_memory has
-     `validierungsbericht`, it appears in system prompt.
+   - `test_specification_prompt_has_validierungsbericht_placeholder` — system prompt
+     contains `{validierungsbericht}` placeholder (preparation for Epic 10).
    - `test_specification_error_on_llm_failure` — LLM error propagates correctly (Rule T-6).
    - `test_specification_no_llm_client_returns_stub` — None LLM client returns stub message.
 
@@ -282,7 +307,7 @@ so that the mode's behavior is verified without real API calls.
 
 **Definition of Done:**
 
-- [ ] `backend/tests/test_specification_mode.py` exists with 10+ tests
+- [ ] `backend/tests/test_specification_mode.py` exists with 12+ tests
 - [ ] Mocked LLM — no real API calls
 - [ ] Guardrail positive and negative tests
 - [ ] System prompt content verification tests

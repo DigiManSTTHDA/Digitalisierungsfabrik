@@ -33,7 +33,7 @@ Prerequisite: OP-02 (EMMA parameter schema) must be resolved via ADR.
 ### Key Observations
 
 - `AlgorithmArtifact` was missing `prozesszusammenfassung` field (SDD 5.5, FR-B-02 AK(2))
-- `EmmaAktion.aktionstyp` was `str` — upgraded to `EmmaAktionstyp` StrEnum with 17 SDD 8.3 values
+- `EmmaAktion.aktionstyp` was `str` — upgraded to `EmmaAktionstyp` StrEnum with 18 SDD 8.3 values
 - `specification.py` is a stub from Epic 03 — full LLM replacement needed
 - `prompts/specification.md` does not exist yet — must be created
 - Epic doc had wrong path `specification_mode.py` — corrected to `specification.py` (HLA Section 6)
@@ -45,3 +45,38 @@ Prerequisite: OP-02 (EMMA parameter schema) must be resolved via ADR.
 ### Escalation Points Flagged
 
 - None — SDD 5.5, 6.6.3, and 8.3 are clear enough to implement unambiguously
+
+---
+
+## STEP 2 — Story Validation
+
+**Date:** 2026-03-16
+
+### Validation Outcome: PASS (after corrections)
+
+### Issues Found and Corrected
+
+| # | Severity | Issue | Correction |
+|---|---|---|---|
+| 1 | **MUST FIX** | EMMA action type count was 17, SDD 8.3 has 18 types | Fixed → 18 throughout all stories (09-01, 09-02, 09-03) |
+| 2 | **MUST FIX** | Guardrail condition `completeness_status != leer` too weak — SDD 6.6.3 requires `nutzervalidiert` | Fixed → guardrail checks for `nutzervalidiert` in 09-04, 09-05 |
+| 3 | **SHOULD FIX** | ADR-006 didn't explicitly call out `nachfolger` SDD deviation (SDD 5.5 says String, model uses list[str]) | Fixed → ADR AC explicitly documents SDD deviation |
+| 4 | **SHOULD FIX** | Story 09-04 referenced `working_memory.validierungsbericht` which doesn't exist | Fixed → clarified as placeholder for Epic 10, not testable yet |
+| 5 | **SHOULD FIX** | Story 09-03 had no test requirements despite introducing logic (AGENTS.md Rule 7) | Fixed → added 4 tests for context assembler + EMMA catalog |
+| 6 | **MINOR** | OpenAPI Contract Note had wrong path `backend/core/models.py` | Fixed → `backend/artifacts/models.py` |
+
+### SDD FR Traceability
+
+| Story | Primary FRs |
+|---|---|
+| 09-01 | FR-B-02 (Algorithmusartefakt), FR-C-03 (EMMA-Kompatibilitätsprüfung), OP-02 |
+| 09-02 | Test coverage for 09-01 |
+| 09-03 | FR-D-05 (Aktives Kontextmanagement), FR-D-07 (Fortschrittsmodell), SDD 6.5.3 |
+| 09-04 | FR-A-01, FR-A-02, FR-A-03, FR-A-08, FR-B-02, FR-B-09, FR-B-11, FR-C-03, FR-C-06, FR-D-07, SDD 6.6.3 |
+| 09-05 | Test coverage for 09-04 |
+| 09-06 | FR-B-06, FR-F-03, FR-F-05 |
+| 09-07 | ADR-001 (OpenAPI co-update) |
+
+### Architecture Compliance
+
+All story file paths match HLA Section 6. No new directories. `prompts/specification.md` is a new file in existing `prompts/` directory — acceptable without ADR.
