@@ -5,15 +5,17 @@
  * FR-F-05: Invalidated slots visually marked.
  * Epic 08-06: Structure artifact renders steps sorted by reihenfolge with
  *   type badges, decision conditions, successor links, and spannungsfeld warnings.
+ * Epic 09-06: Algorithm artifact rendering delegated to AlgorithmView.
  */
+
+import { AlgorithmView } from "./AlgorithmView";
 
 interface Slot {
   slot_id?: string;
-  bezeichnung?: string;
+  titel?: string;
   inhalt?: string;
   completeness_status?: string;
   // Structure artifact fields (SDD 5.4)
-  titel?: string;
   beschreibung?: string;
   typ?: string;
   reihenfolge?: number;
@@ -22,9 +24,6 @@ interface Slot {
   ausnahme_beschreibung?: string;
   algorithmus_status?: string;
   spannungsfeld?: string;
-  // Algorithm artifact fields
-  aktionstyp?: string;
-  status?: string;
 }
 
 interface ArtifactTabProps {
@@ -42,7 +41,7 @@ function getSlots(
   if (type === "struktur") {
     return (artifact.schritte as Record<string, Slot>) ?? {};
   }
-  return (artifact.abschnitte as Record<string, Slot>) ?? {};
+  return {};
 }
 
 function statusLabel(status: string | undefined): string {
@@ -157,11 +156,11 @@ function StructureSlotCard({ id, slot }: { id: string; slot: Slot }) {
 }
 
 export function ArtifactTab({ artifact, type }: ArtifactTabProps) {
-  const slots = getSlots(artifact, type);
   const version = (artifact.version as number) ?? 0;
 
   // For structure artifacts: show prozesszusammenfassung and sort by reihenfolge
   if (type === "struktur") {
+    const slots = getSlots(artifact, type);
     const zusammenfassung = (artifact.prozesszusammenfassung as string) ?? "";
     const sortedEntries = Object.entries(slots).sort(
       ([, a], [, b]) => (a.reihenfolge ?? 0) - (b.reihenfolge ?? 0),
@@ -202,7 +201,13 @@ export function ArtifactTab({ artifact, type }: ArtifactTabProps) {
     );
   }
 
-  // Default rendering for exploration and algorithm artifacts
+  // Algorithm artifact rendering (SDD 5.5, Epic 09-06)
+  if (type === "algorithmus") {
+    return <AlgorithmView artifact={artifact} version={version} />;
+  }
+
+  // Default rendering for exploration artifact
+  const slots = getSlots(artifact, type);
   const entries = Object.entries(slots);
 
   if (entries.length === 0) {
@@ -219,19 +224,14 @@ export function ArtifactTab({ artifact, type }: ArtifactTabProps) {
         Version {version} — {entries.length} Einträge
       </p>
       {entries.map(([id, slot]) => {
-        const status = slot.completeness_status ?? slot.status ?? "leer";
-        const isInvalidiert = status === "invalidiert";
-        const content =
-          slot.inhalt ?? slot.beschreibung ?? slot.aktionstyp ?? "";
+        const status = slot.completeness_status ?? "leer";
+        const content = slot.inhalt ?? "";
 
         return (
-          <div
-            key={id}
-            className={`slot-card ${isInvalidiert ? "invalidiert" : ""}`}
-          >
+          <div key={id} className="slot-card">
             <div className="slot-header">
               <span className="slot-name">
-                {slot.bezeichnung ?? slot.slot_id ?? id}
+                {slot.titel ?? slot.slot_id ?? id}
               </span>
               <span className={`slot-status ${status}`}>
                 {statusLabel(status)}

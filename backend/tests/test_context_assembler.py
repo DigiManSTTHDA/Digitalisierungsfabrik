@@ -165,7 +165,7 @@ def test_prompt_context_summary_contains_prozesszusammenfassung_status() -> None
     project = _make_project()
     context = build_context(project, completeness_state={})
     summary = prompt_context_summary(context)
-    assert "Prozesszusammenfassung: leer" in summary
+    assert "Prozesszusammenfassung (Struktur): leer" in summary
 
     # Filled summary → shows befüllt
     project2 = _make_project()
@@ -174,7 +174,7 @@ def test_prompt_context_summary_contains_prozesszusammenfassung_status() -> None
     )
     context2 = build_context(project2, completeness_state={})
     summary2 = prompt_context_summary(context2)
-    assert "Prozesszusammenfassung: befüllt" in summary2
+    assert "Prozesszusammenfassung (Struktur): befüllt" in summary2
 
 
 def test_prompt_context_summary_nonempty_for_minimal_context() -> None:
@@ -222,3 +222,78 @@ def test_build_context_dialog_history_n_returns_last_n_turns() -> None:
     assert "Turn 1" not in contents
     assert "Turn 2" not in contents
     db.close()
+
+
+# ---------------------------------------------------------------------------
+# Story 09-03: Algorithm artifact counts + EMMA catalog
+# ---------------------------------------------------------------------------
+
+
+def test_prompt_context_summary_contains_algorithm_counts() -> None:
+    """Algorithm artifact slot counts appear in summary output."""
+    from artifacts.models import (
+        AlgorithmArtifact,
+        Algorithmusabschnitt,
+        AlgorithmusStatus,
+        EmmaAktion,
+        EmmaAktionstyp,
+    )
+
+    project = _make_project()
+    aktion = EmmaAktion(aktion_id="a1", aktionstyp=EmmaAktionstyp.READ)
+    abschnitt = Algorithmusabschnitt(
+        abschnitt_id="ab1",
+        titel="Lesen",
+        struktur_ref="step_001",
+        aktionen={"a1": aktion},
+        completeness_status=CompletenessStatus.teilweise,
+        status=AlgorithmusStatus.aktuell,
+    )
+    project.algorithm_artifact = AlgorithmArtifact(abschnitte={"ab1": abschnitt})
+    context = build_context(project, completeness_state={})
+    summary = prompt_context_summary(context)
+    assert "Algorithmusabschnitte: 1/1 befüllt" in summary
+
+
+def test_prompt_context_summary_contains_algorithm_zusammenfassung_status() -> None:
+    """Algorithm prozesszusammenfassung status appears in summary output."""
+    from artifacts.models import AlgorithmArtifact
+
+    # Empty
+    project = _make_project()
+    context = build_context(project, completeness_state={})
+    summary = prompt_context_summary(context)
+    assert "Prozesszusammenfassung (Algorithmus): leer" in summary
+
+    # Filled
+    project2 = _make_project()
+    project2.algorithm_artifact = AlgorithmArtifact(
+        prozesszusammenfassung="Technische Spezifikation"
+    )
+    context2 = build_context(project2, completeness_state={})
+    summary2 = prompt_context_summary(context2)
+    assert "Prozesszusammenfassung (Algorithmus): befüllt" in summary2
+
+
+def test_emma_action_catalog_text_contains_all_types() -> None:
+    """All 18 EMMA action types appear in the catalog text."""
+    from artifacts.models import EmmaAktionstyp
+    from core.context_assembler import emma_action_catalog_text
+
+    text = emma_action_catalog_text()
+    for member in EmmaAktionstyp:
+        assert member.value in text, f"{member.value} not found in catalog text"
+
+
+def test_emma_action_catalog_text_contains_descriptions() -> None:
+    """Descriptions are non-empty for each EMMA action type."""
+    from core.context_assembler import emma_action_catalog_text
+
+    text = emma_action_catalog_text()
+    lines = [line for line in text.strip().split("\n") if line.startswith("- ")]
+    assert len(lines) == 18
+    for line in lines:
+        # Each line has format "- TYPE: Description"
+        parts = line.split(": ", 1)
+        assert len(parts) == 2, f"Unexpected format: {line}"
+        assert len(parts[1]) > 5, f"Description too short: {line}"

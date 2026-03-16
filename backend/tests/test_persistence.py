@@ -17,6 +17,7 @@ from artifacts.models import (
     AlgorithmusStatus,
     CompletenessStatus,
     EmmaAktion,
+    EmmaAktionstyp,
     ExplorationArtifact,
     ExplorationSlot,
     Phasenstatus,
@@ -222,7 +223,7 @@ class TestProjectRepositoryLoadRoundTrip:
         p = repo.create(name="Test")
         aktion = EmmaAktion(
             aktion_id="a1",
-            aktionstyp="SEND_EMAIL",
+            aktionstyp=EmmaAktionstyp.SEND_MAIL,
             parameter={"empfaenger": "archiv@firma.de"},
             emma_kompatibel=True,
         )

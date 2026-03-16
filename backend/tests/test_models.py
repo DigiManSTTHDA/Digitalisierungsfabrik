@@ -276,9 +276,10 @@ class TestAlgorithmArtifact:
             AlgorithmusStatus,
             CompletenessStatus,
             EmmaAktion,
+            EmmaAktionstyp,
         )
 
-        aktion = EmmaAktion(aktion_id="a1", aktionstyp="READ_DATA")
+        aktion = EmmaAktion(aktion_id="a1", aktionstyp=EmmaAktionstyp.READ)
         abschnitt = Algorithmusabschnitt(
             abschnitt_id="ab1",
             titel="Daten lesen",
@@ -288,7 +289,7 @@ class TestAlgorithmArtifact:
             status=AlgorithmusStatus.ausstehend,
         )
         art = AlgorithmArtifact(abschnitte={"ab1": abschnitt})
-        assert art.abschnitte["ab1"].aktionen["a1"].aktionstyp == "READ_DATA"
+        assert art.abschnitte["ab1"].aktionen["a1"].aktionstyp == "READ"
 
     def test_roundtrip_via_model_dump(self) -> None:
         from artifacts.models import (
@@ -297,11 +298,12 @@ class TestAlgorithmArtifact:
             AlgorithmusStatus,
             CompletenessStatus,
             EmmaAktion,
+            EmmaAktionstyp,
         )
 
         aktion = EmmaAktion(
             aktion_id="a1",
-            aktionstyp="SEND_EMAIL",
+            aktionstyp=EmmaAktionstyp.SEND_MAIL,
             parameter={"empfaenger": "archiv@firma.de"},
             emma_kompatibel=True,
         )
@@ -323,6 +325,119 @@ class TestAlgorithmArtifact:
 
         schema = AlgorithmArtifact.model_json_schema()
         assert "abschnitte" in schema["properties"]
+
+    # --- Story 09-02: Algorithm Artifact Schema Tests ---
+
+    def test_invalid_aktionstyp_rejected(self) -> None:
+        """Invalid aktionstyp string must be rejected by Pydantic (Rule T-2)."""
+        from artifacts.models import EmmaAktion
+
+        with pytest.raises(ValidationError, match="aktionstyp"):
+            EmmaAktion(
+                aktion_id="a1",
+                aktionstyp="INVALID_ACTION",  # type: ignore[arg-type]
+            )
+
+    def test_emma_aktionstyp_has_exactly_18_members(self) -> None:
+        """EmmaAktionstyp must have exactly 18 members matching SDD 8.3."""
+        from artifacts.models import EmmaAktionstyp
+
+        expected = {
+            "FIND",
+            "FIND_AND_CLICK",
+            "CLICK",
+            "DRAG",
+            "SCROLL",
+            "TYPE",
+            "READ",
+            "READ_FORM",
+            "GENAI",
+            "EXPORT",
+            "IMPORT",
+            "FILE_OPERATION",
+            "SEND_MAIL",
+            "COMMAND",
+            "LOOP",
+            "DECISION",
+            "WAIT",
+            "SUCCESS",
+        }
+        actual = {m.value for m in EmmaAktionstyp}
+        assert actual == expected, f"Mismatch: {actual.symmetric_difference(expected)}"
+
+    def test_prozesszusammenfassung_persistence_via_repository(self) -> None:
+        """AlgorithmArtifact.prozesszusammenfassung survives save/load cycle."""
+        from artifacts.models import AlgorithmArtifact
+        from persistence.database import Database
+        from persistence.project_repository import ProjectRepository
+
+        db = Database(":memory:")
+        repo = ProjectRepository(db)
+        project = repo.create("Test")
+        project.algorithm_artifact = AlgorithmArtifact(
+            prozesszusammenfassung="Technische Spezifikation des Reisekostenprozesses",
+            version=1,
+        )
+        repo.save(project)
+        reloaded = repo.load(project.projekt_id)
+        assert (
+            reloaded.algorithm_artifact.prozesszusammenfassung
+            == "Technische Spezifikation des Reisekostenprozesses"
+        )
+        db.close()
+
+    def test_algorithmusabschnitt_full_fields_persistence(self) -> None:
+        """All Algorithmusabschnitt + EmmaAktion fields survive save/load."""
+        from artifacts.models import (
+            AlgorithmArtifact,
+            Algorithmusabschnitt,
+            AlgorithmusStatus,
+            CompletenessStatus,
+            EmmaAktion,
+            EmmaAktionstyp,
+        )
+        from persistence.database import Database
+        from persistence.project_repository import ProjectRepository
+
+        aktion = EmmaAktion(
+            aktion_id="a1",
+            aktionstyp=EmmaAktionstyp.DECISION,
+            parameter={"bedingung": "Betrag > 1000"},
+            nachfolger=["a2", "a3"],
+            emma_kompatibel=False,
+            kompatibilitaets_hinweis="DECISION mit dynamischer Bedingung nicht direkt EMMA-fähig",
+        )
+        abschnitt = Algorithmusabschnitt(
+            abschnitt_id="ab1",
+            titel="Betragsprüfung",
+            struktur_ref="step_002",
+            aktionen={"a1": aktion},
+            completeness_status=CompletenessStatus.nutzervalidiert,
+            status=AlgorithmusStatus.aktuell,
+        )
+        db = Database(":memory:")
+        repo = ProjectRepository(db)
+        project = repo.create("FullFieldTest")
+        project.algorithm_artifact = AlgorithmArtifact(abschnitte={"ab1": abschnitt}, version=3)
+        repo.save(project)
+        loaded = repo.load(project.projekt_id)
+        loaded_aktion = loaded.algorithm_artifact.abschnitte["ab1"].aktionen["a1"]
+        assert loaded_aktion.aktionstyp == EmmaAktionstyp.DECISION
+        assert loaded_aktion.parameter == {"bedingung": "Betrag > 1000"}
+        assert loaded_aktion.nachfolger == ["a2", "a3"]
+        assert loaded_aktion.emma_kompatibel is False
+        assert "EMMA-fähig" in (loaded_aktion.kompatibilitaets_hinweis or "")
+        loaded_abschnitt = loaded.algorithm_artifact.abschnitte["ab1"]
+        assert loaded_abschnitt.completeness_status == CompletenessStatus.nutzervalidiert
+        assert loaded_abschnitt.status == AlgorithmusStatus.aktuell
+        db.close()
+
+    def test_algorithm_template_prozesszusammenfassung_replace(self) -> None:
+        """ALGORITHM_TEMPLATE must accept replace on /prozesszusammenfassung."""
+        from artifacts.template_schema import ALGORITHM_TEMPLATE
+
+        assert ALGORITHM_TEMPLATE.is_valid_patch("replace", "/prozesszusammenfassung") is True
+        assert ALGORITHM_TEMPLATE.is_valid_patch("add", "/prozesszusammenfassung") is False
 
 
 # ---------------------------------------------------------------------------

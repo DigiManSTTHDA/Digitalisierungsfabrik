@@ -69,6 +69,32 @@ class Strukturschritttyp(StrEnum):
     ausnahme = "ausnahme"
 
 
+class EmmaAktionstyp(StrEnum):
+    """EMMA-Aktionskatalog — alle 18 Aktionstypen aus SDD 8.3.
+
+    Refs: ADR-006 (OP-02 resolution).
+    """
+
+    FIND = "FIND"
+    FIND_AND_CLICK = "FIND_AND_CLICK"
+    CLICK = "CLICK"
+    DRAG = "DRAG"
+    SCROLL = "SCROLL"
+    TYPE = "TYPE"
+    READ = "READ"
+    READ_FORM = "READ_FORM"
+    GENAI = "GENAI"
+    EXPORT = "EXPORT"
+    IMPORT = "IMPORT"
+    FILE_OPERATION = "FILE_OPERATION"
+    SEND_MAIL = "SEND_MAIL"
+    COMMAND = "COMMAND"
+    LOOP = "LOOP"
+    DECISION = "DECISION"
+    WAIT = "WAIT"
+    SUCCESS = "SUCCESS"
+
+
 # ---------------------------------------------------------------------------
 # Exploration Artifact
 # ---------------------------------------------------------------------------
@@ -138,16 +164,16 @@ class StructureArtifact(BaseModel):
 class EmmaAktion(BaseModel):
     """Eine atomare EMMA-Aktion innerhalb eines Algorithmusabschnitts (SDD 5.5).
 
-    Note (OP-02): aktionstyp ist im Prototyp str — vollständige Enum-Typisierung
-    folgt wenn der EMMA-Aktionskatalog finalisiert ist.
-    Note (OP-02): parameter ist im Prototyp dict[str, str] — vollständige
-    Typisierung folgt wenn die EMMA-Spezifikation vorliegt.
+    Refs: ADR-006 (OP-02 resolution):
+    - aktionstyp: EmmaAktionstyp enum (18 SDD 8.3 values)
+    - parameter: dict[str, str] for prototype (full typing pending EMMA spec)
+    - nachfolger: list[str] (deviates from SDD String — supports DECISION branching)
     """
 
     aktion_id: str
-    aktionstyp: str  # Wert aus EMMA-Aktionskatalog (SDD 8.3)
+    aktionstyp: EmmaAktionstyp  # Wert aus EMMA-Aktionskatalog (SDD 8.3, ADR-006)
     parameter: dict[str, str] = Field(default_factory=dict)
-    nachfolger: list[str] = Field(default_factory=list)
+    nachfolger: list[str] = Field(default_factory=list)  # ADR-006: list for branching
     emma_kompatibel: bool = False  # Ergebnis der EMMA-Kompatibilitätsprüfung
     kompatibilitaets_hinweis: str | None = None  # Begründung bei emma_kompatibel=False
 
@@ -164,7 +190,13 @@ class Algorithmusabschnitt(BaseModel):
 
 
 class AlgorithmArtifact(BaseModel):
-    """Algorithmusartefakt — detaillierte EMMA-Aktionen je Strukturschritt."""
+    """Algorithmusartefakt — detaillierte EMMA-Aktionen je Strukturschritt.
 
+    SDD 5.5: Das Artefakt besteht aus zwei Teilen:
+    1. Prozesszusammenfassung — Freitext, technisch angereichert, LLM-generiert
+    2. Algorithmusabschnitte — geordnete Map von Abschnitten
+    """
+
+    prozesszusammenfassung: str = ""  # SDD 5.5, FR-B-02 AK(2): Pflichtslot
     abschnitte: dict[str, Algorithmusabschnitt] = Field(default_factory=dict)
     version: int = 0
