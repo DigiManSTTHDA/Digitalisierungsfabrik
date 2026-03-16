@@ -26,9 +26,7 @@ _PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "moderator.m
 # Kept private here — only the Moderator needs this, not other modes.
 _MODERATOR_TOOL: dict = {  # type: ignore[type-arg]
     "name": "moderator_antwort",
-    "description": (
-        "Moderator-Antwort mit Steuerungssignal."
-    ),
+    "description": ("Moderator-Antwort mit Steuerungssignal."),
     "input_schema": {
         "type": "object",
         "properties": {
@@ -122,10 +120,14 @@ class Moderator(BaseMode):
             flags=[f.value for f in flags],
         )
 
+        # Preserve the phasenstatus from the previous mode. The Moderator doesn't
+        # produce artifacts — it shouldn't overwrite the phase status that triggered
+        # its activation. Without this, a phase_complete signal would be lost after
+        # the first Moderator turn, making it impossible to advance the phase.
         return ModeOutput(
             nutzeraeusserung=response.nutzeraeusserung,
             patches=[],
-            phasenstatus=Phasenstatus.in_progress,
+            phasenstatus=context.working_memory.phasenstatus,
             flags=flags,
         )
 

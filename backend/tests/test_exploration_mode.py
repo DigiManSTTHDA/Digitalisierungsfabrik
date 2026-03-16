@@ -426,14 +426,14 @@ async def test_nearing_completion_escalates_to_phase_complete() -> None:
     project = repo.create("Test")
     _set_exploration_mode(repo, project)
 
-    # Pre-fill all 9 slots with teilweise status (simulating LLM that never
-    # sets vollstaendig). Bump version so save() actually writes the new state.
+    # Pre-fill all 9 slots with nutzervalidiert status (FR-C-07: user confirmed).
+    # Bump version so save() actually writes the new state.
     for slot_id, titel in PFLICHT_SLOTS.items():
         project.exploration_artifact.slots[slot_id] = ExplorationSlot(
             slot_id=slot_id,
             titel=titel,
             inhalt=f"Inhalt für {titel}",
-            completeness_status=CompletenessStatus.teilweise,
+            completeness_status=CompletenessStatus.nutzervalidiert,
         )
     project.exploration_artifact.version += 1
     repo.save(project)

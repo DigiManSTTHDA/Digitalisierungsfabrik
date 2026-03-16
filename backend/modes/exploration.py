@@ -173,12 +173,22 @@ def _apply_guardrails(
 
     has_leer = any(s == CompletenessStatus.leer for s in projected.values())
 
-    # Guardrail 1: BLOCK — can't complete with empty slots
-    if llm_phasenstatus == Phasenstatus.phase_complete and has_leer:
-        return Phasenstatus.in_progress
+    # Guardrail 1: BLOCK — can't complete with empty or incomplete slots.
+    # All slots must be at least vollstaendig for phase_complete.
+    all_at_least_complete = all(
+        s in (CompletenessStatus.vollstaendig, CompletenessStatus.nutzervalidiert)
+        for s in projected.values()
+    )
+    if llm_phasenstatus == Phasenstatus.phase_complete and not all_at_least_complete:
+        if has_leer:
+            return Phasenstatus.in_progress
+        return Phasenstatus.nearing_completion
 
-    # Guardrail 2: PROMOTE — LLM says nearing but user is done (no new content)
-    if llm_phasenstatus == Phasenstatus.nearing_completion and not has_leer:
+    # Guardrail 2: PROMOTE — LLM says nearing but all slots are nutzervalidiert
+    # (FR-C-07: user must explicitly confirm each slot). If all are validated
+    # and no new content was written, the conservative LLM just won't say phase_complete.
+    all_validated = all(s == CompletenessStatus.nutzervalidiert for s in projected.values())
+    if llm_phasenstatus == Phasenstatus.nearing_completion and all_validated:
         content_patches = [
             p for p in patches if p.get("path", "").endswith("/inhalt") and p.get("value")
         ]
