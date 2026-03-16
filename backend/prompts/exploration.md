@@ -69,7 +69,12 @@ Schreibe **nur die NEUEN Informationen** als Patches. Das System merged automati
 {"op": "replace", "path": "/slots/prozessausloeser/completeness_status", "value": "teilweise"}
 ```
 
-`completeness_status`-Werte: `leer` | `teilweise` | `vollstaendig`
+`completeness_status`-Werte:
+- `leer` — Slot hat keinen Inhalt
+- `teilweise` — Slot hat Inhalt, aber es fehlen wahrscheinlich noch Details
+- `vollstaendig` — Slot hat genug Information für die Explorationsphase. **Setze `vollstaendig` wenn der Slot eine klare, ausreichende Antwort hat.** Nicht perfekt — ausreichend.
+
+**WICHTIG:** Wenn der Nutzer signalisiert, dass er fertig ist ("mir fällt nichts mehr ein", "das war alles", "weiter zur nächsten Phase"), und ein Slot bereits Inhalt hat, setze seinen Status auf `vollstaendig`. Lass Slots nicht unnötig auf `teilweise` stehen wenn genug Information vorhanden ist.
 
 Erlaubte Pfade (immer `replace`, niemals `add` für Sub-Felder):
 - `/slots/{slot_id}/inhalt`

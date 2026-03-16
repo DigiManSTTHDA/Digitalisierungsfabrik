@@ -405,3 +405,49 @@ async def test_output_validator_rejects_invalid_path() -> None:
     reloaded = repo.load(project.projekt_id)
     assert reloaded.exploration_artifact.slots == {}
     db.close()
+
+
+# ---------------------------------------------------------------------------
+# Test: nearing_completion promotes to phase_complete when LLM has no new content
+# ---------------------------------------------------------------------------
+
+
+async def test_nearing_completion_escalates_to_phase_complete() -> None:
+    """When all slots are teilweise and LLM returns no content patches,
+    phase_complete should be emitted so the Moderator can propose transition."""
+    from artifacts.models import CompletenessStatus, ExplorationSlot
+    from modes.exploration import PFLICHT_SLOTS
+
+    db = Database(":memory:")
+    repo = ProjectRepository(db)
+    project = repo.create("Test")
+    _set_exploration_mode(repo, project)
+
+    # Pre-fill all 9 slots with teilweise status (simulating LLM that never
+    # sets vollstaendig). Bump version so save() actually writes the new state.
+    for slot_id, titel in PFLICHT_SLOTS.items():
+        project.exploration_artifact.slots[slot_id] = ExplorationSlot(
+            slot_id=slot_id,
+            titel=titel,
+            inhalt=f"Inhalt für {titel}",
+            completeness_status=CompletenessStatus.teilweise,
+        )
+    project.exploration_artifact.version += 1
+    repo.save(project)
+
+    # LLM returns no content patches (user said "I'm done")
+    llm = _make_mock_llm(
+        nutzeraeusserung="Alles klar, wir können weitermachen.",
+        patches=[],
+    )
+    orchestrator = _make_orchestrator(repo, llm)
+    result = await orchestrator.process_turn(
+        project.projekt_id, TurnInput(text="Mir fällt nichts mehr ein")
+    )
+
+    # Should escalate to moderator via phase_complete
+    assert result.error is None
+    reloaded = repo.load(project.projekt_id)
+    assert reloaded.aktiver_modus == "moderator"
+    assert "phase_complete" in result.flags
+    db.close()

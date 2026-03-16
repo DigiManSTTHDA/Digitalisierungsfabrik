@@ -270,6 +270,19 @@ class ExplorationMode(BaseMode):
         # Compute phase status — must account for patches THIS turn will apply.
         # Build a projected view of slot statuses after patches are applied.
         phasenstatus = _compute_phasenstatus_with_patches(context, llm_patches)
+
+        # Deterministic escalation: if all slots have content (nearing_completion)
+        # and the LLM returned no content patches this turn, the user is signalling
+        # completion. Promote to phase_complete so the Moderator can propose the
+        # phase transition. Without this, weaker LLMs that leave slots at "teilweise"
+        # would never trigger phase_complete.
+        if phasenstatus == Phasenstatus.nearing_completion:
+            content_patches = [
+                p for p in llm_patches if p.get("path", "").endswith("/inhalt") and p.get("value")
+            ]
+            if not content_patches:
+                phasenstatus = Phasenstatus.phase_complete
+
         flags: list[Flag] = []
         if phasenstatus == Phasenstatus.phase_complete:
             flags.append(Flag.phase_complete)
