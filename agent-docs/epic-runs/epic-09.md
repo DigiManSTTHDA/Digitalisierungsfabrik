@@ -94,3 +94,97 @@ No escalations needed:
 - No new directories required
 
 **Proceeding to implementation.**
+
+---
+
+## STEP 3 — Implementation
+
+**Date:** 2026-03-16
+
+### Stories Implemented
+
+| Story | Commit | Tests Added | Key Files |
+|---|---|---|---|
+| 09-01 | `a16491b` | 0 (existing tests fixed) | ADR-006, models.py, template_schema.py, open-points.md |
+| 09-02 | `a07f984` | 5 | test_models.py (persistence round-trips, enum validation, negative test) |
+| 09-03 | `a9cd5c2` | 4 | context_assembler.py, test_context_assembler.py |
+| 09-04 | `d9c3f49` | 0 (tests in 09-05) | modes/specification.py, prompts/specification.md |
+| 09-05 | `b1edc28` | 16 | test_specification_mode.py (guardrails, prompt content, tool_choice, error) |
+| 09-06 | `0c45cf5` | 0 (frontend) | ArtifactTab.tsx, AlgorithmView.tsx (new) |
+| 09-07 | `3c8671a` | 0 | openapi.json, api.d.ts (regenerated) |
+
+### Test Count Progression
+
+303 → 308 → 312 → 312 → 328 → 328 → 328
+
+### Critic Reports
+
+All stories: No issues found.
+
+### Mini-Audit Results
+
+All stories: OK across all dimensions (file paths, line counts, FR coverage, type hints).
+
+### Architecture Components Added
+
+- `backend/modes/specification.py` — SpecificationMode (full LLM implementation)
+- `backend/prompts/specification.md` — German system prompt
+- `frontend/src/components/AlgorithmView.tsx` — Algorithm artifact rendering
+
+### ADRs Written
+
+- ADR-006: EMMA parameter schema (OP-02 resolution)
+
+### Libraries Used
+
+All within existing tech stack. No new dependencies.
+
+---
+
+## STEP 4 — Validate Tests
+
+**Date:** 2026-03-16
+
+328 tests pass. 25 new tests added (5 schema, 4 context assembler, 16 specification mode). All tests exercise real behaviour through persistence or mocked LLM — no tautological assertions.
+
+---
+
+## STEP 5 — Run Tests
+
+**Date:** 2026-03-16
+
+Results: 328 passed, 2 failed (pre-existing e2e — no API key configured).
+
+---
+
+## STEP 6 — Epic-Level Audit
+
+**Date:** 2026-03-16
+
+- SDD compliance: All SDD 5.5 fields present. EmmaAktionstyp has 18 members (SDD 8.3). Guardrails enforce SDD 6.6.3 Abbruchbedingung.
+- Architecture: All file paths match HLA Section 6. No invented paths.
+- Dependencies: No new packages. All within existing tech stack.
+- API contract: openapi.json + api.d.ts regenerated and committed together.
+- File sizes: All source files under 300 lines. Test files over limit are pre-existing.
+
+---
+
+## STEP 7 — Final Verification
+
+**Date:** 2026-03-16
+
+- `ruff check .` — All checks passed
+- `ruff format --check .` — 63 files already formatted
+- `python -m mypy . --explicit-package-bases` — Source files: Success. Pre-existing test errors only.
+- `python -m pytest --tb=short -q` — 328 passed, 2 pre-existing e2e failures
+- `npm run lint` — Passed
+- `npm run format:check` — All matched files use Prettier code style
+- `npm run typecheck` — Passed
+
+---
+
+## STEP 8 — Management Summary
+
+**Date:** 2026-03-16
+
+Written to: `agent-docs/reports/epic-09-summary.md`
