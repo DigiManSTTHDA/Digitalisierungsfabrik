@@ -15,7 +15,7 @@ export default defineConfig({
     proxy: {
       // Proxy REST API calls to the backend during development
       "/api": {
-        target: "http://localhost:8000",
+        target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },
       // Proxy WebSocket connections to the backend.
@@ -23,7 +23,7 @@ export default defineConfig({
       // React 18 StrictMode double-mount (first connection closes before
       // proxy finishes writing).
       "/ws": {
-        target: "ws://localhost:8000",
+        target: "ws://127.0.0.1:8000",
         ws: true,
         changeOrigin: true,
         configure: (proxy) => {

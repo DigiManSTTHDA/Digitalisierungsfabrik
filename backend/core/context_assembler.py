@@ -142,7 +142,7 @@ _EMMA_DESCRIPTIONS: dict[EmmaAktionstyp, str] = {
     EmmaAktionstyp.GENAI: "Generative KI für Textverarbeitung einsetzen",
     EmmaAktionstyp.EXPORT: "Daten aus einer Anwendung exportieren",
     EmmaAktionstyp.IMPORT: "Daten in eine Anwendung importieren",
-    EmmaAktionstyp.FILE_OPERATION: "Dateioperationen durchführen (kopieren, verschieben, löschen)",
+    EmmaAktionstyp.FILE_OPERATION: "Dateioperationen durchführen (speichern, kopieren, verschieben, löschen, in Ordner ablegen)",
     EmmaAktionstyp.SEND_MAIL: "E-Mail versenden",
     EmmaAktionstyp.COMMAND: "Systembefehle oder Tastenkombinationen ausführen",
     EmmaAktionstyp.LOOP: "Schleife über eine Menge von Elementen",

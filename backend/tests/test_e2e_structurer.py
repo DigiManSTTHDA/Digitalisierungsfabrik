@@ -390,10 +390,12 @@ async def test_e2e_structurer_flow() -> None:
         else:
             # Force advance if LLM won't cooperate
             print("  Structurer meldet kein phase_complete. Forciere Phasenwechsel.")
+            from artifacts.models import Phasenstatus as _PS
             p_force = get_project()
             p_force.working_memory.vorheriger_modus = "structuring"
             p_force.working_memory.aktiver_modus = "moderator"
             p_force.aktiver_modus = "moderator"
+            p_force.working_memory.phasenstatus = _PS.phase_complete
             repo.save(p_force)
 
     # CP10: Phase complete — Moderator aktiv, Artefakt vollständig

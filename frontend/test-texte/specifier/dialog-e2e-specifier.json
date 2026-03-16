@@ -1,0 +1,544 @@
+{
+  "_doc": "End-to-End Testdialog: Spezifikationsmodus + Moderator. Explorations- und Strukturartefakt werden als Seeds geladen (Explorer- und Strukturierer-Durchlauf übersprungen). Prozess: Eingangsrechnungsverarbeitung. Enthält: Eskalation (Panik-Button), Widerspruch-Korrektur, unvollständige Angaben, Frust über EMMA-Jargon.",
+
+  "exploration_seed": {
+    "_doc": "Vor-befülltes Explorationsartefakt (identisch mit Ergebnis des Explorer-E2E-Tests).",
+    "slots": {
+      "prozessausloeser": {
+        "slot_id": "prozessausloeser",
+        "titel": "Prozessauslöser",
+        "inhalt": "Eingang einer Lieferantenrechnung per Post (Papierrechnung) oder per E-Mail an das Sammelpostfach rechnungen@firma.de. In Einzelfällen auch direkte Zusendung an den Besteller (wird nicht zentral erfasst).",
+        "completeness_status": "vollstaendig"
+      },
+      "prozessziel": {
+        "slot_id": "prozessziel",
+        "titel": "Prozessziel",
+        "inhalt": "Fristgerechte, sachlich und rechnerisch korrekte Prüfung, Freigabe und Bezahlung von Eingangsrechnungen. Buchung in DATEV. Angestrebtes Nebenziel: Skonto-Ausnutzung (2% bei Zahlung innerhalb von 10 Tagen), wird aktuell meist nicht erreicht.",
+        "completeness_status": "vollstaendig"
+      },
+      "prozessbeschreibung": {
+        "slot_id": "prozessbeschreibung",
+        "titel": "Prozessbeschreibung",
+        "inhalt": "1. Rechnungseingang: Papierrechnungen werden im Sekretariat entgegengenommen und von Frau Becker morgens eingescannt. E-Mail-Rechnungen gehen an Sammelpostfach rechnungen@firma.de. 2. Erfassung und Prüfung: Sachbearbeiterin prüft ob Rechnung zu einer Bestellung passt. 3. Freigabe (dreistufig): Sachliche Prüfung, Freigabe durch Kostenstellenverantwortlichen, bei über 5.000 EUR zusätzlich GF-Freigabe. Freigabe digital über ELO. 4. Buchung in DATEV. 5. Zahlung, Skonto-Nutzung angestrebt.",
+        "completeness_status": "vollstaendig"
+      },
+      "scope": {
+        "slot_id": "scope",
+        "titel": "Scope",
+        "inhalt": "Beginn: Eingang der Rechnung (Post oder E-Mail). Ende: Zahlung an den Lieferanten. Nicht im Scope: Bestellprozess (vorgelagert), Lieferantenmanagement, Ausgangsrechnungen.",
+        "completeness_status": "vollstaendig"
+      },
+      "beteiligte_systeme": {
+        "slot_id": "beteiligte_systeme",
+        "titel": "Beteiligte Systeme",
+        "inhalt": "DATEV: Buchung und Zahlungsverkehr. ELO: Digitale Rechnungsfreigabe (Workflow). Microsoft Outlook: Sammelpostfach rechnungen@firma.de für E-Mail-Rechnungen. Scanner (Sekretariat): Digitalisierung von Papierrechnungen.",
+        "completeness_status": "vollstaendig"
+      },
+      "umgebung": {
+        "slot_id": "umgebung",
+        "titel": "Umgebung",
+        "inhalt": "Mittelständisches Maschinenbauunternehmen, ca. 200 Mitarbeiter, ein Standort in Nürnberg. Buchhaltung besteht aus 4 Personen, davon eine fast ausschließlich für Eingangsrechnungen zuständig. Sekretariat (Frau Becker) übernimmt Scannen und Posteingang.",
+        "completeness_status": "vollstaendig"
+      },
+      "randbedingungen": {
+        "slot_id": "randbedingungen",
+        "titel": "Randbedingungen",
+        "inhalt": "Skonto-Frist: 2% bei Zahlung innerhalb von 10 Tagen. Freigabeschwelle: Rechnungen über 5.000 EUR erfordern zusätzliche Geschäftsführungsfreigabe. Gesetzliche Aufbewahrungspflicht für Rechnungen.",
+        "completeness_status": "vollstaendig"
+      },
+      "ausnahmen": {
+        "slot_id": "ausnahmen",
+        "titel": "Ausnahmen",
+        "inhalt": "Gutschriften: Umgekehrter Rechnungsprozess, muss korrekt gegengebucht werden. Teilrechnungen: Bei Großprojekten. Rechnungen ohne Bestellnummer: Zuordnung unklar, manuelle Recherche. ELO-Verweigerung: Manche Abteilungsleiter nutzen Stempel-Freigabe.",
+        "completeness_status": "vollstaendig"
+      },
+      "prozesszusammenfassung": {
+        "slot_id": "prozesszusammenfassung",
+        "titel": "Prozesszusammenfassung",
+        "inhalt": "Die Eingangsrechnungsverarbeitung umfasst den Weg einer Lieferantenrechnung vom Eingang (Post/E-Mail) über eine dreistufige Freigabe bis zur Bezahlung und Buchung in DATEV. Bei ca. 400-500 Rechnungen monatlich sind die zentralen Herausforderungen die langen Freigabe-Durchlaufzeiten sowie Medienbrüche durch ELO-Verweigerung einzelner Führungskräfte.",
+        "completeness_status": "vollstaendig"
+      }
+    },
+    "version": 12
+  },
+
+  "structure_seed": {
+    "_doc": "Vor-befülltes Strukturartefakt mit 11 Strukturschritten. Entspricht dem Ergebnis des Structurer-E2E-Tests. algorithmus_ref ist überall leer — der Spezifikationsmodus füllt das Algorithmusartefakt.",
+    "prozesszusammenfassung": "Die Eingangsrechnungsverarbeitung umfasst elf Schritte: Rechnungseingang (Post/E-Mail), Digitalisierung durch Frau Becker, Bestellabgleich mit optionaler manueller Zuordnung bei fehlender Bestellnummer, sachliche Prüfung, zweistufige Freigabe (Abteilungsleiter plus optionale GF-Freigabe ab 5.000 EUR), Buchung in DATEV und Zahlungsanweisung. Ausnahme: Gutschriften werden umgekehrt gebucht.",
+    "schritte": {
+      "s01_eingang": {
+        "schritt_id": "s01_eingang",
+        "titel": "Rechnungseingang",
+        "typ": "aktion",
+        "beschreibung": "Eingang einer Lieferantenrechnung per Post (Papierrechnung) oder per E-Mail an das Sammelpostfach rechnungen@firma.de. Frau Becker nimmt Papierrechnungen im Sekretariat entgegen.",
+        "reihenfolge": 1,
+        "nachfolger": ["s02_erfassung"],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s02_erfassung": {
+        "schritt_id": "s02_erfassung",
+        "titel": "Erfassung und Digitalisierung",
+        "typ": "aktion",
+        "beschreibung": "Frau Becker scannt Papierrechnungen jeden Morgen mit Einzugsscanner ein. E-Mail-Rechnungen sind bereits digital im Sammelpostfach. Alle digitalisierten Rechnungen landen auf dem W-Laufwerk.",
+        "reihenfolge": 2,
+        "nachfolger": ["s03_bestellabgleich"],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s03_bestellabgleich": {
+        "schritt_id": "s03_bestellabgleich",
+        "titel": "Bestellabgleich",
+        "typ": "entscheidung",
+        "beschreibung": "Sachbearbeiterin prüft ob die Rechnung zu einer Bestellung passt und eine Bestellnummer vorhanden ist.",
+        "reihenfolge": 3,
+        "nachfolger": ["s04_sachliche_pruefung", "s03b_manuelle_zuordnung"],
+        "bedingung": "Hat die Rechnung eine gültige Bestellnummer?",
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s03b_manuelle_zuordnung": {
+        "schritt_id": "s03b_manuelle_zuordnung",
+        "titel": "Manuelle Zuordnung ohne Bestellnummer",
+        "typ": "aktion",
+        "beschreibung": "Ohne Bestellnummer: manuelle Recherche per Telefon wer bestellt hat. Kann Tage dauern.",
+        "reihenfolge": 4,
+        "nachfolger": ["s04_sachliche_pruefung"],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s04_sachliche_pruefung": {
+        "schritt_id": "s04_sachliche_pruefung",
+        "titel": "Sachliche Prüfung",
+        "typ": "aktion",
+        "beschreibung": "Sachbearbeiterin prüft sachliche und rechnerische Richtigkeit der Rechnung.",
+        "reihenfolge": 5,
+        "nachfolger": ["s05_betragspruefung"],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s05_betragspruefung": {
+        "schritt_id": "s05_betragspruefung",
+        "titel": "Betragsprüfung für GF-Freigabe",
+        "typ": "entscheidung",
+        "beschreibung": "Prüfung ob Rechnungsbetrag die Schwelle für Geschäftsführungsfreigabe überschreitet.",
+        "reihenfolge": 6,
+        "nachfolger": ["s06_abt_freigabe", "s07_gf_freigabe"],
+        "bedingung": "Ist der Rechnungsbetrag größer als 5.000 EUR?",
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s06_abt_freigabe": {
+        "schritt_id": "s06_abt_freigabe",
+        "titel": "Abteilungsleiter-Freigabe",
+        "typ": "aktion",
+        "beschreibung": "Kostenstellenverantwortlicher gibt die Rechnung in ELO frei. Bei ELO-Verweigerung: Ausdruck, Stempel, Rückscan durch Frau Becker.",
+        "reihenfolge": 7,
+        "nachfolger": ["s08_buchung"],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": "ELO-Verweigerung durch einzelne Abteilungsleiter (z.B. Herr Krause) führt zu Medienbruch und Doppelarbeit: Ausdruck, Stempel, Rückscan."
+      },
+      "s07_gf_freigabe": {
+        "schritt_id": "s07_gf_freigabe",
+        "titel": "Geschäftsführungs-Freigabe",
+        "typ": "aktion",
+        "beschreibung": "Zusätzliche Freigabe durch Geschäftsführung bei Rechnungen über 5.000 EUR. Kann zu langen Wartezeiten führen wenn GF auf Dienstreise.",
+        "reihenfolge": 8,
+        "nachfolger": ["s08_buchung"],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s08_buchung": {
+        "schritt_id": "s08_buchung",
+        "titel": "Buchung in DATEV",
+        "typ": "aktion",
+        "beschreibung": "Buchung der freigegebenen Rechnung in DATEV durch die Sachbearbeiterin.",
+        "reihenfolge": 9,
+        "nachfolger": ["s09_zahlung"],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s09_zahlung": {
+        "schritt_id": "s09_zahlung",
+        "titel": "Zahlungsanweisung",
+        "typ": "aktion",
+        "beschreibung": "Zahlungsanweisung an Lieferant über DATEV-Zahlungslauf. Skonto-Nutzung angestrebt (2% bei 10 Tagen).",
+        "reihenfolge": 10,
+        "nachfolger": [],
+        "bedingung": null,
+        "ausnahme_beschreibung": null,
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      },
+      "s10_gutschrift": {
+        "schritt_id": "s10_gutschrift",
+        "titel": "Gutschrift-Ausnahme",
+        "typ": "ausnahme",
+        "beschreibung": "Gutschriften kommen per Post herein, werden nicht bezahlt sondern in DATEV umgekehrt gebucht.",
+        "reihenfolge": 11,
+        "nachfolger": ["s08_buchung"],
+        "bedingung": null,
+        "ausnahme_beschreibung": "Gutschrift: Umgekehrter Buchungsprozess statt Zahlung. Gegenbuchung in DATEV.",
+        "algorithmus_ref": [],
+        "completeness_status": "nutzervalidiert",
+        "algorithmus_status": "ausstehend",
+        "spannungsfeld": null
+      }
+    },
+    "version": 8
+  },
+
+  "user_inputs": [
+    {
+      "id": "U1",
+      "phase": "moderator_spezifikation_intro",
+      "description": "User verwirrt, fragt was jetzt nochmal kommt — kein algorithmisches Verständnis",
+      "message": "Ja und was passiert jetzt noch? Ich hab doch schon alles erzählt über die Rechnungen. Was wollen Sie noch von mir?",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren"
+    },
+    {
+      "id": "U2",
+      "phase": "moderator_spezifikation_intro",
+      "description": "User bestätigt explizit → Spezifikationsmodus startet",
+      "message": "Ah ok, also nochmal aber jetzt noch genauer was wir konkret tun. Na gut, dann fangen wir halt an.",
+      "expect_mode": "moderator",
+      "expect_action": "spezifikation_starten",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "specification"
+    },
+    {
+      "id": "U3",
+      "phase": "specification",
+      "description": "User beschreibt E-Mail-Eingang anekdotisch — Frau Müller öffnet Outlook manuell (wird später in U6 korrigiert)",
+      "message": "Also die E-Mails kommen ins Sammelpostfach rechnungen@firma.de, das ist in Outlook. Frau Müller öffnet das jeden Morgen und geht alle neuen Mails durch. Den Anhang — meistens eine PDF — speichert sie dann in einen Ordner auf dem W-Laufwerk, da gibt es extra einen Ordner der heißt Eingang-Rechnungen oder so ähnlich. Die klickt das halt manuell durch.",
+      "expect_mode": "specification",
+      "contains_info_for_abschnitt": "s01_eingang",
+      "note": "WRONG information: Frau Müller manually goes through all emails. Will be corrected in U6."
+    },
+    {
+      "id": "U4",
+      "phase": "specification",
+      "description": "User beschreibt Scan-Prozess anekdotisch — Einzugsscanner, automatisch, W-Laufwerk",
+      "message": "Beim Scannen macht das Frau Becker jeden Morgen als erstes. Sie hat so einen Einzugsscanner — da legt sie den ganzen Stapel Papierrechnungen rein und der zieht die Seiten automatisch durch. Das geht eigentlich recht schnell. Die werden dann auch als PDFs gespeichert und Frau Becker legt die in denselben Ordner auf dem W-Laufwerk. Also da landen am Ende alle Rechnungen zusammen, egal ob Post oder E-Mail.",
+      "expect_mode": "specification",
+      "contains_info_for_abschnitt": "s02_erfassung"
+    },
+    {
+      "id": "U5",
+      "phase": "specification",
+      "description": "User gibt UNVOLLSTÄNDIGE Infos zum Bestellabgleich — deutet an, dass es noch mehr gibt",
+      "message": "Das mit dem Bestellabgleich... also wenn eine Bestellnummer drauf steht, öffnet Frau Müller in DATEV die Suche und gibt die Nummer ein. Dann zeigt DATEV sofort die passende Bestellung an. Was dann passiert wenn keine Nummer drauf steht, da gibt es noch einiges mehr zu sagen — aber fragen Sie mich da nochmal gezielt was Sie wissen wollen.",
+      "expect_mode": "specification",
+      "contains_info_for_abschnitt": "s03_bestellabgleich",
+      "note": "Partial info — system must ask follow-up about the no-order-number case"
+    },
+    {
+      "id": "U6",
+      "phase": "specification",
+      "description": "WIDERSPRUCH: User korrigiert frühere Aussage über manuelles Outlook-Durchklicken",
+      "message": "Warten Sie mal, ich muss da was korrigieren. Ich hab eben gesagt Frau Müller geht die Mails manuell durch. Das stimmt so nicht mehr. Seit März haben wir eine Weiterleitung in Outlook eingerichtet — alle Mails an rechnungen@firma.de gehen automatisch in einen Unterordner. Frau Müller muss nur noch diesen Unterordner aufmachen, nicht das ganze Postfach durchsuchen. Das hat unser IT-Mann eingerichtet.",
+      "expect_mode": "specification",
+      "contradiction_corrects": "U3",
+      "corrected_info": "Automatic Outlook rule forwards emails to subfolder — Frau Müller only opens that subfolder",
+      "wrong_info": "Frau Müller manually goes through all emails in the mailbox",
+      "corrected_keywords": ["Weiterleitung", "automatisch", "Unterordner"],
+      "wrong_keywords_must_not_dominate": ["manuell durchklicken"]
+    },
+    {
+      "id": "U7",
+      "phase": "specification",
+      "description": "User frustriert über EMMA-Abkürzungen, versteht die Fragen nicht → danach Panik-Button",
+      "message": "Ich kapier nicht was Sie von mir wollen. Sie zeigen mir da so Sachen wie FIND und READ_FORM und TYPE — was soll das sein? Ich bin keine IT-Fachkraft. Ich soll Ihnen sagen wie die Arbeit läuft, nicht wie ein Computerprogramm aussieht. Das versteht doch kein Mensch.",
+      "expect_mode": "specification",
+      "triggers_after": "escalate_button",
+      "note": "Nach dieser Nachricht drückt der User den Panik-Button."
+    },
+    {
+      "id": "U8",
+      "phase": "moderator_eskalation",
+      "description": "User beschreibt Problem beim Moderator — emotional, keine Computerkenntnisse",
+      "message": "Also der stellt mir Fragen die ich nicht verstehen kann. Was ist zum Beispiel ein 'Parameter'? Oder er fragt mich in welcher Reihenfolge das System etwas tun soll — das weiß ich, aber dann schreibt er das mit irgendwelchen englischen Abkürzungen auf die ich nicht kenne. Das macht mir Angst ehrlich gesagt.",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren",
+      "note": "Moderator MUSS erst analysieren, NICHT sofort zurückschicken"
+    },
+    {
+      "id": "U9",
+      "phase": "moderator_eskalation",
+      "description": "User bestätigt Rückkehr mit klarer Ansage — nur auf Deutsch und einfach",
+      "message": "Ja wenn er das auf Deutsch erklärt was er meint dann gut. Aber bitte kein Computerfachchinesisch mehr. Einfache Wörter, wie wenn Sie einem normalen Menschen erklären was passiert.",
+      "expect_mode": "moderator",
+      "expect_action": "zurueck_zum_modus",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "specification",
+      "establishes_agreement": "Spezifikationsmodus soll Alltagssprache verwenden, keine EMMA-Abkürzungen gegenüber dem User"
+    },
+    {
+      "id": "U10",
+      "phase": "specification_nach_eskalation",
+      "description": "User beschreibt ELO-Freigabe anekdotisch (post-escalation, soll einfacher sein)",
+      "message": "Also die Freigabe in ELO läuft so: Das System schickt dem Abteilungsleiter eine E-Mail mit einem Link drin. Der klickt auf den Link, dann öffnet sich ELO im Browser und der sieht die Rechnung und einen Knopf zum Freigeben. Wenn er draufklickt, ist es erledigt. Das ist eigentlich ganz einfach. Aber der Herr Krause macht das nie über den Computer, der druckt immer alles aus.",
+      "expect_mode": "specification",
+      "contains_info_for_abschnitt": "s06_abt_freigabe"
+    },
+    {
+      "id": "U11",
+      "phase": "specification_nach_eskalation",
+      "description": "User beschreibt DATEV-Buchung als Formular-Eingabe mit Feldern",
+      "message": "In DATEV tippt die Kollegin dann die Daten ein: Rechnungsnummer, Datum, Betrag, Lieferant und die Kostenstelle. Das geht über ein Eingabeformular mit verschiedenen Feldern. Manchmal muss sie auch noch die Mehrwertsteuer extra angeben je nach Lieferant. Das ist halt Tipparbeit.",
+      "expect_mode": "specification",
+      "contains_info_for_abschnitt": "s08_buchung"
+    },
+    {
+      "id": "U12",
+      "phase": "specification_nach_eskalation",
+      "description": "User beschreibt Zahlungslauf und signalisiert dass das alles war — kein Fachbegriff",
+      "message": "Das mit der Zahlung ist dann auch in DATEV. Es gibt dort einen Zahlungslauf — da werden alle freigegebenen Rechnungen zusammengestellt und als Sammelüberweisung rausgeschickt. Das macht die Buchhalterin einmal die Woche, montags meistens. Damit wären wir dann glaube ich fertig.",
+      "expect_mode": "specification",
+      "contains_info_for_abschnitt": "s09_zahlung"
+    },
+    {
+      "id": "U13",
+      "phase": "specification_abschluss",
+      "description": "User signalisiert dass nichts mehr fehlt — phase_complete auslösen",
+      "message": "Ja, mir fällt wirklich nichts mehr ein. Das war alles was wir so machen bei den Rechnungen. Können wir jetzt aufhören?",
+      "expect_mode": "specification",
+      "expect_after": "Spezifikationsmodus meldet phase_complete",
+      "expect_mode_after": "moderator"
+    },
+    {
+      "id": "U14",
+      "phase": "moderator_phasenwechsel",
+      "description": "User bestätigt Phasenwechsel zur Validierung",
+      "message": "Ja gut, dann weiter zur Prüfung. Was auch immer das bedeutet.",
+      "expect_mode": "moderator",
+      "expect_action": "phase_wechseln",
+      "expect_flag": "advance_phase",
+      "expect_mode_after": "validation",
+      "expect_phase_after": "validierung"
+    }
+  ],
+
+  "system_events": [
+    {
+      "id": "S0",
+      "when": "before_U1",
+      "event": "system_start_spezifikation",
+      "description": "System startet in Spezifikationsphase (nach Structurer-Completion + Moderator-Phasenwechsel). Moderator begrüßt und erklärt Spezifikationsphase.",
+      "assertions": [
+        "aktiver_modus == 'moderator'",
+        "aktive_phase == 'spezifikation'",
+        "vorheriger_modus == null",
+        "Explorationsartefakt vollständig erhalten (9 Slots)",
+        "Strukturartefakt vollständig erhalten (11 Schritte)"
+      ]
+    },
+    {
+      "id": "S1",
+      "when": "after_U7",
+      "event": "escalate_button",
+      "description": "User drückt Panik-Button nach Frust über EMMA-Jargon. Moderator wird aktiviert.",
+      "assertions": [
+        "aktiver_modus wechselt auf 'moderator'",
+        "vorheriger_modus == 'specification'",
+        "Algorithmusartefakt bleibt erhalten (alle bisherigen Abschnitte)"
+      ]
+    },
+    {
+      "id": "S2",
+      "when": "after_U13",
+      "event": "phase_complete",
+      "description": "Spezifikationsmodus meldet phase_complete. Moderator wird aktiviert.",
+      "assertions": [
+        "aktiver_modus wechselt auf 'moderator'",
+        "Moderator fasst Spezifikation zusammen",
+        "Moderator fragt: 'Sollen wir mit der Validierung fortfahren?'"
+      ]
+    }
+  ],
+
+  "test_checkpoints": {
+    "CP1_moderator_stays_on_question": {
+      "after": "U1",
+      "check": "aktiver_modus == 'moderator'. User hat nur eine Rückfrage gestellt.",
+      "verifies": "Moderator bleibt bei Rückfragen im Moderator-Modus (SDD 6.1.0)"
+    },
+    "CP2_explicit_confirm_starts_specification": {
+      "after": "U2",
+      "check": "aktiver_modus == 'specification'. User hat explizit bestätigt.",
+      "verifies": "Moderator startet Spezifikation nur nach expliziter Bestätigung (SDD 6.1.2)"
+    },
+    "CP3_first_abschnitt_created": {
+      "after": "U4",
+      "check": "Algorithmusartefakt hat mindestens 1 Abschnitt. Spezifikationsmodus arbeitet Strukturschritte durch.",
+      "verifies": "Spezifikationsmodus erstellt Algorithmusabschnitte aus Nutzerangaben (SDD 6.6.3)"
+    },
+    "CP4_system_asks_about_incomplete_info": {
+      "after": "U5",
+      "check": "Systemantwort enthält Fragezeichen. System fragt nach dem Fall ohne Bestellnummer.",
+      "verifies": "System extrahiert Wissen — fragt nach statt Annahmen zu treffen (SDD 1.1, FR-A-02)"
+    },
+    "CP5_artifact_survives_escalation": {
+      "after": "S1 (escalate)",
+      "check": "Anzahl Algorithmusabschnitte ist identisch vor und nach Moderator-Aktivierung.",
+      "verifies": "Eskalation zerstört keine Algorithmusdaten (SDD 2.4)"
+    },
+    "CP5_mode_is_moderator": {
+      "after": "S1 (escalate)",
+      "check": "aktiver_modus == 'moderator'",
+      "verifies": "Panik-Button aktiviert korrekt den Moderator"
+    },
+    "CP6_moderator_analyzes_not_bounces": {
+      "after": "U8",
+      "check": "aktiver_modus == 'moderator'. Moderator hat nicht sofort zurückgeschickt.",
+      "verifies": "Moderator analysiert erst bei Eskalation (SDD 6.6.5)"
+    },
+    "CP6_mod_no_write": {
+      "after": "U8",
+      "check": "Anzahl und Inhalte der Algorithmusabschnitte unverändert nach Moderator-Turn U8.",
+      "verifies": "SDD 6.6.5: Moderator verändert keine Artefakte"
+    },
+    "CP7_return_to_specification": {
+      "after": "U9",
+      "check": "aktiver_modus == 'specification'. Vereinbarung (einfache Sprache) ist im Kontext.",
+      "verifies": "Rückkehr zum Spezifikationsmodus nach Moderator-Intervention (SDD 6.3)"
+    },
+    "CP7_mod_no_write": {
+      "after": "U9",
+      "check": "Algorithmusabschnitte unverändert nach Moderator-Turn U9.",
+      "verifies": "SDD 6.6.5: Moderator-Rückkehr verändert kein Artefakt"
+    },
+    "CP8_escalation_effect_shorter_responses": {
+      "after": "U10",
+      "check": "Antwortlänge nach Eskalation ist nicht deutlich größer als vorher (soft check).",
+      "verifies": "Post-Eskalation-Verhalten ist messbar anders (SDD 2.4, CP_escalation_effect)"
+    },
+    "CP9_contradiction_handled": {
+      "after": "U6",
+      "check": "Algorithmusabschnitt für s01_eingang enthält Korrekturfür 'Weiterleitung' oder 'automatisch' oder 'Unterordner'.",
+      "verifies": "System aktualisiert Artefakt nach Widerspruch (SDD 1.1, CP_contradiction_handled)"
+    },
+    "CP10_phase_complete_specification": {
+      "after": "U13",
+      "check": "Moderator aktiv (durch phase_complete). Algorithmusartefakt hat mindestens 6 Abschnitte.",
+      "verifies": "Spezifikationsmodus erreicht phase_complete mit substantiellem Artefakt"
+    },
+    "CP10_abschnitte_have_aktionen": {
+      "after": "U13",
+      "check": "Alle Algorithmusabschnitte haben mindestens 1 EMMA-Aktion.",
+      "verifies": "Pflichtfeld aktionen ist befüllt (SDD 5.5)"
+    },
+    "CP10_struktur_refs_valid": {
+      "after": "U13",
+      "check": "Alle struktur_ref in Algorithmusabschnitten referenzieren existierende schritt_ids.",
+      "verifies": "Referenzielle Integrität Algorithmus ↔ Struktur (SDD 5.5)"
+    },
+    "CP11_phase_transition_to_validierung": {
+      "after": "U14",
+      "check": "aktive_phase == 'validierung'. Alle drei Artefakte vollständig erhalten.",
+      "verifies": "Sauberer Phasenwechsel zur Validierung ohne Datenverlust (SDD 6.1.2)"
+    }
+  },
+
+  "expected_algorithm_artifact": {
+    "_doc": "Erwartetes Algorithmusartefakt nach Abschluss. Abschnitte sind SINNGEMÄSS zu prüfen — IDs und Formulierungen variieren. Geprüft wird: Sind die EMMA-Aktionen plausibel? Gibt es DECISION-Aktionen für Entscheidungsschritte? Sind die richtigen Systeme (Outlook, DATEV, ELO) referenziert?",
+
+    "expected_abschnitte": [
+      {
+        "concept": "E-Mail-Eingang / Rechnungseingang",
+        "struktur_ref": "s01_eingang",
+        "expected_emma_types": ["READ", "FILE_OPERATION", "FIND"],
+        "keywords": ["Outlook", "E-Mail", "Unterordner", "Weiterleitung", "PDF"],
+        "note": "Nach Korrektur in U6 muss 'Weiterleitung' oder 'automatisch' oder 'Unterordner' enthalten sein"
+      },
+      {
+        "concept": "Erfassung und Digitalisierung",
+        "struktur_ref": "s02_erfassung",
+        "expected_emma_types": ["FILE_OPERATION"],
+        "keywords": ["Scanner", "PDF", "W-Laufwerk", "Ordner"]
+      },
+      {
+        "concept": "Bestellabgleich (Entscheidung)",
+        "struktur_ref": "s03_bestellabgleich",
+        "expected_emma_types": ["FIND", "DECISION", "READ"],
+        "keywords": ["Bestellnummer", "DATEV", "Suche"]
+      },
+      {
+        "concept": "Freigabe in ELO",
+        "struktur_ref": "s06_abt_freigabe",
+        "expected_emma_types": ["SEND_MAIL", "FIND_AND_CLICK", "WAIT"],
+        "keywords": ["ELO", "Freigabe", "Link", "E-Mail"]
+      },
+      {
+        "concept": "Buchung in DATEV",
+        "struktur_ref": "s08_buchung",
+        "expected_emma_types": ["TYPE", "READ_FORM", "FIND"],
+        "keywords": ["DATEV", "Formular", "Betrag", "Kostenstelle"]
+      },
+      {
+        "concept": "Zahlungsanweisung",
+        "struktur_ref": "s09_zahlung",
+        "expected_emma_types": ["TYPE", "FIND_AND_CLICK", "SUCCESS"],
+        "keywords": ["Zahlung", "DATEV", "Zahlungslauf", "Überweisung"]
+      }
+    ],
+
+    "structural_requirements": {
+      "min_abschnitte": 6,
+      "all_abschnitte_must_have_aktionen": true,
+      "must_have_emma_types": ["DECISION", "FILE_OPERATION"],
+      "struktur_refs_must_be_valid": true,
+      "must_have_prozesszusammenfassung": true
+    },
+
+    "contradiction_check": {
+      "_doc": "Nach U6 (Widerspruch) muss der Algorithmusabschnitt für s01_eingang die korrigierte Information enthalten.",
+      "abschnitt_ref": "s01_eingang",
+      "corrected_keywords": ["Weiterleitung", "automatisch", "Unterordner", "Regel"],
+      "wrong_keywords_must_not_be_sole": ["manuell durchklicken", "alle Mails einzeln"]
+    },
+
+    "negative_keywords": {
+      "_doc": "Diese Begriffe hat der User NIE erwähnt. Wenn sie im Algorithmusartefakt auftauchen, hat das System halluziniert.",
+      "keywords": ["PowerShell", "SharePoint", "REST API", "SQL", "XML", "VBA", "Python", "JavaScript"],
+      "note": "SAP wurde nicht erwähnt (nur DATEV), SharePoint nicht (nur W-Laufwerk/ELO), keine Programmiersprachen"
+    }
+  }
+}

@@ -16,7 +16,7 @@ Du führst ein strukturiertes Interview, um implizites Prozesswissen zu erfassen
 | umgebung | In welcher organisatorischen/technischen Umgebung läuft der Prozess? | Abteilung, Standort, Infrastruktur |
 | randbedingungen | Welche Regeln, Fristen oder Einschränkungen gelten? | Compliance, SLAs, gesetzliche Vorgaben |
 | ausnahmen | Welche Sonderfälle oder Fehlerszenarien gibt es? | Eskalationen, Workarounds, Fehlerpfade |
-| prozesszusammenfassung | Kurze Gesamtbeschreibung des Prozesses | Kompakte Zusammenfassung (2-4 Sätze) — wird erst gegen Ende befüllt |
+| prozesszusammenfassung | Kurze Gesamtbeschreibung des Prozesses | Kompakte Zusammenfassung (2-4 Sätze) — **wird geschrieben sobald du `nearing_completion` oder `phase_complete` meldest** |
 
 ## Verhalten
 
@@ -86,6 +86,8 @@ Schreibe **nur die NEUEN Informationen** als Patches. Das System merged automati
 4. Setze `nutzervalidiert` NIEMALS ohne explizite Nutzerbestätigung
 
 Die Phase kann erst abgeschlossen werden wenn alle 9 Slots `nutzervalidiert` sind.
+
+**Prozesszusammenfassung-Pflicht**: Sobald du `nearing_completion` oder `phase_complete` meldest, MUSS der Slot `prozesszusammenfassung` in demselben Turn befüllt sein (2-4 Sätze Gesamtbeschreibung). Melde nie `nearing_completion` ohne diesen Slot zu schreiben.
 
 Erlaubte Pfade (immer `replace`, niemals `add` für Sub-Felder):
 - `/slots/{slot_id}/inhalt`

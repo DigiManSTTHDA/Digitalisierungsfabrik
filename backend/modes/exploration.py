@@ -249,7 +249,7 @@ class ExplorationMode(BaseMode):
             tool_choice={"type": "tool", "name": "apply_patches"},
         )
 
-        llm_patches = response.tool_input.get("patches", [])
+        llm_patches = [p for p in (response.tool_input.get("patches") or []) if isinstance(p, dict)]
         llm_patches = _merge_slot_patches(llm_patches, context)
         all_patches = init_patches + llm_patches
 

@@ -134,8 +134,8 @@ STRUCTURE_TEMPLATE = ArtifactTemplate(
         ),
         TemplatePathPattern(
             pattern=r"/schritte/[^/]+/spannungsfeld",
-            allowed_ops=["replace"],
-            description="Spannungsfeld-Hinweis eines Strukturschritts setzen",
+            allowed_ops=["add", "replace"],
+            description="Spannungsfeld-Hinweis eines Strukturschritts setzen — add erlaubt da initial nicht vorhanden",
         ),
     ],
 )

@@ -183,8 +183,9 @@ class Executor:
     def _addressed_items(self, patches: list[dict]) -> set[tuple[str, str]]:  # type: ignore[type-arg]
         """Return (collection_key, entity_id) pairs addressed by patch paths.
 
-        Example: /slots/s01/inhalt → ("slots", "s01")
-                 /schritte/s01    → ("schritte", "s01")
+        Example: /slots/s01/inhalt        → ("slots", "s01")
+                 /schritte/s01            → ("schritte", "s01")
+                 /prozesszusammenfassung  → ("prozesszusammenfassung", "")
         """
         items: set[tuple[str, str]] = set()
         for op_dict in patches:
@@ -192,6 +193,9 @@ class Executor:
             parts = path.lstrip("/").split("/")
             if len(parts) >= 2:
                 items.add((parts[0], parts[1]))
+            elif len(parts) == 1 and parts[0]:
+                # Top-level scalar field like /prozesszusammenfassung
+                items.add((parts[0], ""))
         return items
 
     def _check_preservation(

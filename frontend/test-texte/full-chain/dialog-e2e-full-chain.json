@@ -1,0 +1,699 @@
+{
+  "_doc": "End-to-End Testdialog: Komplette Chain Explorer → Moderator → Structurer → Moderator → Specifier → Moderator. Prozess: Eingangsrechnungsverarbeitung. Alle 3 Arbeitsphasen werden LIVE durchlaufen — kein Seeding. Enthält je Phase: Eskalation (Panik-Button), Negativpfad (Widerspruch/Verweigerung/Verwirrung), und explizite Phasenbestätigung. WICHTIG: user_inputs ist eine Queue — der Testrunner füttert die nächste Nachricht ein, unabhängig davon welche Frage der aktive Modus gerade stellt.",
+
+  "user_inputs": [
+
+    {
+      "id": "U1",
+      "phase": "moderator_begruessung",
+      "description": "User stellt Rückfrage statt direkt loszulegen",
+      "message": "Moment mal, bevor wir starten — was genau soll ich hier eigentlich machen? Und wie lange dauert das? Ich hab heute noch drei andere Termine.",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren"
+    },
+
+    {
+      "id": "U2",
+      "phase": "moderator_begruessung",
+      "description": "User beschreibt Prozess grob, sagt aber NICHT explizit 'los gehts'",
+      "message": "Ok verstanden. Also wir machen die Eingangsrechnungsverarbeitung. Rechnungen kommen per Post und per E-Mail rein, die werden geprüft, freigegeben und dann bezahlt. Bei uns sind das so 400-500 Rechnungen im Monat.",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren",
+      "note": "Moderator darf NICHT eigenständig starten. Muss nachfragen."
+    },
+
+    {
+      "id": "U3",
+      "phase": "moderator_begruessung",
+      "description": "User bestätigt explizit → Exploration startet",
+      "message": "Ja, legen wir los mit der Exploration.",
+      "expect_mode": "moderator",
+      "expect_action": "exploration_starten",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "exploration"
+    },
+
+    {
+      "id": "U4",
+      "phase": "exploration",
+      "description": "Rechnungseingang und Sekretariat — narrativ",
+      "message": "Also die Rechnungen kommen bei uns im Sekretariat an. Papierrechnungen scannt die Frau Becker morgens als erstes ein. E-Mail-Rechnungen kommen an rechnungen@firma.de, das ist unser Sammelpostfach. Das Problem ist: manche Lieferanten schicken die Rechnung direkt an den Besteller, dann bekommt die Buchhaltung das gar nicht mit.",
+      "expect_mode": "exploration",
+      "contains_info_for_slots": ["prozessausloeser", "prozessbeschreibung"]
+    },
+
+    {
+      "id": "U5",
+      "phase": "exploration",
+      "description": "Systeme — anekdotisch mit Frustration, Medienbruch erwähnt",
+      "message": "Systeme? Also DATEV haben wir, das ist für die Buchung. Und dann ELO, da werden die Rechnungen digital freigegeben. Wobei — manche Abteilungsleiter machen das immer noch mit Stempel auf Papier, der Herr Krause zum Beispiel. Dann muss die Frau Becker das wieder einscannen. Das ist ja Wahnsinn. Und natürlich Outlook für das Sammelpostfach.",
+      "expect_mode": "exploration",
+      "contains_info_for_slots": ["beteiligte_systeme", "prozessbeschreibung", "ausnahmen"]
+    },
+
+    {
+      "id": "U6",
+      "phase": "exploration",
+      "description": "WIDERSPRUCH SETUP — User beschreibt zunächst Freigabe als IMMER dreistufig",
+      "message": "Der Freigabeprozess ist dreistufig. Erst prüft die Sachbearbeiterin ob die Rechnung zu einer Bestellung passt. Dann gibt der Kostenstellenverantwortliche frei. Und dann muss noch die Geschäftsführung drüber. Das dauert ewig weil alle das tagelang liegen lassen.",
+      "expect_mode": "exploration",
+      "contains_info_for_slots": ["prozessbeschreibung", "randbedingungen"],
+      "note": "FALSCHE INFO — wird in U7 korrigiert. Das dreistufige gilt nur ab 5000 EUR."
+    },
+
+    {
+      "id": "U7",
+      "phase": "exploration",
+      "description": "NEGATIVPFAD — User KORRIGIERT sich selbst. Dreistufig gilt nicht immer.",
+      "message": "Ach nein Moment, das hab ich ungenau gesagt. Die Geschäftsführung muss NICHT immer drüber. Das ist nur wenn die Rechnung über 5.000 Euro ist. Für normale Rechnungen reicht Sachbearbeiterin plus Abteilungsleiter, also eigentlich nur zwei Stufen. Die Grenze ist wirklich 5000 Euro, das ist intern so festgelegt.",
+      "expect_mode": "exploration",
+      "contains_info_for_slots": ["prozessbeschreibung", "randbedingungen"],
+      "note": "KORREKTUR: Normalfall = 2-stufige Freigabe. GF-Freigabe nur ab 5000 EUR. System muss Artefakt aktualisieren.",
+      "contradiction": {
+        "wrong_info_from": "U6",
+        "wrong_keywords": ["immer dreistufig", "immer alle drei"],
+        "corrected_info": "Normalfall: 2 Stufen. 3. Stufe (GF) nur ab 5000 EUR.",
+        "corrected_keywords": ["5000", "5.000", "normal", "zwei Stufen", "Abteilungsleiter"],
+        "must_appear_in_artifact": ["5000", "5.000"],
+        "must_not_appear_verbatim": []
+      }
+    },
+
+    {
+      "id": "U8",
+      "phase": "exploration",
+      "description": "Scope + Ungeduld → danach Panik-Button",
+      "message": "Scope? Von Rechnungseingang bis Zahlung. Was soll ich da noch groß erklären? Ich hab jetzt schon eine ganze Weile erzählt und ich weiß nicht ob wir auf dem richtigen Weg sind. Können Sie mir sagen ob das so passt was ich bisher gesagt hab?",
+      "expect_mode": "exploration",
+      "contains_info_for_slots": ["scope"],
+      "triggers_after": "escalate_button",
+      "note": "Nach U8 drückt der User den Panik-Button."
+    },
+
+    {
+      "id": "U9",
+      "phase": "moderator_eskalation",
+      "description": "User beschreibt Problem beim Moderator — emotional, nicht analytisch",
+      "message": "Ich hab das Gefühl ich drehe mich im Kreis. Der fragt immer wieder ähnliche Sachen und ich weiß nicht was noch fehlt. Ich hab doch schon alles erzählt was ich weiß. Und die Fragen werden manchmal so lang dass ich nicht mehr weiß was er eigentlich wissen will.",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren",
+      "note": "Moderator MUSS erst analysieren — darf NICHT sofort zurückschicken"
+    },
+
+    {
+      "id": "U10",
+      "phase": "moderator_eskalation",
+      "description": "User bestätigt Vereinbarung und Rückkehr",
+      "message": "Ok, wenn also noch Umgebung und Randbedingungen fehlen — das kann ich kurz sagen. Sagen Sie ihm dass er kürzer und knapper fragen soll, ich hab nicht ewig Zeit. Dann machen wir weiter.",
+      "expect_mode": "moderator",
+      "expect_action": "zurueck_zum_modus",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "exploration",
+      "establishes_agreement": "Explorer soll kürzer fragen. Fehlende Infos: Umgebung, Randbedingungen, Ausnahmen."
+    },
+
+    {
+      "id": "U11",
+      "phase": "exploration_nach_eskalation",
+      "description": "Umgebung + Randbedingungen — kompakt (Vereinbarung eingehalten)",
+      "message": "Umgebung: Maschinenbau, 200 Mitarbeiter, Standort Nürnberg. Buchhaltung hat 4 Leute, eine macht fast nur Eingangsrechnungen. Randbedingungen: Wir wollen immer Skonto ziehen, 2% bei 10 Tagen. Das schaffen wir meist nicht wegen der langen Freigabe. Letztes Jahr haben wir 30.000 Euro Skonto verschenkt.",
+      "expect_mode": "exploration",
+      "contains_info_for_slots": ["umgebung", "randbedingungen"]
+    },
+
+    {
+      "id": "U12",
+      "phase": "exploration_nach_eskalation",
+      "description": "Ausnahmen + letzte Details",
+      "message": "Ausnahmen gibt es ein paar: Gutschriften, die laufen anders rum. Teilrechnungen bei großen Projekten, die muss man gegenrechnen. Und manchmal kommen Rechnungen ohne Bestellnummer, dann ist es Detektivarbeit wer das bestellt hat. Ach und Mahnungen kommen auch manchmal wenn wir zu langsam sind.",
+      "expect_mode": "exploration",
+      "contains_info_for_slots": ["ausnahmen", "prozessbeschreibung"]
+    },
+
+    {
+      "id": "U13",
+      "phase": "exploration_abschluss",
+      "description": "User signalisiert Ende der Exploration",
+      "message": "Ich denke das war jetzt alles. Mir fällt nichts mehr ein was ich noch nicht gesagt hab.",
+      "expect_mode": "exploration",
+      "expect_after": "phase_complete → Moderator aktiv",
+      "expect_mode_after": "moderator"
+    },
+
+    {
+      "id": "U14",
+      "phase": "moderator_phasenwechsel_zu_strukturierung",
+      "description": "User bestätigt Phasenwechsel zur Strukturierung",
+      "message": "Ja, weiter zur nächsten Phase.",
+      "expect_mode": "moderator",
+      "expect_flag": "advance_phase",
+      "expect_mode_after": "structuring",
+      "expect_phase_after": "strukturierung"
+    },
+
+    {
+      "id": "U15",
+      "phase": "moderator_strukturierung_intro",
+      "description": "User fragt verständnislos was Strukturierung bedeutet",
+      "message": "Und was sollen wir jetzt nochmal machen? Ich hab doch schon alles erklärt. Müssen wir das nochmal von vorne?",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren"
+    },
+
+    {
+      "id": "U16",
+      "phase": "moderator_strukturierung_intro",
+      "description": "User bestätigt explizit → Structurer startet",
+      "message": "Ah ok, also wir sortieren das jetzt in eine Reihenfolge. Na gut, dann fangen wir halt an.",
+      "expect_mode": "moderator",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "structuring"
+    },
+
+    {
+      "id": "U17",
+      "phase": "structuring",
+      "description": "Freigabe-Logik anekdotisch — kein algorithmisches Denken",
+      "message": "Also bei der Freigabe ist es halt so: Wenn die Rechnung unter 5000 Euro ist, reicht der Abteilungsleiter. Aber wenn mehr draufsteht muss der Chef auch noch drüber schauen. Das hat vorige Woche wieder ewig gedauert weil der Chef auf Dienstreise war und keiner die Rechnung freigegeben hat.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["freigabe_entscheidung", "betragsprüfung"]
+    },
+
+    {
+      "id": "U18",
+      "phase": "structuring",
+      "description": "Schleifen und Gutschriften — narrativ, keine Fachbegriffe",
+      "message": "Manchmal stimmt was auf der Rechnung nicht, dann schreibt die Kollegin dem Lieferanten und wartet auf eine korrigierte Version. Das kann zwei drei Mal hin und her gehen. Und Gutschriften — die kommen auch per Post, werden aber nicht bezahlt sondern irgendwie anders in DATEV verrechnet.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["klärungsschleife", "gutschrift_ausnahme"]
+    },
+
+    {
+      "id": "U19",
+      "phase": "structuring",
+      "description": "Bestellabgleich aus Alltagssicht",
+      "message": "Das Bestellnummern-Problem ist nervig. Wenn eine Bestellnummer draufsteht, geht alles schnell. Wenn nicht, muss man rumtelefonieren wer das bestellt hat. Das dauert manchmal Tage. Und bei den großen Maschinenteilen kommen oft drei vier Rechnungen für eine Bestellung.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["bestellabgleich", "teilrechnung"]
+    },
+
+    {
+      "id": "U20",
+      "phase": "structuring",
+      "description": "NEGATIVPFAD — User VERWEIGERT Systeminterpretation (Reihenfolge falsch)",
+      "message": "Nein, das stimmt so nicht. Sie haben das falsch verstanden. Bei uns wird die Rechnung ZUERST in DATEV vorerfasst, und DANN erst geht sie zur Freigabe. Das ist wichtig für die Nummerierung. Erst Erfassung, dann Prüfung und Freigabe, dann erst die richtige Buchung. So läuft das wirklich.",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["vorerfassung", "reihenfolge_korrektur"],
+      "note": "VERWEIGERUNG: User korrigiert Reihenfolge. DATEV-Vorerfassung vor Freigabe, nicht danach.",
+      "refusal": {
+        "wrong_system_interpretation": "Buchung in DATEV nach Freigabe",
+        "corrected_info": "Erst DATEV-Vorerfassung (vor Freigabe), dann Prüfung + Freigabe, dann finale Buchung",
+        "corrected_keywords": ["Vorerfassung", "vorerfass"],
+        "must_appear_in_artifact": ["vorerfassung", "Vorerfassung"]
+      }
+    },
+
+    {
+      "id": "U21",
+      "phase": "structuring",
+      "description": "ELO-Spannungsfeld + kurz fertig → dann Panik-Button",
+      "message": "Was mich wirklich ärgert ist das mit ELO. Das ist eigentlich für digitale Freigabe. Aber Herr Krause druckt alles aus und stempelt. Dann scannt Frau Becker den Zettel wieder ein. Doppelte Arbeit, kostet extra Zeit. Können Sie das irgendwo vermerken dass das ein Problem ist?",
+      "expect_mode": "structuring",
+      "contains_info_for_steps": ["spannungsfeld_elo"],
+      "triggers_after": "escalate_button",
+      "note": "Nach U21 drückt der User den Panik-Button."
+    },
+
+    {
+      "id": "U22",
+      "phase": "moderator_eskalation_strukturierung",
+      "description": "User beschwert sich beim Moderator über Fachsprache",
+      "message": "Der benutzt die ganze Zeit Begriffe die ich nicht verstehe. Verzweigung, Entscheidungsknoten, Kontrollfluss — ich bin Sachbearbeiterin, kein Informatiker. Ich will meinen Prozess beschreiben, nicht Programmieren lernen. Kann man dem sagen dass er normal reden soll?",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren",
+      "note": "Moderator MUSS erst analysieren, dann Lösung vorschlagen"
+    },
+
+    {
+      "id": "U23",
+      "phase": "moderator_eskalation_strukturierung",
+      "description": "User bestätigt Rückkehr mit Vereinbarung: einfachere Sprache",
+      "message": "Ok gut, dann machen wir weiter. Aber sagen Sie ihm: normale Wörter, immer nur eine Frage auf einmal, und keine Computerbegriffe.",
+      "expect_mode": "moderator",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "structuring",
+      "establishes_agreement": "Structurer soll einfache Sprache verwenden, eine Frage auf einmal, keine Computerbegriffe"
+    },
+
+    {
+      "id": "U24",
+      "phase": "structuring_nach_eskalation",
+      "description": "User bestätigt Gesamtstruktur in einfacher Sprache",
+      "message": "Ja, so ungefähr stimmt das. Von Anfang an: Rechnung kommt rein, wird eingescannt, in DATEV vorerfasst, sachlich geprüft, freigegeben je nach Betrag, dann final gebucht und bezahlt. Ich glaub das passt so. Mir fällt nichts mehr ein was noch fehlt.",
+      "expect_mode": "structuring",
+      "expect_after": "phase_complete → Moderator aktiv",
+      "expect_mode_after": "moderator"
+    },
+
+    {
+      "id": "U25",
+      "phase": "moderator_phasenwechsel_zu_spezifikation",
+      "description": "User bestätigt Phasenwechsel zur Spezifikation",
+      "message": "Ja, weiter zur nächsten Phase.",
+      "expect_mode": "moderator",
+      "expect_flag": "advance_phase",
+      "expect_mode_after": "specification",
+      "expect_phase_after": "spezifikation"
+    },
+
+    {
+      "id": "U26",
+      "phase": "moderator_spezifikation_intro",
+      "description": "User fragt was EMMA-Aktionen sind — völlig unbekannter Begriff",
+      "message": "Was sind denn EMMA-Aktionen? Ich hab keine Ahnung was das sein soll. Erkläre mir das bitte auf Deutsch.",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren"
+    },
+
+    {
+      "id": "U27",
+      "phase": "moderator_spezifikation_intro",
+      "description": "User bestätigt nach Erklärung explizit — etwas skeptisch",
+      "message": "Ok, ich versuch das mal. Also wir schauen Schritt für Schritt was der Roboter machen soll. Na gut, dann fangen wir an.",
+      "expect_mode": "moderator",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "specification"
+    },
+
+    {
+      "id": "U28",
+      "phase": "specification",
+      "description": "Rechnungseingang-Schritte — User erklärt wie es wirklich läuft",
+      "message": "Also beim Rechnungseingang: Die E-Mails vom Sammelpostfach müssen geprüft werden ob was Neues dabei ist. Papierrechnungen werden eingescannt und als PDF gespeichert. Dann werden die in einem bestimmten Ordner abgelegt damit die Kollegin in der Buchhaltung die findet.",
+      "expect_mode": "specification",
+      "contains_info_for_steps": ["rechnungseingang_algo"]
+    },
+
+    {
+      "id": "U29",
+      "phase": "specification",
+      "description": "Bestellabgleich — unvollständige Info, erwartet Nachfrage",
+      "message": "Beim Bestellabgleich schaut die Kollegin in DATEV ob es eine passende Bestellung gibt. Ja da gibt es noch mehr dazu, aber fragen Sie mich ruhig genauer.",
+      "expect_mode": "specification",
+      "contains_info_for_steps": ["bestellabgleich_algo"],
+      "note": "Unvollständige Info — System soll nachfragen"
+    },
+
+    {
+      "id": "U30",
+      "phase": "specification",
+      "description": "NEGATIVPFAD — VERWIRRUNG über EMMA-Aktionstyp READ_FORM",
+      "message": "Moment, was ist das READ_FORM? Das verstehe ich nicht. Was soll der Roboter da genau tun? Ich kenn das nicht. Können Sie mir erklären was das bedeutet bevor ich weitermache?",
+      "expect_mode": "specification",
+      "note": "VERWIRRUNG: User versteht EMMA-Aktion nicht. System DARF NICHT weiter pushen, muss erklären."
+    },
+
+    {
+      "id": "U31",
+      "phase": "specification",
+      "description": "Nach Erklärung: User liefert Info für Prüfungsschritt → dann Panik-Button",
+      "message": "Ah ok, also die Kollegin öffnet die Rechnung auf dem Bildschirm und schaut die Felder an — Betrag, Lieferant, Datum, ob alles stimmt. Das macht sie in dem Programm wo die PDF angezeigt wird. Aber ich muss sagen, ich versteh noch immer nicht so ganz wozu das alles gut ist.",
+      "expect_mode": "specification",
+      "contains_info_for_steps": ["sachpruefung_algo"],
+      "triggers_after": "escalate_button",
+      "note": "Nach U31 drückt der User den Panik-Button — Frustration über den Gesamtprozess."
+    },
+
+    {
+      "id": "U32",
+      "phase": "moderator_eskalation_spezifikation",
+      "description": "User erklärt Frustration beim Moderator — versteht Sinn der Spezifikation nicht",
+      "message": "Ich verstehe nicht was das bringen soll. Wir beschreiben jetzt jeden kleinen Schritt im Detail, aber das klingt alles sehr kompliziert und ich bin nicht sicher ob der Roboter das wirklich so kann. Was ist wenn das gar nicht automatisierbar ist?",
+      "expect_mode": "moderator",
+      "expect_action": "weiter_moderieren",
+      "note": "Moderator muss Vertrauen aufbauen und erklären — NICHT sofort zurückschicken"
+    },
+
+    {
+      "id": "U33",
+      "phase": "moderator_eskalation_spezifikation",
+      "description": "User beruhigt sich, bestätigt Rückkehr",
+      "message": "Ok das klingt vernünftig. Wenn es nicht klappt steht das da. Gut, dann machen wir weiter. Aber bitte einfach erklären was wir brauchen.",
+      "expect_mode": "moderator",
+      "expect_flag": "return_to_mode",
+      "expect_mode_after": "specification",
+      "establishes_agreement": "Specifier soll einfach erklären, was der Roboter bei jedem Schritt konkret tut"
+    },
+
+    {
+      "id": "U34",
+      "phase": "specification_nach_eskalation",
+      "description": "User liefert Infos für Freigabe + Buchung + Zahlung kompakt",
+      "message": "Also bei der Freigabe: der Abteilungsleiter klickt in ELO auf Freigeben. Bei über 5000 Euro macht das dann noch der Chef. Danach bucht die Kollegin die Rechnung in DATEV fertig, das heißt sie gibt die Buchungsinformationen ein. Und am Ende kommt die Zahlung, die läuft über DATEV automatisch mit dem Zahlungslauf.",
+      "expect_mode": "specification",
+      "contains_info_for_steps": ["freigabe_algo", "buchung_algo", "zahlung_algo"]
+    },
+
+    {
+      "id": "U35",
+      "phase": "specification_abschluss",
+      "description": "User signalisiert Fertigstellung",
+      "message": "Ich denke das war genug. Ich hab alles gesagt was ich weiß. Können wir das abschließen?",
+      "expect_mode": "specification",
+      "expect_after": "phase_complete → Moderator aktiv",
+      "expect_mode_after": "moderator"
+    }
+  ],
+
+  "system_events": [
+    {
+      "id": "S0",
+      "when": "before_U1",
+      "event": "system_start_neues_projekt",
+      "description": "System startet neu. Moderator wird aktiviert, begrüßt User, erklärt 4-Phasen-System.",
+      "assertions": [
+        "aktiver_modus == 'moderator'",
+        "aktive_phase == 'exploration'",
+        "vorheriger_modus == null",
+        "Keine Artefakte (alle leer)"
+      ]
+    },
+    {
+      "id": "S1",
+      "when": "after_U8",
+      "event": "panik_button_exploration",
+      "description": "Panik-Button nach U8. Moderator wird aktiv. Exploration-Artefakt bleibt erhalten.",
+      "assertions": [
+        "aktiver_modus wechselt auf 'moderator'",
+        "vorheriger_modus == 'exploration'",
+        "Explorationsartefakt bleibt vollständig erhalten (alle bisherigen Patches)"
+      ]
+    },
+    {
+      "id": "S2",
+      "when": "after_U13",
+      "event": "phase_complete_exploration",
+      "description": "Explorer meldet phase_complete. Moderator übernimmt, schlägt Phasenwechsel vor.",
+      "assertions": [
+        "aktiver_modus == 'moderator'",
+        "Alle 8 Pflicht-Slots des Explorationsartefakts befüllt",
+        "Moderator fragt ob Nutzer zur Strukturierung wechseln will"
+      ]
+    },
+    {
+      "id": "S3",
+      "when": "after_U21",
+      "event": "panik_button_structuring",
+      "description": "Panik-Button nach U21. Moderator wird aktiv. Strukturartefakt bleibt erhalten.",
+      "assertions": [
+        "aktiver_modus wechselt auf 'moderator'",
+        "vorheriger_modus == 'structuring'",
+        "Strukturartefakt bleibt vollständig erhalten"
+      ]
+    },
+    {
+      "id": "S4",
+      "when": "after_U24",
+      "event": "phase_complete_structuring",
+      "description": "Structurer meldet phase_complete. Moderator übernimmt, schlägt Spezifikation vor.",
+      "assertions": [
+        "aktiver_modus == 'moderator'",
+        "Strukturartefakt hat mindestens 5 Schritte",
+        "Moderator fragt ob Nutzer zur Spezifikation wechseln will"
+      ]
+    },
+    {
+      "id": "S5",
+      "when": "after_U31",
+      "event": "panik_button_specification",
+      "description": "Panik-Button nach U31. Moderator wird aktiv. Algorithmusartefakt bleibt erhalten.",
+      "assertions": [
+        "aktiver_modus wechselt auf 'moderator'",
+        "vorheriger_modus == 'specification'",
+        "Algorithmusartefakt bleibt vollständig erhalten"
+      ]
+    }
+  ],
+
+  "test_checkpoints": {
+    "CP1_mod_stays_on_question": {
+      "after": "U1",
+      "check": "aktiver_modus == 'moderator'. User hat nur eine Rückfrage gestellt.",
+      "verifies": "SDD 6.1.0 — Moderator kein vorzeitiger Modus-Start"
+    },
+    "CP2_mod_resists_implicit_start": {
+      "after": "U2",
+      "check": "aktiver_modus == 'moderator'. User hat Prozess beschrieben aber nicht explizit 'Ja' gesagt.",
+      "verifies": "SDD 6.1.0 — Start nur nach expliziter Bestätigung"
+    },
+    "CP3_exploration_starts": {
+      "after": "U3",
+      "check": "aktiver_modus == 'exploration'. Kontext aus U2 in Dialog-History.",
+      "verifies": "SDD 6.1.2 — Phasenwechsel nach Nutzerbestätigung. FR-D-04 — Kontextübergabe"
+    },
+    "CP4_contradiction_tracked": {
+      "after": "U7",
+      "check": "Explorationsartefakt enthält korrigierte Info aus U7 (5000 EUR Grenze). System hat Widerspruch verarbeitet.",
+      "verifies": "SDD 1.1 — keine Halluzination, Widerspruchsbehandlung"
+    },
+    "CP5_artifact_survives_exploration_escalation": {
+      "after": "S1",
+      "check": "Explorationsartefakt mit allen befüllten Slots erhalten. befuellte_slots > 0.",
+      "verifies": "SDD 2.4 — Eskalation zerstört keine Daten"
+    },
+    "CP6_mod_no_write_exploration_U9": {
+      "after": "U9",
+      "check": "Explorationsartefakt IDENTISCH nach Moderator-Turn U9 (kein Slot verändert).",
+      "verifies": "SDD 6.6.5 — Moderator hat keine Schreibrechte auf Artefakte"
+    },
+    "CP7_mod_no_write_exploration_U10": {
+      "after": "U10",
+      "check": "Explorationsartefakt IDENTISCH nach Moderator-Turn U10.",
+      "verifies": "SDD 6.6.5 — Moderator hat keine Schreibrechte auf Artefakte"
+    },
+    "CP8_return_to_exploration": {
+      "after": "U10",
+      "check": "aktiver_modus == 'exploration'. Vereinbarung (kürzer fragen) im Kontext.",
+      "verifies": "SDD 6.3 — Rückkehr zum Modus nach Eskalation"
+    },
+    "CP9_phase_complete_exploration": {
+      "after": "U13 (nudge)",
+      "check": "aktiver_modus == 'moderator'. Alle 8 Pflicht-Slots befüllt. prozesszusammenfassung nicht leer.",
+      "verifies": "SDD 6.6.1 — phase_complete mit vollständigem Artefakt"
+    },
+    "CP10_phase_transition_to_strukturierung": {
+      "after": "U14",
+      "check": "aktive_phase == 'strukturierung'. aktiver_modus == 'structuring'. Explorationsartefakt vollständig erhalten.",
+      "verifies": "SDD 6.1.2 — Phasenwechsel nach Bestätigung. Kein Datenverlust."
+    },
+    "CP11_mod_stays_on_structuring_question": {
+      "after": "U15",
+      "check": "aktiver_modus == 'moderator'. User Rückfrage ohne Bestätigung.",
+      "verifies": "SDD 6.1.0 — Moderator wartet auf explizites Ja"
+    },
+    "CP12_structuring_starts": {
+      "after": "U16",
+      "check": "aktiver_modus == 'structuring'. Strukturartefakt wird befüllt.",
+      "verifies": "SDD 6.1.2 — Modus-Aktivierung nach Bestätigung"
+    },
+    "CP13_refusal_handled": {
+      "after": "U20",
+      "check": "System hat Verweigerung verarbeitet. Strukturartefakt enthält korrigierte Reihenfolge (Vorerfassung).",
+      "verifies": "SDD 1.1 — Verweigerungsbehandlung ohne Absturz"
+    },
+    "CP14_artifact_survives_structuring_escalation": {
+      "after": "S3",
+      "check": "Strukturartefakt erhalten. Schritte-Anzahl >= Anzahl vor Eskalation.",
+      "verifies": "SDD 2.4 — Datensicherheit bei Eskalation"
+    },
+    "CP15_mod_no_write_structuring_U22": {
+      "after": "U22",
+      "check": "Strukturartefakt IDENTISCH (Schritte-Anzahl und Beschreibungen) nach Moderator-Turn U22.",
+      "verifies": "SDD 6.6.5 — Moderator hat keine Schreibrechte"
+    },
+    "CP16_mod_no_write_structuring_U23": {
+      "after": "U23",
+      "check": "Strukturartefakt IDENTISCH nach Moderator-Turn U23.",
+      "verifies": "SDD 6.6.5 — Moderator hat keine Schreibrechte"
+    },
+    "CP17_return_to_structuring": {
+      "after": "U23",
+      "check": "aktiver_modus == 'structuring'. Vereinbarung (einfache Sprache) im Kontext.",
+      "verifies": "SDD 6.3 — Rückkehr nach Eskalation"
+    },
+    "CP18_phase_complete_structuring": {
+      "after": "U24 (nudge)",
+      "check": "aktiver_modus == 'moderator'. Strukturartefakt hat >= 5 Schritte. Kein Schritt mit Status 'leer'. Nachfolger-Referenzen valide.",
+      "verifies": "SDD 6.6.2 — phase_complete mit vollständigem Artefakt"
+    },
+    "CP19_phase_transition_to_spezifikation": {
+      "after": "U25",
+      "check": "aktive_phase == 'spezifikation'. aktiver_modus == 'specification'. Exploration + Struktur-Artefakt erhalten.",
+      "verifies": "SDD 6.1.2 — Phasenwechsel. Kein Datenverlust."
+    },
+    "CP20_mod_stays_on_specification_question": {
+      "after": "U26",
+      "check": "aktiver_modus == 'moderator'. User Rückfrage über EMMA ohne Bestätigung.",
+      "verifies": "SDD 6.1.0 — Kein vorzeitiger Start"
+    },
+    "CP21_specification_starts": {
+      "after": "U27",
+      "check": "aktiver_modus == 'specification'. Algorithmusartefakt beginnt sich zu füllen.",
+      "verifies": "SDD 6.1.2 — Spezifikation startet nach Bestätigung"
+    },
+    "CP22_confusion_handled_gracefully": {
+      "after": "U30",
+      "check": "aktiver_modus == 'specification'. Kein Fehler. System hat READ_FORM erklärt.",
+      "verifies": "SDD 1.2 — System robustheit gegenüber verwirrendem Nutzerverhalten"
+    },
+    "CP23_artifact_survives_specification_escalation": {
+      "after": "S5",
+      "check": "Algorithmusartefakt erhalten. Abschnitte-Anzahl >= Anzahl vor Eskalation.",
+      "verifies": "SDD 2.4 — Datensicherheit bei Eskalation"
+    },
+    "CP24_mod_no_write_specification_U32": {
+      "after": "U32",
+      "check": "Algorithmusartefakt IDENTISCH nach Moderator-Turn U32.",
+      "verifies": "SDD 6.6.5 — Moderator verändert keine Artefakte"
+    },
+    "CP25_mod_no_write_specification_U33": {
+      "after": "U33",
+      "check": "Algorithmusartefakt IDENTISCH nach Moderator-Turn U33.",
+      "verifies": "SDD 6.6.5 — Moderator verändert keine Artefakte"
+    },
+    "CP26_return_to_specification": {
+      "after": "U33",
+      "check": "aktiver_modus == 'specification'.",
+      "verifies": "SDD 6.3 — Rückkehr nach Eskalation"
+    },
+    "CP27_phase_complete_specification": {
+      "after": "U35 (nudge)",
+      "check": "aktiver_modus == 'moderator'. Algorithmusartefakt hat >= 4 Abschnitte mit EMMA-Aktionen.",
+      "verifies": "SDD 6.6.3 — phase_complete mit substantiellem Algorithmusartefakt"
+    }
+  },
+
+  "expected_artifact": {
+    "_doc": "Keyword-Prüfung für Explorationsartefakt nach Phase 1. Inhalte variieren je LLM-Antwort.",
+    "slots": {
+      "prozessausloeser": { "keywords": ["Rechnung", "Post", "E-Mail"] },
+      "prozessziel": { "keywords": ["Zahlung", "Prüfung", "freigeb"] },
+      "prozessbeschreibung": { "keywords": ["Freigabe", "DATEV", "5000", "5.000"] },
+      "scope": { "keywords": ["Eingang", "Zahlung"] },
+      "beteiligte_systeme": { "keywords": ["DATEV", "ELO", "Outlook"] },
+      "umgebung": { "keywords": ["Nürnberg", "Buchhaltung", "200"] },
+      "randbedingungen": { "keywords": ["Skonto", "10 Tage", "5000", "5.000"] },
+      "ausnahmen": { "keywords": ["Gutschrift", "Bestellnummer"] },
+      "prozesszusammenfassung": { "keywords": ["Rechnung", "Freigabe"] }
+    },
+    "negative_keywords": {
+      "_doc": "Begriffe die der User NIE erwähnt hat — deren Vorkommen deutet auf Halluzination hin",
+      "keywords": ["SAP", "OCR", "Blockchain", "Machine Learning", "Vier-Augen-Prinzip", "KI-gestützt", "API"]
+    },
+    "contradiction_check": {
+      "_doc": "Nach U7 muss das Artefakt die KORRIGIERTE Info enthalten (5000-EUR-Schwelle für GF-Freigabe)",
+      "must_contain_corrected": ["5000", "5.000"],
+      "corrected_concept": "GF-Freigabe nur ab 5000 EUR, Normalfall 2-stufig"
+    }
+  },
+
+  "expected_structure_artifact": {
+    "_doc": "Keyword-Prüfung für Strukturartefakt nach Phase 2. Konzepte variieren je LLM.",
+    "expected_concepts": [
+      {
+        "concept": "Rechnungseingang",
+        "expected_typ": "aktion",
+        "keywords": ["Rechnung", "Eingang", "Post", "E-Mail"],
+        "should_be_start": true
+      },
+      {
+        "concept": "Erfassung/Scannen",
+        "expected_typ": "aktion",
+        "keywords": ["Scan", "erfass", "digital", "Vorerfassung", "vorerfass"]
+      },
+      {
+        "concept": "Bestellabgleich",
+        "expected_typ": "entscheidung",
+        "keywords": ["Bestell", "Zuordnung", "Bestellnummer"],
+        "must_have_bedingung": true
+      },
+      {
+        "concept": "Freigabe-Entscheidung",
+        "expected_typ": "entscheidung",
+        "keywords": ["5000", "5.000", "Geschäftsführung", "Betrag", "Freigabe"],
+        "must_have_bedingung": true
+      },
+      {
+        "concept": "Buchung DATEV",
+        "expected_typ": "aktion",
+        "keywords": ["DATEV", "Buchung", "buch"]
+      },
+      {
+        "concept": "Zahlung",
+        "expected_typ": "aktion",
+        "keywords": ["Zahlung", "bezahl"],
+        "should_be_end": true
+      }
+    ],
+    "structural_requirements": {
+      "min_schritte": 5,
+      "must_have_types": ["aktion", "entscheidung"],
+      "should_have_types": ["ausnahme"],
+      "must_have_start_step": true,
+      "must_have_end_step": true,
+      "must_have_prozesszusammenfassung": true,
+      "entscheidung_must_have_bedingung": true,
+      "entscheidung_must_have_multiple_nachfolger": true
+    },
+    "negative_keywords": {
+      "_doc": "Begriffe die der User NIE für die Struktur erwähnt hat",
+      "keywords": ["BPMN", "UML", "Swimlane", "swimlane", "Flowchart"]
+    },
+    "refusal_check": {
+      "_doc": "Nach U20 muss Strukturartefakt DATEV-Vorerfassung VOR Freigabe enthalten",
+      "must_contain_corrected": ["Vorerfassung", "vorerfass"],
+      "corrected_concept": "DATEV-Vorerfassung erfolgt VOR der Freigabe"
+    }
+  },
+
+  "expected_algorithm_artifact": {
+    "_doc": "Keyword-Prüfung für Algorithmusartefakt nach Phase 3. EMMA-Typen und Keywords variieren.",
+    "expected_abschnitte": [
+      {
+        "concept": "Rechnungseingang-Algorithmus",
+        "keywords": ["Eingang", "Rechnung", "Post", "E-Mail", "Ordner"],
+        "expected_emma_types": ["FILE_OPERATION", "FIND", "READ"]
+      },
+      {
+        "concept": "Bestellabgleich-Algorithmus",
+        "keywords": ["Bestell", "Prüfung", "DATEV"],
+        "expected_emma_types": ["READ", "DECISION", "READ_FORM"]
+      },
+      {
+        "concept": "Freigabe-Algorithmus",
+        "keywords": ["Freigabe", "ELO", "freigeb"],
+        "expected_emma_types": ["FIND_AND_CLICK", "DECISION"]
+      },
+      {
+        "concept": "Buchung-Algorithmus",
+        "keywords": ["DATEV", "Buchung", "buch"],
+        "expected_emma_types": ["TYPE", "FIND_AND_CLICK", "READ_FORM"]
+      },
+      {
+        "concept": "Zahlung-Algorithmus",
+        "keywords": ["Zahlung", "bezahl", "Zahlungslauf"],
+        "expected_emma_types": ["FIND_AND_CLICK", "COMMAND", "SUCCESS"]
+      }
+    ],
+    "structural_requirements": {
+      "min_abschnitte": 4,
+      "must_have_emma_types": ["DECISION", "FILE_OPERATION"],
+      "should_have_emma_types": ["READ", "TYPE", "FIND_AND_CLICK"],
+      "must_have_prozesszusammenfassung": true
+    },
+    "negative_keywords": {
+      "_doc": "Begriffe die der User NIE für den Algorithmus erwähnt hat — Halluzinationscheck",
+      "keywords": ["Python", "webhook", "REST", "API", "Tesseract", "Machine Learning", "sklearn"]
+    }
+  }
+}

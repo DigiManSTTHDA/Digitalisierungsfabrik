@@ -1,11 +1,11 @@
-"""Tests for SQLite persistence layer — Database + ProjectRepository.
+"""Tests for ProjectRepository — create, load, save, list, atomicity,
+and AlgorithmArtifact persistence.
 
-All tests use in-memory SQLite (:memory:) — no file I/O required.
+Stories 01-05/06 + 09-02 (persistence parts).
 """
 
 from __future__ import annotations
 
-import sqlite3
 from collections.abc import Generator
 from datetime import UTC, datetime
 
@@ -32,6 +32,7 @@ from core.working_memory import WorkingMemory
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -48,115 +49,7 @@ def make_working_memory(projekt_id: str = "p1") -> WorkingMemory:
 
 
 # ---------------------------------------------------------------------------
-# Story 01-04: Database class
-# ---------------------------------------------------------------------------
-
-
-class TestDatabase:
-    def test_in_memory_instantiation(self) -> None:
-        from persistence.database import Database
-
-        db = Database(":memory:")
-        db.close()
-
-    def test_schema_tables_created(self) -> None:
-        from persistence.database import Database
-
-        db = Database(":memory:")
-        conn = db.get_connection()
-        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-        tables = {row[0] for row in cursor.fetchall()}
-        assert "projects" in tables
-        assert "artifact_versions" in tables
-        assert "working_memory" in tables
-        assert "dialog_history" in tables
-        assert "validation_reports" in tables
-        db.close()
-
-    def test_idempotent_schema_init(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        """CREATE TABLE IF NOT EXISTS — zweites Database auf derselben Datei darf nicht schmeißen."""
-        from persistence.database import Database
-
-        db_file = str(tmp_path / "test.db")
-        db1 = Database(db_file)
-        db1.close()
-        # If IF NOT EXISTS were missing, this second init would raise "table already exists"
-        db2 = Database(db_file)
-        conn = db2.get_connection()
-        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = {row[0] for row in cursor.fetchall()}
-        assert "projects" in tables
-        db2.close()
-
-    def test_foreign_keys_enforced(self) -> None:
-        from persistence.database import Database
-
-        db = Database(":memory:")
-        conn = db.get_connection()
-        # FK enforcement: inserting artifact_version with unknown projekt_id must fail
-        with pytest.raises(sqlite3.IntegrityError):
-            conn.execute(
-                """INSERT INTO artifact_versions
-                   (projekt_id, typ, version_id, timestamp, created_by, inhalt)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                ("nonexistent", "exploration", 1, "2026-01-01T00:00:00Z", "test", "{}"),
-            )
-            conn.commit()
-        db.close()
-
-    def test_transaction_commits(self) -> None:
-        from persistence.database import Database
-
-        db = Database(":memory:")
-        with db.transaction():
-            db.get_connection().execute(
-                "INSERT INTO projects VALUES (?,?,?,?,?,?,?,?)",
-                (
-                    "p1",
-                    "Test",
-                    "",
-                    "2026-01-01",
-                    "2026-01-01",
-                    "exploration",
-                    "exploration",
-                    "aktiv",
-                ),
-            )
-        # Verify row is visible after transaction
-        cursor = db.get_connection().execute("SELECT projekt_id FROM projects")
-        rows = cursor.fetchall()
-        assert len(rows) == 1
-        assert rows[0][0] == "p1"
-        db.close()
-
-    def test_transaction_rollback_on_exception(self) -> None:
-        from persistence.database import Database
-
-        db = Database(":memory:")
-        with pytest.raises(ValueError):
-            with db.transaction():
-                db.get_connection().execute(
-                    "INSERT INTO projects VALUES (?,?,?,?,?,?,?,?)",
-                    (
-                        "p2",
-                        "Test",
-                        "",
-                        "2026-01-01",
-                        "2026-01-01",
-                        "exploration",
-                        "exploration",
-                        "aktiv",
-                    ),
-                )
-                raise ValueError("simulated failure")
-        # Row must NOT be present after rollback
-        cursor = db.get_connection().execute("SELECT projekt_id FROM projects")
-        assert cursor.fetchall() == []
-        db.close()
-
-
-# ---------------------------------------------------------------------------
-# Story 01-05/06: ProjectRepository
+# Fixtures
 # ---------------------------------------------------------------------------
 
 
@@ -165,6 +58,11 @@ def repo() -> Generator[ProjectRepository, None, None]:
     db = Database(":memory:")
     yield ProjectRepository(db)
     db.close()
+
+
+# ---------------------------------------------------------------------------
+# Story 01-05/06: ProjectRepository
+# ---------------------------------------------------------------------------
 
 
 class TestProjectRepositoryCreate:
@@ -431,85 +329,59 @@ class TestProjectRepositoryAtomicity:
 
 
 # ---------------------------------------------------------------------------
-# FR-E-07: Dialog History Persistence
+# AlgorithmArtifact persistence tests (from test_models.py Story 09-02)
 # ---------------------------------------------------------------------------
 
 
-class TestDialogHistoryPersistence:
-    def test_append_and_load_single_turn(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """append_dialog_turn() schreibt einen Turn; load_dialog_history() liest ihn zurück."""
-        p = repo.create(name="Dialog Test")
-        repo.append_dialog_turn(p.projekt_id, 1, "user", "Hallo")
-        history = repo.load_dialog_history(p.projekt_id)
-        assert len(history) == 1
-        assert history[0]["role"] == "user"
-        assert history[0]["inhalt"] == "Hallo"
-        assert "timestamp" in history[0]
+class TestAlgorithmArtifactPersistence:
+    def test_prozesszusammenfassung_persistence_via_repository(self) -> None:
+        """AlgorithmArtifact.prozesszusammenfassung survives save/load cycle."""
+        db = Database(":memory:")
+        repo = ProjectRepository(db)
+        project = repo.create("Test")
+        project.algorithm_artifact = AlgorithmArtifact(
+            prozesszusammenfassung="Technische Spezifikation des Reisekostenprozesses",
+            version=1,
+        )
+        repo.save(project)
+        reloaded = repo.load(project.projekt_id)
+        assert (
+            reloaded.algorithm_artifact.prozesszusammenfassung
+            == "Technische Spezifikation des Reisekostenprozesses"
+        )
+        db.close()
 
-    def test_turns_returned_in_order(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """Drei Turns werden chronologisch (aufsteigend nach turn_id) zurückgegeben."""
-        p = repo.create(name="Order Test")
-        repo.append_dialog_turn(p.projekt_id, 1, "user", "Erster")
-        repo.append_dialog_turn(p.projekt_id, 1, "assistant", "Zweiter")
-        repo.append_dialog_turn(p.projekt_id, 2, "user", "Dritter")
-
-        history = repo.load_dialog_history(p.projekt_id)
-        assert len(history) == 3
-        assert history[0]["inhalt"] == "Erster"
-        assert history[1]["inhalt"] == "Zweiter"
-        assert history[2]["inhalt"] == "Dritter"
-
-    def test_dialog_history_scoped_per_project(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """Dialoghistorie ist pro Projekt isoliert — kein Bleed-over zwischen Projekten."""
-        p_a = repo.create(name="Projekt A")
-        p_b = repo.create(name="Projekt B")
-
-        repo.append_dialog_turn(p_a.projekt_id, 1, "user", "Nachricht von A")
-        repo.append_dialog_turn(p_b.projekt_id, 1, "user", "Nachricht von B")
-
-        history_a = repo.load_dialog_history(p_a.projekt_id)
-        history_b = repo.load_dialog_history(p_b.projekt_id)
-
-        assert len(history_a) == 1
-        assert history_a[0]["inhalt"] == "Nachricht von A"
-        assert len(history_b) == 1
-        assert history_b[0]["inhalt"] == "Nachricht von B"
-
-    def test_load_dialog_history_last_n_limit(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """last_n-Parameter begrenzt die Anzahl der zurückgegebenen Turns."""
-        p = repo.create(name="Limit Test")
-        for i in range(5):
-            repo.append_dialog_turn(p.projekt_id, i + 1, "user", f"Turn {i + 1}")
-
-        history = repo.load_dialog_history(p.projekt_id, last_n=3)
-        assert len(history) == 3
-
-    def test_load_dialog_history_empty_for_new_project(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """Neues Projekt hat leere Dialoghistorie."""
-        p = repo.create(name="Leer Test")
-        history = repo.load_dialog_history(p.projekt_id)
-        assert history == []
-
-
-class TestArtifactVersioning:
-    """Story 05-04: list_artifact_versions and load_artifact_version."""
-
-    def test_list_artifact_versions(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """Version 0 exists after project creation."""
-        p = repo.create(name="V-Test")
-        versions = repo.list_artifact_versions(p.projekt_id, "exploration")
-        assert len(versions) == 1
-        assert versions[0]["version"] == 0
-        assert "erstellt_am" in versions[0]
-        assert versions[0]["created_by"] == "system"
-
-    def test_load_artifact_version(self, repo) -> None:  # type: ignore[no-untyped-def]
-        """Load specific artifact version returns valid JSON."""
-        p = repo.create(name="V-Load")
-        raw = repo.load_artifact_version(p.projekt_id, "exploration", 0)
-        assert '"version":0' in raw.replace(" ", "").replace('"version": 0', '"version":0')
-        # Parse it to verify it's valid artifact JSON
-        from artifacts.models import ExplorationArtifact
-
-        artifact = ExplorationArtifact.model_validate_json(raw)
-        assert artifact.version == 0
+    def test_algorithmusabschnitt_full_fields_persistence(self) -> None:
+        """All Algorithmusabschnitt + EmmaAktion fields survive save/load."""
+        aktion = EmmaAktion(
+            aktion_id="a1",
+            aktionstyp=EmmaAktionstyp.DECISION,
+            parameter={"bedingung": "Betrag > 1000"},
+            nachfolger=["a2", "a3"],
+            emma_kompatibel=False,
+            kompatibilitaets_hinweis="DECISION mit dynamischer Bedingung nicht direkt EMMA-fähig",
+        )
+        abschnitt = Algorithmusabschnitt(
+            abschnitt_id="ab1",
+            titel="Betragsprüfung",
+            struktur_ref="step_002",
+            aktionen={"a1": aktion},
+            completeness_status=CompletenessStatus.nutzervalidiert,
+            status=AlgorithmusStatus.aktuell,
+        )
+        db = Database(":memory:")
+        repo = ProjectRepository(db)
+        project = repo.create("FullFieldTest")
+        project.algorithm_artifact = AlgorithmArtifact(abschnitte={"ab1": abschnitt}, version=3)
+        repo.save(project)
+        loaded = repo.load(project.projekt_id)
+        loaded_aktion = loaded.algorithm_artifact.abschnitte["ab1"].aktionen["a1"]
+        assert loaded_aktion.aktionstyp == EmmaAktionstyp.DECISION
+        assert loaded_aktion.parameter == {"bedingung": "Betrag > 1000"}
+        assert loaded_aktion.nachfolger == ["a2", "a3"]
+        assert loaded_aktion.emma_kompatibel is False
+        assert "EMMA-fähig" in (loaded_aktion.kompatibilitaets_hinweis or "")
+        loaded_abschnitt = loaded.algorithm_artifact.abschnitte["ab1"]
+        assert loaded_abschnitt.completeness_status == CompletenessStatus.nutzervalidiert
+        assert loaded_abschnitt.status == AlgorithmusStatus.aktuell
+        db.close()

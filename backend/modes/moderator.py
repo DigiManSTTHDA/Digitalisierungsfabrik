@@ -37,9 +37,24 @@ _MODERATOR_TOOL: dict = {  # type: ignore[type-arg]
             "uebergabe": {
                 "type": "boolean",
                 "description": (
-                    "true = Nutzer hat bestätigt, Kontrolle an den Arbeitsmodus übergeben. "
-                    "false = Im Moderator bleiben (Standard). "
-                    "NUR true setzen wenn der Nutzer EXPLIZIT bestätigt hat."
+                    "true = Nachricht enthält IRGENDWO einen Zustimmungsausdruck zum Weitermachen. "
+                    "Zustimmungsausdrücke: 'Ja', 'okay', 'los', 'gut', 'machen wir', "
+                    "'probieren wir', 'klar', 'weiter', 'dann machen wir weiter', 'dann weiter'. "
+                    "VORRANG-REGEL: Ein Zustimmungsausdruck setzt IMMER true, unabhängig davon, "
+                    "ob du vorher gefragt hast oder nicht. "
+                    "Ergänzungen, Bedingungen, Kommentare oder Nachfragen NACH dem Zustimmungsausdruck "
+                    "negieren ihn NICHT. "
+                    "Beispiele für true: "
+                    "'Sagen Sie ihm X. Dann machen wir weiter.' → true. "
+                    "'Ja, probieren wir nochmal. Aber bitte einfacher.' → true. "
+                    "'Ja gut, dann weiter zur Prüfung. Was auch immer das bedeutet.' → true "
+                    "('Was auch immer das bedeutet' ist kein Einwand, nur ein Kommentar). "
+                    "'Okay, aber dann bitte anders.' → true. "
+                    "KEIN Signal (false): 'Ja' oder 'Ok' NUR als Gesprächseröffnung vor "
+                    "einem Einwand oder einer Frage ohne nachfolgenden Zustimmungsausdruck: "
+                    "'Ok, und was passiert jetzt?', 'Ja, aber warum nicht?'. "
+                    "false = Standard. Gilt wenn: kein Zustimmungsausdruck vorhanden, "
+                    "Nutzer beschreibt seinen Prozess, stellt Fragen, ist unsicher, oder ablehnt."
                 ),
             },
         },

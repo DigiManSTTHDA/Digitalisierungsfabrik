@@ -114,7 +114,7 @@ class StructuringMode(BaseMode):
             tool_choice={"type": "tool", "name": "apply_patches"},
         )
 
-        patches = response.tool_input.get("patches", [])
+        patches = [p for p in (response.tool_input.get("patches") or []) if isinstance(p, dict)]
 
         # LLM decides phasenstatus, guardrails enforce hard constraints
         raw_status = response.tool_input.get("phasenstatus", "in_progress")

@@ -52,21 +52,24 @@ def advance_phase(project: Project, wm: WorkingMemory) -> bool:
     if new_phase is None:
         return False
 
-    new_mode = PHASE_TO_MODE[new_phase]
+    primary_mode = PHASE_TO_MODE[new_phase]
 
     logger.info(
         "phase_transition.advance",
         from_phase=wm.aktive_phase.value,
         to_phase=new_phase.value,
-        new_mode=new_mode,
+        new_mode="moderator",
     )
 
+    # After phase advance, the Moderator provides the phase intro (SDD 6.1.2).
+    # vorheriger_modus carries the primary working mode so return_to_mode
+    # hands off to it once the user confirms.
     wm.aktive_phase = new_phase
-    wm.aktiver_modus = new_mode
-    wm.vorheriger_modus = None
+    wm.aktiver_modus = "moderator"
+    wm.vorheriger_modus = primary_mode
     wm.phasenstatus = Phasenstatus.in_progress
 
     project.aktive_phase = new_phase
-    project.aktiver_modus = new_mode
+    project.aktiver_modus = "moderator"
 
     return True
