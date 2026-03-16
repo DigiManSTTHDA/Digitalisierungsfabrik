@@ -30,7 +30,7 @@ class AnthropicClient(LLMClient):
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._client = anthropic.Anthropic(api_key=settings.llm_api_key)
+        self._client = anthropic.AsyncAnthropic(api_key=settings.llm_api_key)
 
     async def complete(
         self,
@@ -64,7 +64,7 @@ class AnthropicClient(LLMClient):
         if tools is not None:
             kwargs["tools"] = tools
 
-        response = self._client.messages.create(**kwargs)
+        response = await self._client.messages.create(**kwargs)
 
         # Parse response: extract tool_use block (nutzeraeusserung is inside tool_input)
         tool_input: dict | None = None  # type: ignore[type-arg]

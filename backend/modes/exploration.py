@@ -18,7 +18,7 @@ from artifacts.models import CompletenessStatus, ExplorationSlot, Phasenstatus
 from core.context_assembler import prompt_context_summary
 from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
-from modes.base import BaseMode, Flag, ModeContext, ModeOutput
+from modes.base import BaseMode, Flag, ModeContext, ModeOutput, translate_dialog_history
 
 # 9 Pflicht-Slots per SDD 5.3 and FR-B-00
 PFLICHT_SLOTS: dict[str, str] = {
@@ -120,17 +120,6 @@ def _merge_slot_patches(
 
         merged.append(patch)
     return merged
-
-
-def _translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type: ignore[type-arg]
-    """Translate internal dialog history to Anthropic messages format."""
-    messages: list[dict] = []  # type: ignore[type-arg]
-    for entry in dialog_history:
-        role = entry.get("role", "user")
-        inhalt = entry.get("inhalt", "")
-        if role in ("user", "assistant") and inhalt:
-            messages.append({"role": role, "content": inhalt})
-    return messages
 
 
 def _apply_guardrails(
@@ -251,7 +240,7 @@ class ExplorationMode(BaseMode):
             )
         system_prompt += hint
 
-        messages = _translate_dialog_history(context.dialog_history)
+        messages = translate_dialog_history(context.dialog_history)
 
         response = await self._llm_client.complete(
             system=system_prompt,

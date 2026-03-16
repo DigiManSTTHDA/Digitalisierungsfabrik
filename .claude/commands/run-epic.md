@@ -12,6 +12,25 @@ You must write progress information to the Epic log file
 after each phase.
 
 ------------------------------------------------
+CRITICAL: CONTINUATION RULE
+------------------------------------------------
+
+This workflow has 9 steps (STEP 0 through STEP 8).
+You MUST execute ALL steps in sequence without stopping.
+
+After each step: log progress, then IMMEDIATELY continue
+with the next step. Do NOT stop, summarize, or ask for
+confirmation between steps — unless a step explicitly
+says "STOP" (only STEP 2.5 may do this).
+
+After completing EACH step, state:
+
+"✅ Step N complete. Continuing with Step N+1..."
+
+The epic is NOT done until you reach the FINAL RESULT
+section and all conditions there are met.
+
+------------------------------------------------
 GLOBAL RULES
 ------------------------------------------------
 
@@ -42,9 +61,11 @@ If the file already exists, continue appending to it.
 
 Initialize with:
 
-Epic name  
-Start date  
-Goal  
+Epic name
+Start date
+Goal
+
+→ Do NOT stop here. Continue with STEP 1.
 
 ------------------------------------------------
 STEP 1 — CREATE STORIES
@@ -61,6 +82,8 @@ Append to the Epic log:
 - generated stories
 - their purpose
 
+→ Do NOT stop here. Continue with STEP 2.
+
 ------------------------------------------------
 STEP 2 — VALIDATE STORIES
 ------------------------------------------------
@@ -74,6 +97,8 @@ If validation finds issues:
 fix them.
 
 Append validation results to the Epic log.
+
+→ Do NOT stop here. Continue with STEP 2.5.
 
 ------------------------------------------------
 STEP 2.5 — ESCALATION CHECKPOINT
@@ -101,6 +126,8 @@ If all stories are clear: proceed immediately without asking.
 
 Append escalation outcome (or "no escalations needed") to the Epic log.
 
+→ Do NOT stop here. Continue with STEP 3.
+
 ------------------------------------------------
 STEP 3 — IMPLEMENT EPIC
 ------------------------------------------------
@@ -125,6 +152,8 @@ Append to Epic log:
 - Critic issues found and fixed per story
 - Mini-Audit results per story
 
+→ Do NOT stop here. Continue with STEP 4.
+
 ------------------------------------------
 STEP 4 — VALIDATE TESTS
 ------------------------------------------
@@ -135,6 +164,8 @@ Run:
 
 Improve the test suite before execution.
 
+→ Do NOT stop here. Continue with STEP 5.
+
 ---------------------------------------------
 STEP 5 — RUN TESTS
 ---------------------------------------------
@@ -142,6 +173,8 @@ STEP 5 — RUN TESTS
 Run:
 
 /run-tests
+
+→ Do NOT stop here. Continue with STEP 6.
 
 ------------------------------------------------
 STEP 6 — EPIC-LEVEL AUDIT
@@ -164,6 +197,8 @@ Verify:
 
 Append audit results to Epic log.
 
+→ Do NOT stop here. Continue with STEP 7.
+
 ------------------------------------------------
 STEP 7 — FINAL VERIFICATION
 ------------------------------------------------
@@ -179,6 +214,8 @@ pytest
 frontend checks
 
 Append final verification results.
+
+→ Do NOT stop here. Continue with STEP 8.
 
 ------------------------------------------------
 STEP 8 — MANAGEMENT SUMMARY

@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 
 import structlog
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from config import Settings
 from llm.base import LLMClient, LLMResponse
@@ -44,7 +44,7 @@ class OpenAIClient(LLMClient):
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._client = OpenAI(api_key=settings.llm_api_key)
+        self._client = AsyncOpenAI(api_key=settings.llm_api_key)
 
     async def complete(
         self,
@@ -86,7 +86,7 @@ class OpenAIClient(LLMClient):
             # is functionally equivalent but preserves the conversational text.
             kwargs["tool_choice"] = "required"
 
-        response = self._client.chat.completions.create(**kwargs)
+        response = await self._client.chat.completions.create(**kwargs)
 
         choice = response.choices[0]
         message = choice.message

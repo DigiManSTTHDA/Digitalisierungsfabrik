@@ -126,9 +126,7 @@ async def _handle_greeting(
         # First connection — run the greeting turn
         _greeting_in_progress.add(project_id)
         try:
-            output = await orchestrator.process_turn(
-                project_id, TurnInput(text="[Systemstart]")
-            )
+            output = await orchestrator.process_turn(project_id, TurnInput(text="[Systemstart]"))
             await _send_turn_events(ws, output, repo, project_id)
         except Exception:
             log.exception("websocket.greeting_error")

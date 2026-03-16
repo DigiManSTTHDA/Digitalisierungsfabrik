@@ -2,7 +2,7 @@
 
 AI-geführtes System zur Prozesserhebung für Digitalisierungsprojekte.
 
-**Status:** Implementierung läuft — Epic 00 + 01 abgeschlossen.
+**Status:** Implementierung läuft — Epics 00–08 abgeschlossen.
 
 ---
 
@@ -191,13 +191,13 @@ Vollständige Begründung: `agent-docs/decisions/ADR-001-openapi-contract.md`
 |---|---|---|
 | 00 | Projektfundament | ✅ abgeschlossen |
 | 01 | Datenmodelle & Persistenz | ✅ abgeschlossen |
-| 02 | Execution Engine | ⏳ ausstehend |
-| 03 | Orchestrator & Working Memory | ⏳ ausstehend |
-| 04 | Exploration Mode & LLM | ⏳ ausstehend |
-| 05 | Backend API | ⏳ ausstehend |
-| 06 | React Frontend | ⏳ ausstehend |
-| 07 | Moderator & Phasenwechsel | ⏳ ausstehend |
-| 08 | Strukturierungsmodus | ⏳ ausstehend |
+| 02 | Execution Engine | ✅ abgeschlossen |
+| 03 | Orchestrator & Working Memory | ✅ abgeschlossen |
+| 04 | Exploration Mode & LLM | ✅ abgeschlossen |
+| 05 | Backend API | ✅ abgeschlossen |
+| 06 | React Frontend | ✅ abgeschlossen |
+| 07 | Moderator & Phasenwechsel | ✅ abgeschlossen |
+| 08 | Strukturierungsmodus | ✅ abgeschlossen |
 | 09 | Spezifikationsmodus | ⏳ ausstehend |
 | 10 | Validierung & Korrektur | ⏳ ausstehend |
 | 11 | End-to-End-Stabilisierung | ⏳ ausstehend |

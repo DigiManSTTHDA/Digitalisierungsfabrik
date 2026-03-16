@@ -7,7 +7,7 @@ Coverage:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -67,7 +67,7 @@ async def test_anthropic_client_positive_text_and_tool_use() -> None:
     mock_response.content = [text_block, tool_block]
 
     mock_messages = MagicMock()
-    mock_messages.create = MagicMock(return_value=mock_response)
+    mock_messages.create = AsyncMock(return_value=mock_response)
 
     with patch.object(client, "_client") as mock_client:
         mock_client.messages = mock_messages
@@ -107,7 +107,7 @@ async def test_anthropic_client_no_tool_use_raises_value_error() -> None:
     mock_response.content = [text_block]
 
     mock_messages = MagicMock()
-    mock_messages.create = MagicMock(return_value=mock_response)
+    mock_messages.create = AsyncMock(return_value=mock_response)
 
     with patch.object(client, "_client") as mock_client:
         mock_client.messages = mock_messages
@@ -144,7 +144,7 @@ async def test_anthropic_client_api_error_propagated() -> None:
     api_error = anthropic.APIStatusError("Internal Server Error", response=resp, body=None)
 
     mock_messages = MagicMock()
-    mock_messages.create = MagicMock(side_effect=api_error)
+    mock_messages.create = AsyncMock(side_effect=api_error)
 
     with patch.object(client, "_client") as mock_client:
         mock_client.messages = mock_messages
@@ -185,7 +185,7 @@ async def test_anthropic_client_default_tool_choice() -> None:
     mock_response.content = [text_block, tool_block]
 
     mock_messages = MagicMock()
-    mock_messages.create = MagicMock(return_value=mock_response)
+    mock_messages.create = AsyncMock(return_value=mock_response)
 
     with patch.object(client, "_client") as mock_client:
         mock_client.messages = mock_messages
@@ -268,7 +268,7 @@ async def test_anthropic_client_logs_when_enabled() -> None:
     mock_response.content = [text_block, tool_block]
 
     mock_messages = MagicMock()
-    mock_messages.create = MagicMock(return_value=mock_response)
+    mock_messages.create = AsyncMock(return_value=mock_response)
 
     log_calls: list[tuple[str, dict[str, object]]] = []
 

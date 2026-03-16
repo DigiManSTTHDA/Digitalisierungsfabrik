@@ -74,6 +74,20 @@ class ModeOutput(BaseModel):
     flags: list[Flag] = Field(default_factory=list)
 
 
+def translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type: ignore[type-arg]
+    """Translate internal dialog history to LLM messages format.
+
+    Converts [{role, inhalt, ...}] entries to [{role, content}] for LLM APIs.
+    """
+    messages: list[dict] = []  # type: ignore[type-arg]
+    for entry in dialog_history:
+        role = entry.get("role", "user")
+        inhalt = entry.get("inhalt", "")
+        if role in ("user", "assistant") and inhalt:
+            messages.append({"role": role, "content": inhalt})
+    return messages
+
+
 class BaseMode:
     """Abstrakte Basisklasse für alle kognitiven Modi (HLA Section 3.5).
 

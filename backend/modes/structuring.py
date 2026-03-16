@@ -18,7 +18,7 @@ from artifacts.models import CompletenessStatus, Phasenstatus
 from core.context_assembler import prompt_context_summary
 from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
-from modes.base import BaseMode, Flag, ModeContext, ModeOutput
+from modes.base import BaseMode, Flag, ModeContext, ModeOutput, translate_dialog_history
 
 _PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "structuring.md"
 
@@ -57,17 +57,6 @@ def _build_slot_status(context: ModeContext) -> str:
         lines.insert(0, f"Prozesszusammenfassung: {zusammenfassung}\n")
 
     return "\n".join(lines)
-
-
-def _translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type: ignore[type-arg]
-    """Translate internal dialog history to Anthropic messages format."""
-    messages: list[dict] = []  # type: ignore[type-arg]
-    for entry in dialog_history:
-        role = entry.get("role", "user")
-        inhalt = entry.get("inhalt", "")
-        if role in ("user", "assistant") and inhalt:
-            messages.append({"role": role, "content": inhalt})
-    return messages
 
 
 def _apply_guardrails(llm_phasenstatus: Phasenstatus, context: ModeContext) -> Phasenstatus:
@@ -116,7 +105,7 @@ class StructuringMode(BaseMode):
         system_prompt = system_prompt.replace("{exploration_content}", exploration_content)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
 
-        messages = _translate_dialog_history(context.dialog_history)
+        messages = translate_dialog_history(context.dialog_history)
 
         response = await self._llm_client.complete(
             system=system_prompt,
