@@ -35,7 +35,7 @@ re-validate until all artifacts pass.
 
 ## Key Deliverables
 
-- `backend/modes/validation_mode.py` – `ValidationMode` with completeness + consistency
+- `backend/modes/validation.py` – `ValidationMode` with completeness + consistency
   checks
 - `backend/core/orchestrator.py` updated – correction loop routing logic
 - `backend/core/phase_transition.py` updated – `VALIDATION_PASSED` terminal state
@@ -81,6 +81,8 @@ so that the validation mode has a well-defined output structure and retry behavi
 1. ADR-007 written and accepted in `agent-docs/decisions/ADR-007-validation-report-retry.md`:
    - Resolves OP-20: For the prototype, output violations return an error message + user retry option.
      No automatic retry. Configurable retry limit deferred to post-prototype.
+   - Documents the SDD inconsistency between FR-C-08 AK(1) (`wichtig`) and SDD 6.6.4
+     Schweregradskala (`warnung`) — decision: follow SDD 6.6.4 as the more specific definition.
    - Defines that the validation report is stored in `WorkingMemory.validierungsbericht`
      as a structured Pydantic model (not a raw dict), persisted with the project,
      and passed to the moderator as context.
@@ -130,7 +132,8 @@ so that serialization, persistence round-trips, and severity classification work
 **Acceptance Criteria:**
 
 1. `backend/tests/test_validation_mode.py` created with tests for:
-   - `Schweregrad` enum: all 3 values exist and are strings
+   - `Schweregrad` enum: has exactly 3 members (`kritisch`, `warnung`, `hinweis`) —
+     no more, no fewer — and `ist_bestanden` correctly filters by `kritisch` only
    - `Validierungsbefund` construction with all fields
    - `Validierungsbefund` rejects empty `beschreibung`
    - `Validierungsbericht.ist_bestanden` is `True` when no `kritisch` findings
@@ -173,6 +176,8 @@ so that the system produces a structured validation report (SDD 6.6.4).
      - EMMA-Kompatibilität: all `EmmaAktion.aktionstyp` values are valid `EmmaAktionstyp`
        members (FR-C-03)
      - Completeness: no mandatory slots have status `leer` or `teilweise` (SDD 5.6)
+     - Ausnahmebehandlung: all `Strukturschritt` entries of type `ausnahme` are
+       referenced in the Algorithmusartefakt (SDD 6.6.4 behavior bullet 4)
      - Consistency: no contradictions within artifact fields
    - Returns `ModeOutput` with:
      - `nutzeraeusserung`: formatted German summary of the validation report
@@ -197,6 +202,7 @@ so that the system produces a structured validation report (SDD 6.6.4).
 - [ ] Validation mode emits NO patches (SDD 6.6.4: keine Schreibrechte)
 - [ ] Validation mode always sets `phase_complete` flag
 - [ ] LLM tool schema `produce_validation_report` defined
+- [ ] `ValidationMode.__init__` accepts `llm: LLMClient` parameter
 - [ ] `ruff check .` passes
 - [ ] `ruff format --check .` passes
 - [ ] `python -m mypy . --explicit-package-bases` passes
@@ -244,6 +250,8 @@ so that the user can iteratively fix issues found by validation.
 - [ ] `advance_phase` in validierung sets `projektstatus = abgeschlossen` (terminal state)
 - [ ] Validation report persists through save/load cycle
 - [ ] Correction loop routing logic implemented in orchestrator
+- [ ] `backend/core/phase_transition.py` handles validierung as terminal phase
+- [ ] `backend/persistence/project_repository.py` round-trips `validierungsbericht` in WorkingMemory
 - [ ] `ruff check .` passes
 - [ ] `ruff format --check .` passes
 - [ ] `python -m mypy . --explicit-package-bases` passes

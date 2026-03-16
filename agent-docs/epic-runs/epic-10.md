@@ -47,3 +47,33 @@ Dependencies: Epic 09 ✅ complete (328 backend tests, all DoD checks green afte
 - None — SDD 6.6.4, 6.1.3, and FR-C-08/FR-C-09 are clear enough to implement unambiguously
 
 ---
+
+## STEP 2 — Validation
+
+**Date:** 2026-03-16
+
+### Issues Found and Fixed
+
+| # | Issue | Severity | Fix Applied |
+|---|---|---|---|
+| 1 | Key Deliverables: `validation_mode.py` → `validation.py` | Path error | Fixed in epic header |
+| 2 | FR-C-08/6.6.4 `warnung` vs `wichtig` SDD inconsistency | Documentation | Added to ADR-007 scope in 10-01 |
+| 3 | Missing "Ausnahmebehandlung" check in validation checks | SDD gap | Added to 10-03 AC |
+| 4 | Tautological Schweregrad enum test | Test quality | Reworded 10-02 AC |
+| 5 | Missing DoD checkbox for `llm: LLMClient` | DoD completeness | Added to 10-03 DoD |
+| 6 | Missing DoD checkboxes for phase_transition + persistence | DoD completeness | Added to 10-04 DoD |
+
+### Validation Outcome
+
+All 6 issues corrected. Epic is now valid.
+
+---
+
+## STEP 2.5 — Escalation Checkpoint
+
+No escalations needed:
+1. SDD is clear enough for all stories (6.6.4, 6.1.3, FR-C-08/FR-C-09)
+2. OP-20 resolution already planned as Story 10-01 (ADR-007)
+3. No new dependencies required
+
+---
