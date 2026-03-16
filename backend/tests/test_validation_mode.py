@@ -16,8 +16,6 @@ import pytest
 from pydantic import ValidationError
 
 from artifacts.models import (
-    Phasenstatus,
-    Projektphase,
     Schweregrad,
     Validierungsbefund,
     Validierungsbericht,
@@ -195,9 +193,7 @@ def test_durchlauf_nr_increments_across_passes(repo: ProjectRepository) -> None:
     assert reloaded.working_memory.validierungsbericht.durchlauf_nr == 1
 
     # Simulate second pass — increment durchlauf_nr
-    reloaded.working_memory.validierungsbericht = _make_bericht(
-        durchlauf_nr=2, ist_bestanden=True
-    )
+    reloaded.working_memory.validierungsbericht = _make_bericht(durchlauf_nr=2, ist_bestanden=True)
     repo.save(reloaded)
 
     reloaded2 = repo.load(project.projekt_id)

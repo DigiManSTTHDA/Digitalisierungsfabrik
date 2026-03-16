@@ -21,6 +21,7 @@ from artifacts.models import (
     Phasenstatus,
     Projektphase,
     StructureArtifact,
+    Validierungsbericht,
 )
 from artifacts.template_schema import ArtifactTemplate
 from core.working_memory import WorkingMemory
@@ -72,6 +73,7 @@ class ModeOutput(BaseModel):
     patches: list[dict] = Field(default_factory=list)  # type: ignore[type-arg]
     phasenstatus: Phasenstatus
     flags: list[Flag] = Field(default_factory=list)
+    validierungsbericht: Validierungsbericht | None = None
 
 
 def translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type: ignore[type-arg]

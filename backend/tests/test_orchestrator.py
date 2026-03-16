@@ -243,8 +243,9 @@ async def test_validation_mode_returns_valid_output() -> None:
     ctx = _make_context(_minimal_wm())
     output = await mode.call(ctx)
     assert output.patches == []
-    assert output.flags == []
-    assert "ValidationMode" in output.nutzeraeusserung
+    assert Flag.phase_complete in output.flags
+    assert output.validierungsbericht is not None
+    assert output.validierungsbericht.ist_bestanden is True  # minimal artifacts → no findings
 
 
 async def test_moderator_returns_valid_output() -> None:
