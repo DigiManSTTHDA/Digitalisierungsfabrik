@@ -146,6 +146,10 @@ class Orchestrator:
             if result.invalidated_abschnitt_ids:
                 apply_invalidations(project, result.invalidated_abschnitt_ids, self._executor)
 
+        # Store validation report in WorkingMemory (SDD 6.6.4, Story 10-04)
+        if mode_output.validierungsbericht is not None:
+            wm.validierungsbericht = mode_output.validierungsbericht
+
         # Schritt 9: Completeness-State aktualisieren
         completeness_state, befuellte, bekannte = self._calculator.calculate(
             project.exploration_artifact,

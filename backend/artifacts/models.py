@@ -60,6 +60,14 @@ class Projektstatus(StrEnum):
     abgeschlossen = "abgeschlossen"
 
 
+class Schweregrad(StrEnum):
+    """Schweregrad eines Validierungsbefunds (SDD 6.6.4 Schweregradskala, ADR-007)."""
+
+    kritisch = "kritisch"
+    warnung = "warnung"
+    hinweis = "hinweis"
+
+
 class Strukturschritttyp(StrEnum):
     """Typ eines Strukturschritts im Kontrollflussgraph (SDD 5.4)."""
 
@@ -200,3 +208,38 @@ class AlgorithmArtifact(BaseModel):
     prozesszusammenfassung: str = ""  # SDD 5.5, FR-B-02 AK(2): Pflichtslot
     abschnitte: dict[str, Algorithmusabschnitt] = Field(default_factory=dict)
     version: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Validation Report (SDD 6.6.4, FR-C-08, ADR-007)
+# ---------------------------------------------------------------------------
+
+from datetime import datetime  # noqa: E402
+
+
+class Validierungsbefund(BaseModel):
+    """Ein einzelner Befund im Validierungsbericht (SDD 6.6.4, FR-C-08).
+
+    Jeder Befund hat einen Schweregrad und lokalisiert das Problem
+    auf betroffene Slots innerhalb eines Artefakttyps.
+    """
+
+    befund_id: str
+    schweregrad: Schweregrad  # FR-C-08 AK(1)
+    beschreibung: str = Field(min_length=1)  # Menschenlesbare deutsche Beschreibung
+    betroffene_slots: list[str] = Field(default_factory=list)  # FR-C-01 AK
+    artefakttyp: str  # "exploration" | "struktur" | "algorithmus"
+    empfehlung: str = ""  # Empfohlene Maßnahme auf Deutsch
+
+
+class Validierungsbericht(BaseModel):
+    """Vollständiger Validierungsbericht (SDD 6.6.4, eigenständiges Ausgabedokument).
+
+    Kein Slot-Modell — wird als Ganzes im WorkingMemory gespeichert und
+    dem Moderator als Kontext übergeben (ADR-007).
+    """
+
+    befunde: list[Validierungsbefund] = Field(default_factory=list)
+    erstellt_am: datetime
+    durchlauf_nr: int = 1  # 1-basiert, wird bei jedem Durchlauf inkrementiert
+    ist_bestanden: bool = False  # True wenn keine `kritisch`-Befunde

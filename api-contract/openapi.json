@@ -615,6 +615,60 @@
         }
       }
     },
+    "/api/projects/{projekt_id}/validation": {
+      "get": {
+        "tags": [
+          "projects",
+          "projects"
+        ],
+        "summary": "Get Validation Report",
+        "description": "Aktuellen Validierungsbericht abrufen (SDD 6.6.4, FR-C-08).",
+        "operationId": "get_validation_report_api_projects__projekt_id__validation_get",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationReportResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -997,6 +1051,57 @@
         "title": "Projektstatus",
         "description": "Gesamtstatus des Projekts (SDD 8.4, 6.4)."
       },
+      "Schweregrad": {
+        "type": "string",
+        "enum": [
+          "kritisch",
+          "warnung",
+          "hinweis"
+        ],
+        "title": "Schweregrad",
+        "description": "Schweregrad eines Validierungsbefunds (SDD 6.6.4 Schweregradskala, ADR-007)."
+      },
+      "ValidationBefundResponse": {
+        "properties": {
+          "befund_id": {
+            "type": "string",
+            "title": "Befund Id"
+          },
+          "schweregrad": {
+            "$ref": "#/components/schemas/Schweregrad"
+          },
+          "beschreibung": {
+            "type": "string",
+            "title": "Beschreibung"
+          },
+          "betroffene_slots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Betroffene Slots"
+          },
+          "artefakttyp": {
+            "type": "string",
+            "title": "Artefakttyp"
+          },
+          "empfehlung": {
+            "type": "string",
+            "title": "Empfehlung"
+          }
+        },
+        "type": "object",
+        "required": [
+          "befund_id",
+          "schweregrad",
+          "beschreibung",
+          "betroffene_slots",
+          "artefakttyp",
+          "empfehlung"
+        ],
+        "title": "ValidationBefundResponse",
+        "description": "Single validation finding in the report."
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -1036,6 +1141,39 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValidationReportResponse": {
+        "properties": {
+          "befunde": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationBefundResponse"
+            },
+            "type": "array",
+            "title": "Befunde"
+          },
+          "erstellt_am": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Erstellt Am"
+          },
+          "durchlauf_nr": {
+            "type": "integer",
+            "title": "Durchlauf Nr"
+          },
+          "ist_bestanden": {
+            "type": "boolean",
+            "title": "Ist Bestanden"
+          }
+        },
+        "type": "object",
+        "required": [
+          "befunde",
+          "erstellt_am",
+          "durchlauf_nr",
+          "ist_bestanden"
+        ],
+        "title": "ValidationReportResponse",
+        "description": "Full validation report (SDD 6.6.4)."
       }
     }
   }

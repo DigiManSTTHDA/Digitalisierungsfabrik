@@ -243,8 +243,9 @@ async def test_validation_mode_returns_valid_output() -> None:
     ctx = _make_context(_minimal_wm())
     output = await mode.call(ctx)
     assert output.patches == []
-    assert output.flags == []
-    assert "ValidationMode" in output.nutzeraeusserung
+    assert Flag.phase_complete in output.flags
+    assert output.validierungsbericht is not None
+    assert output.validierungsbericht.ist_bestanden is True  # minimal artifacts → no findings
 
 
 async def test_moderator_returns_valid_output() -> None:
@@ -836,7 +837,8 @@ async def test_phase_complete_triggers_moderator_then_advance() -> None:
     assert result2.error is None
     reloaded2 = repo.load(project.projekt_id)
     assert reloaded2.aktive_phase == Projektphase.strukturierung
-    assert reloaded2.aktiver_modus == "structuring"
+    # Per SDD 6.1.2, moderator introduces the new phase; primary mode is in vorheriger_modus
+    assert reloaded2.aktiver_modus == "moderator"
 
 
 @pytest.mark.asyncio

@@ -23,6 +23,8 @@ import type { components } from "../generated/api";
 // ---------------------------------------------------------------------------
 
 type ProjectResponse = components["schemas"]["ProjectResponse"];
+type ValidationReportResponse =
+  components["schemas"]["ValidationReportResponse"];
 
 export interface ChatMessage {
   role: "user" | "assistant" | "error";
@@ -48,6 +50,7 @@ export interface SessionState {
     working_memory: Record<string, unknown>;
     flags: string[];
   };
+  validationReport: ValidationReportResponse | null;
   error: string | null;
   isProcessing: boolean;
 }
@@ -79,6 +82,7 @@ export type SessionAction =
       working_memory: Record<string, unknown>;
       flags: string[];
     }
+  | { type: "SET_VALIDATION_REPORT"; report: ValidationReportResponse | null }
   | { type: "SET_ERROR"; error: string | null };
 
 // ---------------------------------------------------------------------------
@@ -104,6 +108,7 @@ export const initialState: SessionState = {
     working_memory: {},
     flags: [],
   },
+  validationReport: null,
   error: null,
   isProcessing: false,
 };
@@ -163,6 +168,8 @@ export function sessionReducer(
           flags: action.flags,
         },
       };
+    case "SET_VALIDATION_REPORT":
+      return { ...state, validationReport: action.report };
     case "SET_ERROR":
       return { ...state, error: action.error };
     default:

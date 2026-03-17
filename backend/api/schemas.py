@@ -15,7 +15,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from artifacts.models import Projektphase, Projektstatus
+from artifacts.models import Projektphase, Projektstatus, Schweregrad
 
 # ---------------------------------------------------------------------------
 # Project management
@@ -134,6 +134,31 @@ class ErrorResponse(BaseModel):
     """Standard error response body."""
 
     detail: str
+
+
+# ---------------------------------------------------------------------------
+# Validation Report (SDD 6.6.4, FR-C-08, ADR-007)
+# ---------------------------------------------------------------------------
+
+
+class ValidationBefundResponse(BaseModel):
+    """Single validation finding in the report."""
+
+    befund_id: str
+    schweregrad: Schweregrad
+    beschreibung: str
+    betroffene_slots: list[str]
+    artefakttyp: str
+    empfehlung: str
+
+
+class ValidationReportResponse(BaseModel):
+    """Full validation report (SDD 6.6.4)."""
+
+    befunde: list[ValidationBefundResponse]
+    erstellt_am: datetime
+    durchlauf_nr: int
+    ist_bestanden: bool
 
 
 # ---------------------------------------------------------------------------
