@@ -23,6 +23,7 @@ from artifacts.models import (
     Strukturschritt,
     Strukturschritttyp,
 )
+from core.models import Project
 from core.orchestrator import Orchestrator, TurnInput, TurnOutput
 from core.working_memory import WorkingMemory
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput
@@ -31,7 +32,6 @@ from modes.moderator import Moderator
 from modes.specification import SpecificationMode
 from modes.structuring import StructuringMode
 from modes.validation import ValidationMode
-from core.models import Project
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 

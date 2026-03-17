@@ -234,6 +234,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/projects/{projekt_id}/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export Project
+     * @description Export all three artifacts as JSON + Markdown (Story 11-02, FR-B-07).
+     */
+    get: operations["export_project_api_projects__projekt_id__export_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/health": {
     parameters: {
       query?: never;
@@ -361,6 +381,26 @@ export interface components {
     ErrorResponse: {
       /** Detail */
       detail: string;
+    };
+    /**
+     * ExportResponse
+     * @description Response for GET /api/projects/{id}/export — JSON artifacts + Markdown.
+     */
+    ExportResponse: {
+      /** Exploration */
+      exploration: {
+        [key: string]: unknown;
+      };
+      /** Struktur */
+      struktur: {
+        [key: string]: unknown;
+      };
+      /** Algorithmus */
+      algorithmus: {
+        [key: string]: unknown;
+      };
+      /** Markdown */
+      markdown: string;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -993,6 +1033,46 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ValidationReportResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  export_project_api_projects__projekt_id__export_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        projekt_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ExportResponse"];
         };
       };
       /** @description Not Found */

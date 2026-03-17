@@ -126,6 +126,20 @@ class DownloadResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Export (Story 11-02, FR-B-07)
+# ---------------------------------------------------------------------------
+
+
+class ExportResponse(BaseModel):
+    """Response for GET /api/projects/{id}/export — JSON artifacts + Markdown."""
+
+    exploration: dict  # type: ignore[type-arg]
+    struktur: dict  # type: ignore[type-arg]
+    algorithmus: dict  # type: ignore[type-arg]
+    markdown: str
+
+
+# ---------------------------------------------------------------------------
 # Error
 # ---------------------------------------------------------------------------
 

@@ -32,7 +32,7 @@
           "projects"
         ],
         "summary": "Create Project",
-        "description": "Neues Projekt anlegen (FR-G-01).\n\nPer SDD 6.1.0: Neue Projekte starten im Moderator-Modus.\nDie Begr\u00fc\u00dfung erfolgt \u00fcber den WebSocket bei Verbindungsaufbau (FR-D-11),\nNICHT synchron hier \u2014 damit der Moderator im Modus bleibt und der\nNutzer mit ihm interagieren kann, bevor die Exploration beginnt.",
+        "description": "Neues Projekt anlegen (FR-G-01).\n\nPer SDD 6.1.0: Neue Projekte starten im Moderator-Modus.\nDie Begrüßung erfolgt über den WebSocket bei Verbindungsaufbau (FR-D-11),\nNICHT synchron hier — damit der Moderator im Modus bleibt und der\nNutzer mit ihm interagieren kann, bevor die Exploration beginnt.",
         "operationId": "create_project_api_projects_post",
         "requestBody": {
           "content": {
@@ -125,7 +125,7 @@
           "projects"
         ],
         "summary": "Delete Project",
-        "description": "Einzelnes Projekt l\u00f6schen (FR-E-06: isoliert).",
+        "description": "Einzelnes Projekt löschen (FR-E-06: isoliert).",
         "operationId": "delete_project_api_projects__projekt_id__delete",
         "parameters": [
           {
@@ -277,7 +277,7 @@
           "projects"
         ],
         "summary": "Delete Projects Batch",
-        "description": "Mehrere Projekte gleichzeitig l\u00f6schen.",
+        "description": "Mehrere Projekte gleichzeitig löschen.",
         "operationId": "delete_projects_batch_api_projects_batch_delete",
         "requestBody": {
           "content": {
@@ -444,7 +444,7 @@
           "projects"
         ],
         "summary": "Restore Artifact Version",
-        "description": "Version wiederherstellen \u2014 erzeugt neue Version (FR-B-10).",
+        "description": "Version wiederherstellen — erzeugt neue Version (FR-B-10).",
         "operationId": "restore_artifact_version_api_projects__projekt_id__artifacts__typ__restore_post",
         "parameters": [
           {
@@ -669,13 +669,66 @@
         }
       }
     },
+    "/api/projects/{projekt_id}/export": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Export Project",
+        "description": "Export all three artifacts as JSON + Markdown (Story 11-02, FR-B-07).",
+        "operationId": "export_project_api_projects__projekt_id__export_get",
+        "parameters": [
+          {
+            "name": "projekt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Projekt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
           "meta"
         ],
         "summary": "Health Check",
-        "description": "Liveness probe \u2014 returns ok when the server is running.",
+        "description": "Liveness probe — returns ok when the server is running.",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
@@ -870,6 +923,38 @@
         "title": "ErrorResponse",
         "description": "Standard error response body."
       },
+      "ExportResponse": {
+        "properties": {
+          "exploration": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Exploration"
+          },
+          "struktur": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Struktur"
+          },
+          "algorithmus": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Algorithmus"
+          },
+          "markdown": {
+            "type": "string",
+            "title": "Markdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exploration",
+          "struktur",
+          "algorithmus",
+          "markdown"
+        ],
+        "title": "ExportResponse",
+        "description": "Response for GET /api/projects/{id}/export — JSON artifacts + Markdown."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1027,7 +1112,7 @@
           "projektstatus"
         ],
         "title": "ProjectResponse",
-        "description": "Project metadata \u2014 all SDD 7.2.1 fields."
+        "description": "Project metadata — all SDD 7.2.1 fields."
       },
       "Projektphase": {
         "type": "string",

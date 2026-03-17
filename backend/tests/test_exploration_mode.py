@@ -10,12 +10,12 @@ from __future__ import annotations
 from datetime import UTC
 from unittest.mock import AsyncMock
 
+from core.models import Project
 from core.orchestrator import Orchestrator, TurnInput
 from llm.base import LLMClient, LLMResponse
 from modes.base import BaseMode
 from modes.exploration import ExplorationMode
 from modes.moderator import Moderator
-from core.models import Project
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 

@@ -19,6 +19,7 @@ from api.schemas import (
     ArtifactVersionsResponse,
     DownloadResponse,
     ErrorResponse,
+    ExportResponse,
     ProjectCompleteResponse,
     ProjectCreateRequest,
     ProjectDeleteBatchRequest,
@@ -373,3 +374,27 @@ def _recalculate_completeness(project: Project) -> None:
     )
     wm = project.working_memory
     wm.completeness_state, wm.befuellte_slots, wm.bekannte_slots = state, filled, total
+
+
+@router.get(
+    "/projects/{projekt_id}/export",
+    response_model=ExportResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+async def export_project(projekt_id: str, repo: RepoDep) -> ExportResponse:
+    """Export all three artifacts as JSON + Markdown (Story 11-02, FR-B-07)."""
+    from artifacts.renderer import ArtifaktRenderer
+
+    project = _load_or_404(repo, projekt_id)
+    renderer = ArtifaktRenderer()
+    markdown = renderer.render_all(
+        project.exploration_artifact,
+        project.structure_artifact,
+        project.algorithm_artifact,
+    )
+    return ExportResponse(
+        exploration=project.exploration_artifact.model_dump(),
+        struktur=project.structure_artifact.model_dump(),
+        algorithmus=project.algorithm_artifact.model_dump(),
+        markdown=markdown,
+    )

@@ -339,6 +339,41 @@ def test_debug_advance_phase_not_found(client: TestClient) -> None:
     assert resp.status_code == 404
 
 
+# ---------------------------------------------------------------------------
+# Story 11-02: Export endpoint
+# ---------------------------------------------------------------------------
+
+
+def test_export_returns_json_and_markdown(client: TestClient) -> None:
+    """GET /api/projects/{id}/export returns exploration, struktur, algorithmus, markdown."""
+    pid = client.post("/api/projects", json={"name": "Export"}).json()["projekt_id"]
+    resp = client.get(f"/api/projects/{pid}/export")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "exploration" in body
+    assert "struktur" in body
+    assert "algorithmus" in body
+    assert "markdown" in body
+    assert "# Explorationsartefakt" in body["markdown"]
+
+
+def test_export_404_for_unknown_project(client: TestClient) -> None:
+    """GET /api/projects/nonexistent/export returns 404."""
+    resp = client.get("/api/projects/nonexistent/export")
+    assert resp.status_code == 404
+
+
+def test_export_includes_markdown_for_all_phases(client: TestClient) -> None:
+    """Markdown output contains all three artifact headings."""
+    pid = client.post("/api/projects", json={"name": "AllPhases"}).json()["projekt_id"]
+    resp = client.get(f"/api/projects/{pid}/export")
+    assert resp.status_code == 200
+    md = resp.json()["markdown"]
+    assert "# Explorationsartefakt" in md
+    assert "# Strukturartefakt" in md
+    assert "# Algorithmusartefakt" in md
+
+
 def test_import_artifact_persisted(client: TestClient) -> None:
     """POST import persists the imported artifact — verified by reload."""
     pid = client.post("/api/projects", json={"name": "IP"}).json()["projekt_id"]
