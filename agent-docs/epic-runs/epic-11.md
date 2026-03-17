@@ -392,3 +392,82 @@ None. All DoD items verified as-is. The single observation above is pre-existing
 | **SDD compliant** | **YES** — FR-B-07 (export at any phase) implemented and verified; FR-A-08 (German UI) verified throughout; ExportResponse schema complete with all 4 required fields |
 
 **Epic 11 is COMPLETE. All 5 stories pass all DoD checks. 370 backend tests passing. Production build succeeds.**
+
+---
+
+## STEP 7 — Final Verification
+
+**Date:** 2026-03-17
+
+### DoD Commands — Final State
+
+All commands executed from project root after Epic 11 completion:
+
+#### Backend
+
+| Command | Result |
+|---|---|
+| `ruff check .` | All checks passed — 0 issues |
+| `ruff format --check .` | 80 files already formatted — 0 changes needed |
+| `python -m mypy . --explicit-package-bases` | Success: no issues found in 80 source files |
+| `pytest --tb=short -q` | **370 passed**, 4 deselected, **0 failures** |
+
+#### Frontend
+
+| Command | Result |
+|---|---|
+| `npm run lint` | 0 warnings, 0 errors |
+| `npm run format:check` | All matched files use Prettier code style |
+| `npm run typecheck` | `tsc --noEmit` — exit 0, no errors, no implicit-any |
+| `npm run build` | **Built in 522ms** — `dist/assets/index-IMZkN74N.js 171.39 kB`, exit 0 |
+
+### Test Count Summary
+
+| Milestone | Test Count |
+|---|---|
+| Before Epic 11 (end of Epic 10) | 351 |
+| After Story 11-01 (Markdown Renderer) | 361 |
+| After Story 11-02 (Export Endpoint) | 364 |
+| After STEP 4 QA Hardening Pass | **370** |
+| **Final: Epic 11 complete** | **370 — 0 failures** |
+
+### Verification Notes
+
+- All 5 story-level DoD checklists verified as fully satisfied (see STEP 6, Section 8)
+- `api-contract/openapi.json` regenerated and committed; `ExportResponse` schema present with all 4 fields
+- `frontend/src/generated/api.d.ts` regenerated in same commit; `ExportResponse` TypeScript type present
+- `ExportButton.tsx` uses generated type `components["schemas"]["ExportResponse"]` — no hand-written response types
+- All open points OP-03 through OP-17 have final status (`resolved` or `deferred`); ADR-008 written for OP-14
+- Production bundle size: 171.39 kB (gzip: ~55 kB) — no unexpected size regressions
+- No new Python packages added; no new npm packages added
+
+---
+
+## STEP 8 — Management Summary
+
+**Date:** 2026-03-17
+
+The full management-level summary for Epic 11 has been written to:
+
+```
+agent-docs/reports/epic-11-summary.md
+```
+
+The report covers:
+1. Epic Summary (what was built, why it matters)
+2. Implemented Components (renderer, endpoint, ExportButton, OP resolutions, UI polish)
+3. SDD Progress (FR-B-07, FR-A-08, FR-F-01, FR-F-03)
+4. Test Status (370 tests, all passing, coverage areas)
+4a. Key Decisions (ADR-001 through ADR-008)
+5. Problems Encountered (pre-existing ruff/mypy issues, UTF-16 encoding, file size violations)
+6. Remaining Issues (OP-05 deferred, OP-14 deferred, router.py/test_api.py pre-existing line count violations)
+7. System Integration Flow (user → chat → orchestrator → mode → patches → artifact → export)
+8. Project Progress (all 12 epics [00–11] complete; prototype finished)
+9. Project Status Overview (100% — 12/12 epics complete)
+10. SDD Coverage (what is implemented vs. what is deferred post-prototype)
+11. Major Risks (LLM quality, prototype vs. production gap, uncalibrated token thresholds, EMMA parameter schemas)
+12. Next Steps (prototype complete — production hardening if desired; pilot operation guidance)
+
+Target audience: technically literate non-developer stakeholders. Written in German for business context; section titles and technical identifiers in English for developer clarity.
+
+**The Digitalisierungsfabrik prototype is complete.**
