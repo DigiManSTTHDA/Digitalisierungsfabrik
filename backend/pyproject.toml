@@ -5,6 +5,10 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 pythonpath = ["."]
+addopts = "-m 'not e2e'"
+markers = [
+    "e2e: End-to-End-Tests mit echtem LLM (explizit aufrufen mit -m e2e)",
+]
 
 [tool.ruff]
 line-length = 100

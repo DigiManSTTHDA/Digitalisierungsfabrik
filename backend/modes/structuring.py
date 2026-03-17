@@ -59,14 +59,58 @@ def _build_slot_status(context: ModeContext) -> str:
     return "\n".join(lines)
 
 
-def _apply_guardrails(llm_phasenstatus: Phasenstatus, context: ModeContext) -> Phasenstatus:
+def _build_first_turn_directive(context: ModeContext) -> str:
+    """Inject a strong directive when the structure artifact is still empty.
+
+    Returns an empty string if Strukturschritte already exist, so this
+    directive only fires on the very first turn of the structuring phase.
+    """
+    if context.structure_artifact.schritte:
+        return ""
+    return (
+        "\n\n## SOFORT-AKTION: Strukturartefakt ist leer\n\n"
+        "Das Strukturartefakt enthält noch KEINE Strukturschritte. "
+        "Du befindest dich am Beginn der Strukturierungsphase.\n\n"
+        "Deine PFLICHT in DIESEM Turn (nicht auf den nächsten Turn warten):\n"
+        "1. Analysiere das Explorationsartefakt vollständig "
+        "(prozessbeschreibung, prozessausloeser, ausnahmen, randbedingungen).\n"
+        "2. Erstelle Patches für ALLE erkennbaren Strukturschritte — "
+        "mindestens die Hauptschritte des Prozessablaufs. "
+        "Nutze completeness_status='teilweise', da Details noch folgen.\n"
+        "3. Ordne Reihenfolge und Nachfolger bereits jetzt plausibel zu.\n"
+        "4. Stelle dem Nutzer den Entwurf vor und frage: "
+        "'Ich habe [N] Schritte identifiziert. Fehlt etwas, oder soll ich etwas anpassen?'\n\n"
+        "WARTE NICHT auf weitere Eingaben — erstelle den Entwurf JETZT in diesem Turn."
+    )
+
+
+def _apply_guardrails(
+    llm_phasenstatus: Phasenstatus,
+    context: ModeContext,
+    patches: list[dict],
+) -> Phasenstatus:
     """Deterministic guardrails on the LLM's phasenstatus decision.
 
-    BLOCK phase_complete if no Strukturschritte exist or any has leer status.
+    Evaluates the projected post-patch state to prevent a 2-turn bypass
+    where the LLM sends phase_complete + add-patches in the same turn,
+    causing the guardrail to block on Turn N (schritte empty) but then
+    allow it on Turn N+1 because schritte were just added.
     """
     schritte = context.structure_artifact.schritte
+
+    adding_schritte = any(
+        p.get("op") == "add"
+        and isinstance(p.get("path"), str)
+        and p["path"].startswith("/schritte/")
+        and len(p["path"].split("/")) == 3
+        for p in patches
+    )
+
     if not schritte:
         if llm_phasenstatus == Phasenstatus.phase_complete:
+            # Schritte gerade erst angelegt — noch nicht durch Nutzer bestätigt
+            if adding_schritte:
+                return Phasenstatus.nearing_completion
             return Phasenstatus.in_progress
         return llm_phasenstatus
 
@@ -104,6 +148,7 @@ class StructuringMode(BaseMode):
         system_prompt = system_prompt.replace("{context_summary}", context_summary)
         system_prompt = system_prompt.replace("{exploration_content}", exploration_content)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
+        system_prompt += _build_first_turn_directive(context)
 
         messages = translate_dialog_history(context.dialog_history)
 
@@ -123,7 +168,7 @@ class StructuringMode(BaseMode):
         except ValueError:
             llm_phasenstatus = Phasenstatus.in_progress
 
-        phasenstatus = _apply_guardrails(llm_phasenstatus, context)
+        phasenstatus = _apply_guardrails(llm_phasenstatus, context, patches)
 
         flags: list[Flag] = []
         if phasenstatus == Phasenstatus.phase_complete:

@@ -440,8 +440,8 @@ Keep files focused and readable. A human engineer would refactor proactively —
 
 **Rules:**
 
-1. **No source file should exceed 300 lines** (tests and generated files excluded).
-2. If a file approaches 300 lines during implementation, split it:
+1. **No source file should exceed 400 lines** (tests and generated files excluded).
+2. If a file approaches 400 lines during implementation, split it:
    - Extract cohesive classes or functions into separate modules.
    - Use existing HLA Section 6 paths. If none fit, write an ADR first.
 3. **One class = one responsibility.** Do not merge unrelated concerns into a single class.

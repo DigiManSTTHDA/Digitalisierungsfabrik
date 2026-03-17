@@ -352,7 +352,7 @@ async def test_structuring_error_on_llm_failure() -> None:
 def test_guardrail_blocks_phase_complete_without_schritte() -> None:
     """Guardrail blocks phase_complete if no Strukturschritte exist."""
     ctx = _make_context(schritte={})
-    assert _apply_guardrails(Phasenstatus.phase_complete, ctx) == Phasenstatus.in_progress
+    assert _apply_guardrails(Phasenstatus.phase_complete, ctx, []) == Phasenstatus.in_progress
 
 
 def test_guardrail_blocks_phase_complete_with_leer_schritte() -> None:
@@ -362,7 +362,7 @@ def test_guardrail_blocks_phase_complete_with_leer_schritte() -> None:
         "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.leer),
     }
     ctx = _make_context(schritte=schritte)
-    assert _apply_guardrails(Phasenstatus.phase_complete, ctx) == Phasenstatus.nearing_completion
+    assert _apply_guardrails(Phasenstatus.phase_complete, ctx, []) == Phasenstatus.nearing_completion
 
 
 def test_guardrail_allows_phase_complete_when_schritte_filled() -> None:
@@ -372,7 +372,7 @@ def test_guardrail_allows_phase_complete_when_schritte_filled() -> None:
         "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.vollstaendig),
     }
     ctx = _make_context(schritte=schritte)
-    assert _apply_guardrails(Phasenstatus.phase_complete, ctx) == Phasenstatus.phase_complete
+    assert _apply_guardrails(Phasenstatus.phase_complete, ctx, []) == Phasenstatus.phase_complete
 
 
 def test_guardrail_passes_through_in_progress() -> None:
@@ -381,4 +381,4 @@ def test_guardrail_passes_through_in_progress() -> None:
         "s1": _make_schritt("s1", status=CompletenessStatus.teilweise),
     }
     ctx = _make_context(schritte=schritte)
-    assert _apply_guardrails(Phasenstatus.in_progress, ctx) == Phasenstatus.in_progress
+    assert _apply_guardrails(Phasenstatus.in_progress, ctx, []) == Phasenstatus.in_progress

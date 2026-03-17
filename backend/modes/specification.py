@@ -72,6 +72,42 @@ def _build_algorithm_status(context: ModeContext) -> str:
     return "\n".join(lines)
 
 
+def _build_first_turn_directive(context: ModeContext) -> str:
+    """Inject a strong directive when the algorithm artifact is still empty.
+
+    Returns an empty string if Algorithmusabschnitte already exist, so this
+    directive only fires on the very first turn of the specification phase.
+    Lists the Strukturschritte so the LLM has concrete targets with correct IDs.
+    """
+    if context.algorithm_artifact.abschnitte:
+        return ""
+
+    schritte = context.structure_artifact.schritte
+    if not schritte:
+        return (
+            "\n\n## SOFORT-AKTION: Algorithmusartefakt ist leer\n\n"
+            "Das Strukturartefakt ist ebenfalls leer. Bitte den Nutzer, "
+            "zuerst die Strukturierungsphase abzuschließen."
+        )
+
+    schritt_liste = "\n".join(
+        f"  - {schritt.titel} ({sid})"
+        for sid, schritt in sorted(schritte.items(), key=lambda x: x[1].reihenfolge)
+    )
+
+    return (
+        "\n\n## SOFORT-AKTION: Algorithmusartefakt ist leer\n\n"
+        "Das Algorithmusartefakt enthält noch KEINE Abschnitte. "
+        "Du befindest dich am Beginn der Spezifikationsphase.\n\n"
+        f"Folgende Strukturschritte warten auf Algorithmusabschnitte:\n{schritt_liste}\n\n"
+        "Deine PFLICHT in DIESEM Turn:\n"
+        "1. Lege für JEDEN Strukturschritt einen Skelett-Abschnitt an "
+        "(completeness_status='leer', status='ausstehend', aktionen={}).\n"
+        "2. Beginne dann mit dem ersten Schritt: stelle die erste Operationalisierungsfrage.\n"
+        "3. Warte NICHT — lege alle Skelett-Abschnitte JETZT an."
+    )
+
+
 def _apply_guardrails(llm_phasenstatus: Phasenstatus, context: ModeContext) -> Phasenstatus:
     """Deterministic guardrails on the LLM's phasenstatus decision (SDD 6.6.3).
 
@@ -131,6 +167,7 @@ class SpecificationMode(BaseMode):
         system_prompt = system_prompt.replace("{algorithm_status}", algorithm_status)
         system_prompt = system_prompt.replace("{emma_catalog}", emma_catalog)
         system_prompt = system_prompt.replace("{validierungsbericht}", "")
+        system_prompt += _build_first_turn_directive(context)
 
         messages = translate_dialog_history(context.dialog_history)
 

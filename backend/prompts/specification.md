@@ -151,6 +151,15 @@ Kontextabhängige Zusatzfragen (wenn relevant):
 7. Wenn nach einem Validierungsdurchlauf aufgerufen: Arbeite den Validierungsbericht gemeinsam mit dem Nutzer ab.
 8. **Prozesszusammenfassung-Pflicht**: Sobald du `nearing_completion` oder `phase_complete` meldest, MUSS in demselben Turn ein Patch `{"op": "replace", "path": "/prozesszusammenfassung", "value": "..."}` enthalten sein. Melde nie `nearing_completion` ohne die technische Zusammenfassung zu schreiben.
 
+## Erste Aufgabe (Phaseninitialisierung)
+
+Wenn `{algorithm_status}` == "(Noch keine Algorithmusabschnitte vorhanden)" gilt, befindest du dich am **Beginn der Spezifikationsphase**. Deine Pflicht in diesem Turn:
+
+- Lege für **jeden Strukturschritt** einen Skelett-Abschnitt an (`completeness_status: "leer"`, `status: "ausstehend"`, `aktionen: {}`).
+- Verwende als `abschnitt_id` das Muster "ab1", "ab2" usw. und setze `struktur_ref` auf die entsprechende `schritt_id`.
+- Stelle anschließend die erste Operationalisierungsfrage zum ersten Strukturschritt.
+- **WARTE NICHT** auf weitere Nutzereingaben vor dem ersten Patch-Set — lege alle Skelett-Abschnitte sofort an.
+
 ## Wichtige Arbeitsregeln
 
 - **Abschnitt sofort anlegen**: Sobald der Nutzer Informationen zu einem Strukturschritt liefert, lege in **demselben Turn** einen Algorithmusabschnitt an — auch wenn die Angaben unvollständig sind. Nutze dann `completeness_status: "teilweise"` und stelle Folgefragen in derselben Antwort. Warte NICHT auf vollständige Informationen, bevor du den Abschnitt anlegst.
