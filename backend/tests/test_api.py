@@ -345,15 +345,31 @@ def test_debug_advance_phase_not_found(client: TestClient) -> None:
 
 
 def test_export_returns_json_and_markdown(client: TestClient) -> None:
-    """GET /api/projects/{id}/export returns exploration, struktur, algorithmus, markdown."""
+    """GET /api/projects/{id}/export returns exploration, struktur, algorithmus, markdown.
+
+    T-1: key presence alone is not falsifiable — we additionally verify that each
+    JSON artifact key contains a dict with the expected top-level fields ('slots',
+    'schritte', 'abschnitte', 'version'), and that the markdown is a non-empty string
+    starting with the correct heading. A renderer returning None or an empty string
+    would break these assertions.
+    """
     pid = client.post("/api/projects", json={"name": "Export"}).json()["projekt_id"]
     resp = client.get(f"/api/projects/{pid}/export")
     assert resp.status_code == 200
     body = resp.json()
-    assert "exploration" in body
-    assert "struktur" in body
-    assert "algorithmus" in body
-    assert "markdown" in body
+    # Verify all four top-level keys are present and have the right types
+    assert isinstance(body["exploration"], dict), "exploration must be a dict"
+    assert isinstance(body["struktur"], dict), "struktur must be a dict"
+    assert isinstance(body["algorithmus"], dict), "algorithmus must be a dict"
+    assert isinstance(body["markdown"], str) and len(body["markdown"]) > 0, (
+        "markdown must be a non-empty string"
+    )
+    # Verify artifact dicts have expected structure (falsifiable: wrong schema fails)
+    assert "slots" in body["exploration"]
+    assert "schritte" in body["struktur"]
+    assert "abschnitte" in body["algorithmus"]
+    assert "version" in body["exploration"]
+    # Verify markdown actually contains the renderer output
     assert "# Explorationsartefakt" in body["markdown"]
 
 
@@ -372,6 +388,52 @@ def test_export_includes_markdown_for_all_phases(client: TestClient) -> None:
     assert "# Explorationsartefakt" in md
     assert "# Strukturartefakt" in md
     assert "# Algorithmusartefakt" in md
+
+
+def test_export_markdown_contains_imported_slot_content(client: TestClient) -> None:
+    """T-1/T-6: Markdown in export response reflects actual artifact content.
+
+    Importing a slot with known inhalt and then exporting must produce markdown
+    that contains that specific inhalt string. A renderer that ignores slot data
+    and returns a static template would fail this assertion.
+    """
+    pid = client.post("/api/projects", json={"name": "SlotContent"}).json()["projekt_id"]
+    client.post(
+        f"/api/projects/{pid}/import",
+        json={
+            "typ": "exploration",
+            "artefakt": {
+                "slots": {
+                    "s1": {
+                        "slot_id": "s1",
+                        "titel": "Prozessname",
+                        "inhalt": "Rechnungsverarbeitung per E-Mail",
+                        "completeness_status": "vollstaendig",
+                    }
+                },
+                "version": 0,
+            },
+        },
+    )
+    resp = client.get(f"/api/projects/{pid}/export")
+    assert resp.status_code == 200
+    md = resp.json()["markdown"]
+    # The specific slot content must appear in the markdown
+    assert "Rechnungsverarbeitung per E-Mail" in md
+    assert "Prozessname" in md
+
+
+def test_export_404_error_body_has_detail(client: TestClient) -> None:
+    """T-6: 404 response body must contain a non-empty 'detail' field.
+
+    A bare 404 with no body is not actionable. The error response must
+    explain what was not found so the caller can handle it correctly.
+    """
+    resp = client.get("/api/projects/does-not-exist/export")
+    assert resp.status_code == 404
+    body = resp.json()
+    assert "detail" in body
+    assert len(body["detail"]) > 0
 
 
 def test_import_artifact_persisted(client: TestClient) -> None:

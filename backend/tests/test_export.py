@@ -167,8 +167,8 @@ def test_render_structure_with_steps(renderer: ArtifaktRenderer) -> None:
     # completeness / algorithmus_status
     assert "nutzervalidiert" in result
     assert "aktuell" in result
-    # spannungsfeld absent when None
-    assert "spannungsfeld" not in result.lower() or "None" not in result
+    # spannungsfeld must NOT appear at all when None — OR logic was a tautology
+    assert "Spannungsfeld" not in result
 
 
 def test_render_structure_spannungsfeld_shown(renderer: ArtifaktRenderer) -> None:
@@ -284,8 +284,9 @@ def test_render_algorithm_with_actions(renderer: ArtifaktRenderer) -> None:
     assert "READ" in result
     assert "act2" in result  # nachfolger of act1
     assert "email_app" in result  # parameter value
-    # emma_kompatibel state
-    assert "True" in result or "true" in result or "kompatibel" in result.lower()
+    # emma_kompatibel must show the actual boolean value — loose OR was a tautology
+    # ("kompatibel" always appears as a field label so the last branch never fails)
+    assert "True" in result  # act1 is emma_kompatibel=True
     # kompatibilitaets_hinweis
     assert "Dynamischer Inhalt" in result
 
@@ -321,3 +322,104 @@ def test_render_all_contains_all_sections(renderer: ArtifaktRenderer) -> None:
     pos_str = result.index("# Strukturartefakt")
     pos_alg = result.index("# Algorithmusartefakt")
     assert pos_exp < pos_str < pos_alg
+
+
+def test_render_all_separator_count(renderer: ArtifaktRenderer) -> None:
+    """render_all joins exactly 3 sections with exactly 2 '---' separators.
+
+    T-7 boundary: a renderer that emits extra or missing separators would break
+    the Markdown structure seen by the user. Checking count is falsifiable
+    (adding a fourth section or omitting the second separator both fail).
+    """
+    result = renderer.render_all(
+        ExplorationArtifact(version=0),
+        StructureArtifact(version=0),
+        AlgorithmArtifact(version=0),
+    )
+    # The separator string used by render_all is "\n\n---\n\n"
+    assert result.count("\n---\n") == 2
+
+
+def test_render_exploration_single_slot(renderer: ArtifaktRenderer) -> None:
+    """T-7 boundary: exactly one slot renders correctly (no off-by-one in loop).
+
+    A renderer that accidentally skips the first or last slot when count == 1
+    would produce output without the slot title, breaking this assertion.
+    """
+    art = ExplorationArtifact(
+        version=1,
+        slots={
+            "only": ExplorationSlot(
+                slot_id="only",
+                titel="Einziger Slot",
+                inhalt="Einziger Inhalt",
+                completeness_status=CompletenessStatus.vollstaendig,
+            ),
+        },
+    )
+    result = renderer.render_exploration(art)
+
+    assert "Einziger Slot" in result
+    assert "Einziger Inhalt" in result
+    assert "only" in result  # slot_id
+    assert "vollstaendig" in result
+
+
+def test_render_exploration_slot_with_empty_inhalt_no_blank_line(
+    renderer: ArtifaktRenderer,
+) -> None:
+    """T-7: empty inhalt must NOT render a blank content value — only _(leer)_.
+
+    This is stronger than just asserting _(leer)_ is present: we also verify
+    that the raw empty string is not written as the Inhalt value, which would
+    produce a misleading 'Inhalt: ' line in the Markdown.
+    """
+    art = ExplorationArtifact(
+        version=1,
+        slots={
+            "s1": ExplorationSlot(
+                slot_id="s1",
+                titel="Leerer Slot",
+                inhalt="",
+                completeness_status=CompletenessStatus.leer,
+            ),
+        },
+    )
+    result = renderer.render_exploration(art)
+
+    assert "_(leer)_" in result
+    # The Inhalt line must not end with ': ' (empty value after the colon)
+    assert "**Inhalt:** \n" not in result
+    assert "**Inhalt:**\n" not in result
+
+
+def test_render_algorithm_emma_kompatibel_false_shown(renderer: ArtifaktRenderer) -> None:
+    """T-7: emma_kompatibel=False must be rendered explicitly, not omitted.
+
+    A renderer that only renders True values would silently hide incompatible
+    actions. This test verifies False appears in the output for act2.
+    """
+    art = AlgorithmArtifact(
+        version=1,
+        abschnitte={
+            "a1": Algorithmusabschnitt(
+                abschnitt_id="a1",
+                titel="Abschnitt",
+                struktur_ref="s1",
+                completeness_status=CompletenessStatus.vollstaendig,
+                status=AlgorithmusStatus.aktuell,
+                aktionen={
+                    "act1": EmmaAktion(
+                        aktion_id="act1",
+                        aktionstyp=EmmaAktionstyp.READ,
+                        parameter={},
+                        nachfolger=[],
+                        emma_kompatibel=False,
+                    ),
+                },
+            ),
+        },
+    )
+    result = renderer.render_algorithm(art)
+
+    assert "False" in result  # emma_kompatibel=False must appear explicitly
