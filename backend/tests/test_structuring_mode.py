@@ -362,7 +362,9 @@ def test_guardrail_blocks_phase_complete_with_leer_schritte() -> None:
         "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.leer),
     }
     ctx = _make_context(schritte=schritte)
-    assert _apply_guardrails(Phasenstatus.phase_complete, ctx, []) == Phasenstatus.nearing_completion
+    assert (
+        _apply_guardrails(Phasenstatus.phase_complete, ctx, []) == Phasenstatus.nearing_completion
+    )
 
 
 def test_guardrail_allows_phase_complete_when_schritte_filled() -> None:

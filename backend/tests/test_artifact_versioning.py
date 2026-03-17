@@ -12,7 +12,6 @@ import pytest
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

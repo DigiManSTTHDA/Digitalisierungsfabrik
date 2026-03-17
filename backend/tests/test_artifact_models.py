@@ -7,7 +7,6 @@ Story 01-02: Artifact Pydantic models.
 import pytest
 from pydantic import ValidationError
 
-
 # ---------------------------------------------------------------------------
 # Story 01-02: Artifact Pydantic models
 # ---------------------------------------------------------------------------

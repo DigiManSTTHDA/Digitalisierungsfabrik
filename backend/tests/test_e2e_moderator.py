@@ -234,7 +234,7 @@ async def test_e2e_moderator_explorer_flow() -> None:
     check(
         "CP6_mod_no_write",
         art_before_u8 == art_after_u8,
-        f"CP6_mod_no_write: Moderator hat Exploration-Artefakt veraendert",
+        "CP6_mod_no_write: Moderator hat Exploration-Artefakt veraendert",
     )
 
     # ── U9: User formulates wish ────────────────────────────────────
@@ -249,7 +249,7 @@ async def test_e2e_moderator_explorer_flow() -> None:
     check(
         "CP6_mod_no_write_u9",
         art_before_u8 == art_after_u9,
-        f"CP6_mod_no_write_u9: Moderator hat Exploration-Artefakt in U9 veraendert",
+        "CP6_mod_no_write_u9: Moderator hat Exploration-Artefakt in U9 veraendert",
     )
 
     # ── U10: User confirms return to Explorer ───────────────────────
@@ -270,7 +270,7 @@ async def test_e2e_moderator_explorer_flow() -> None:
     check(
         "CP7_mod_no_write",
         art_before_u8 == art_after_u10,
-        f"CP7_mod_no_write: Moderator hat Exploration-Artefakt bei Rueckkehr veraendert",
+        "CP7_mod_no_write: Moderator hat Exploration-Artefakt bei Rueckkehr veraendert",
     )
 
     # ── U11-U13: Explorer turns (post-escalation) ──────────────────
@@ -426,8 +426,16 @@ async def test_e2e_moderator_explorer_flow() -> None:
 
     # Assert all hard checkpoints pass
     for cp_name in [
-        "CP1", "CP2", "CP3", "CP5", "CP5_mode", "CP6", "CP7", "CP10",
-        "CP6_mod_no_write", "CP7_mod_no_write",
+        "CP1",
+        "CP2",
+        "CP3",
+        "CP5",
+        "CP5_mode",
+        "CP6",
+        "CP7",
+        "CP10",
+        "CP6_mod_no_write",
+        "CP7_mod_no_write",
     ]:
         if cp_name in checkpoint_results:
             assert checkpoint_results[cp_name], (

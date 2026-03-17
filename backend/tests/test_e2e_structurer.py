@@ -159,7 +159,12 @@ async def test_e2e_structurer_flow() -> None:
     print("\n=== S0: Systemstart (Strukturierungsphase) ===")
     turn_nr += 1
     mode_before = get_mode()
-    result = await orchestrator.process_turn(pid, TurnInput(text="[Systemstart] Die Explorationsphase ist abgeschlossen. Bitte erkläre dem Nutzer die Strukturierungsphase."))
+    result = await orchestrator.process_turn(
+        pid,
+        TurnInput(
+            text="[Systemstart] Die Explorationsphase ist abgeschlossen. Bitte erkläre dem Nutzer die Strukturierungsphase."
+        ),
+    )
     entry = log_turn(turn_nr, "S0", mode_before, result)
     print(f"  Greeting: {result.nutzeraeusserung[:150]}")
     assert result.error is None, f"S0 error: {result.error}"
@@ -201,7 +206,9 @@ async def test_e2e_structurer_flow() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[2]["message"]))
     entry = log_turn(turn_nr, "U3", mode_before, result)
-    print(f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}"
+    )
     p3 = get_project()
     check(
         "CP3",
@@ -215,7 +222,9 @@ async def test_e2e_structurer_flow() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[3]["message"]))
     entry = log_turn(turn_nr, "U4", mode_before, result)
-    print(f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # ── U5: Bestellabgleich als Entscheidungspunkt ────────────────
     print("\n=== U5: Bestellabgleich + Teilrechnungen ===")
@@ -223,7 +232,9 @@ async def test_e2e_structurer_flow() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[4]["message"]))
     entry = log_turn(turn_nr, "U5", mode_before, result)
-    print(f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # CP4: Mindestens eine Entscheidung modelliert
     p5 = get_project()
@@ -314,7 +325,9 @@ async def test_e2e_structurer_flow() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[8]["message"]))
     entry = log_turn(turn_nr, "U9", mode_before, result)
-    print(f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # CP8: Reihenfolge prüfen
     p8 = get_project()
@@ -335,7 +348,9 @@ async def test_e2e_structurer_flow() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[9]["message"]))
     entry = log_turn(turn_nr, "U10", mode_before, result)
-    print(f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Schritte: {entry['schritte_count']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # CP9: Spannungsfeld dokumentiert — mit inhaltlicher Keyword-Prüfung
     p9 = get_project()
@@ -391,6 +406,7 @@ async def test_e2e_structurer_flow() -> None:
             # Force advance if LLM won't cooperate
             print("  Structurer meldet kein phase_complete. Forciere Phasenwechsel.")
             from artifacts.models import Phasenstatus as _PS
+
             p_force = get_project()
             p_force.working_memory.vorheriger_modus = "structuring"
             p_force.working_memory.aktiver_modus = "moderator"
@@ -413,7 +429,8 @@ async def test_e2e_structurer_flow() -> None:
 
     # CP10_no_leer: SDD 6.6.2 — Kein Schritt darf completeness_status 'leer' haben bei phase_complete
     leer_schritte = [
-        sid for sid, s in p10.structure_artifact.schritte.items()
+        sid
+        for sid, s in p10.structure_artifact.schritte.items()
         if s.completeness_status.value == "leer"
     ]
     check(
@@ -424,7 +441,8 @@ async def test_e2e_structurer_flow() -> None:
 
     # CP10_beschreibung: SDD 5.4 — beschreibung ist Pflichtfeld, darf nicht leer sein
     empty_beschreibung = [
-        sid for sid, s in p10.structure_artifact.schritte.items()
+        sid
+        for sid, s in p10.structure_artifact.schritte.items()
         if not s.beschreibung or not s.beschreibung.strip()
     ]
     check(
@@ -493,7 +511,9 @@ async def test_e2e_structurer_flow() -> None:
     for sid, schritt in sorted(schritte.items(), key=lambda x: x[1].reihenfolge):
         nachf = ", ".join(schritt.nachfolger) if schritt.nachfolger else "(Ende)"
         bed = f" | Bedingung: {schritt.bedingung}" if schritt.bedingung else ""
-        aus = f" | Ausnahme: {schritt.ausnahme_beschreibung}" if schritt.ausnahme_beschreibung else ""
+        aus = (
+            f" | Ausnahme: {schritt.ausnahme_beschreibung}" if schritt.ausnahme_beschreibung else ""
+        )
         span = f" | Spannungsfeld: {schritt.spannungsfeld[:60]}" if schritt.spannungsfeld else ""
         print(
             f"  [{schritt.reihenfolge:2d}] {sid:8s} {schritt.titel:30s} [{schritt.typ.value:12s}] [{schritt.completeness_status.value:15s}] → {nachf}{bed}{aus}{span}"
@@ -573,7 +593,9 @@ async def test_e2e_structurer_flow() -> None:
         found = [kw for kw in keywords if kw.lower() in all_text]
         coverage = len(found) / len(keywords) if keywords else 0
         status = "OK" if coverage >= 0.5 else "MISS"
-        print(f"  {status}: {concept['concept']:35s} KW: {len(found)}/{len(keywords)} ({coverage:.0%}) | gefunden: {found}")
+        print(
+            f"  {status}: {concept['concept']:35s} KW: {len(found)}/{len(keywords)} ({coverage:.0%}) | gefunden: {found}"
+        )
 
     # ── TURN LOG ──────────────────────────────────────────────────
     print(f"\n{'=' * 72}")
@@ -615,12 +637,25 @@ async def test_e2e_structurer_flow() -> None:
 
     # Assert all hard checkpoints pass
     hard_checkpoints = [
-        "CP1", "CP2", "CP3", "CP5", "CP5_mode", "CP6", "CP7",
-        "CP6_mod_no_write", "CP7_mod_no_write",
-        "CP10", "CP10_schritte", "CP10_no_leer", "CP10_beschreibung",
+        "CP1",
+        "CP2",
+        "CP3",
+        "CP5",
+        "CP5_mode",
+        "CP6",
+        "CP7",
+        "CP6_mod_no_write",
+        "CP7_mod_no_write",
+        "CP10",
+        "CP10_schritte",
+        "CP10_no_leer",
+        "CP10_beschreibung",
         "CP10_nachfolger_valid",
-        "CP11", "EXP_INTACT",
-        "STRUCT_MIN_SCHRITTE", "STRUCT_TYPE_aktion", "STRUCT_TYPE_entscheidung",
+        "CP11",
+        "EXP_INTACT",
+        "STRUCT_MIN_SCHRITTE",
+        "STRUCT_TYPE_aktion",
+        "STRUCT_TYPE_entscheidung",
     ]
     for cp_name in hard_checkpoints:
         if cp_name in checkpoint_results:

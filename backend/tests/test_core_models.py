@@ -6,8 +6,6 @@ Story 01-03: WorkingMemory + Project models.
 import json
 from datetime import UTC, datetime
 
-import pytest
-
 from artifacts.models import (
     CompletenessStatus,
     Phasenstatus,
@@ -16,7 +14,6 @@ from artifacts.models import (
 )
 from core.models import Project
 from core.working_memory import WorkingMemory
-
 
 # ---------------------------------------------------------------------------
 # Story 01-03: WorkingMemory + Project models

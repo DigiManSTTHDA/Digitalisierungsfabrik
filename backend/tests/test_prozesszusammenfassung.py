@@ -7,7 +7,6 @@ from artifacts.models import StructureArtifact
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
-
 # ---------------------------------------------------------------------------
 # Story 08-01: prozesszusammenfassung + template schema
 # ---------------------------------------------------------------------------
