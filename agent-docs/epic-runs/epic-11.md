@@ -178,3 +178,217 @@ Applied rules T-1, T-5, T-6, T-7 from AGENTS.md to `backend/tests/test_export.py
 | `pytest --tb=short -q` | **370 passed**, 4 deselected, 0 failures |
 
 Previous test count before this pass: 364. Tests added: +6 (test_export.py) +2 (test_api.py) = **+8 net new tests** (370 total).
+
+---
+
+## STEP 6 — Epic-Level Audit
+
+**Date:** 2026-03-17
+**Auditor:** Claude Sonnet 4.6 (strict architecture and compliance auditor)
+
+---
+
+### 1. Files Audited
+
+| File | Status |
+|---|---|
+| `AGENTS.md` | Read in full |
+| `docs/hla_architecture.md` Section 6 | Read (lines 532–619) |
+| `agent-docs/epics/epic-11-end-to-end-stabilization.md` | Read in full |
+| `backend/artifacts/renderer.py` | Read in full |
+| `backend/api/schemas.py` | Read in full — ExportResponse verified |
+| `backend/api/router.py` | Read in full — export endpoint verified |
+| `frontend/src/components/ExportButton.tsx` | Read in full |
+| `agent-docs/open-points/open-points.md` | Read in full |
+| `agent-docs/decisions/ADR-008-llm-log-deferral.md` | Read in full |
+| `api-contract/openapi.json` | ExportResponse and export endpoint verified |
+| `frontend/src/generated/api.d.ts` | ExportResponse type verified |
+| `backend/tests/test_export.py` | Read in full (14 tests) |
+| `README.md` | Read in full |
+| `agent-docs/epic-runs/epic-11.md` (STEP 1–4) | Read for context |
+
+---
+
+### 2. Architecture Compliance (HLA Section 6)
+
+| Check | Result | Notes |
+|---|---|---|
+| `backend/artifacts/renderer.py` exists at HLA-defined path | PASS | HLA Section 6 line 568: `renderer.py — JSON → Markdown (für Download, OP-19)` |
+| `frontend/src/components/ExportButton.tsx` path | PASS | HLA Section 6 defines `frontend/src/components/` directory (lines 609–614). `ExportButton.tsx` is a new component in an existing HLA-defined directory — no ADR required. |
+| No new directories outside HLA structure | PASS | No new directories were created; all new files placed in pre-existing HLA-defined paths |
+| AGENTS.md references `hla_architecture.md` at root — actual file is at `docs/hla_architecture.md` | OBSERVATION | Pre-existing path discrepancy between AGENTS.md documentation and actual file location. Not introduced by Epic 11. No Epic 11 DoD items are blocked by this discrepancy. |
+
+---
+
+### 3. SDD Compliance
+
+| Requirement | Check | Result |
+|---|---|---|
+| FR-B-07: artifact downloadable at any phase, regardless of completeness | `export_project` endpoint calls `_load_or_404` then immediately calls `ArtifaktRenderer.render_all()` — no completeness gate | PASS |
+| FR-A-08: all UI text in German | Button label `Exportieren`, loading state `Exportiere...`, error message `Export fehlgeschlagen` all German; PhaseHeader shows `Exploration`, `Strukturierung`, `Spezifikation`, `Validierung`, `Abgeschlossen`; `Projekt abgeschlossen` badge present | PASS |
+| ExportResponse has `exploration`, `struktur`, `algorithmus`, `markdown` | `backend/api/schemas.py` lines 133–139: all 4 fields present and typed | PASS |
+| ExportResponse in OpenAPI snapshot | `api-contract/openapi.json`: `ExportResponse` schema present with all 4 fields required | PASS |
+| ExportResponse in generated TypeScript types | `frontend/src/generated/api.d.ts`: `ExportResponse` type present with all 4 fields | PASS |
+
+---
+
+### 4. DoD Verification — Commands
+
+#### Backend (run 2026-03-17)
+
+| Command | Result |
+|---|---|
+| `ruff check .` | All checks passed |
+| `ruff format --check .` | 80 files already formatted |
+| `python -m mypy . --explicit-package-bases` | Success: no issues found in 80 source files |
+| `pytest --tb=short -q` | **370 passed**, 4 deselected, 0 failures |
+
+#### Frontend (run 2026-03-17)
+
+| Command | Result |
+|---|---|
+| `npm run lint` | 0 warnings, 0 errors |
+| `npm run format:check` | All matched files use Prettier code style |
+| `npm run typecheck` | `tsc --noEmit` — exit 0, no errors |
+| `npm run build` | Built in 522ms — `dist/assets/index-IMZkN74N.js 171.39 kB`, exit 0 |
+
+All DoD commands return exit 0. No failures.
+
+---
+
+### 5. API Contract
+
+| Check | Result |
+|---|---|
+| `api-contract/openapi.json` contains `GET /api/projects/{projekt_id}/export` endpoint | PASS |
+| `api-contract/openapi.json` contains `ExportResponse` schema with all 4 fields typed (no `{}`) | PASS — `exploration`, `struktur`, `algorithmus` typed as `additionalProperties: true` objects; `markdown` typed as string |
+| `frontend/src/generated/api.d.ts` contains `ExportResponse` type | PASS |
+| `frontend/src/generated/api.d.ts` export endpoint path present | PASS — `/api/projects/{projekt_id}/export` GET with `ExportResponse` response |
+| Co-update rule: openapi.json and api.d.ts updated in same Epic | PASS |
+
+---
+
+### 6. Dependency Check
+
+| Check | Result |
+|---|---|
+| No new Python packages in `requirements.txt` | PASS — renderer uses stdlib only (f-strings, dict iteration) |
+| No new npm packages | PASS — ExportButton uses existing `openapi-fetch` client and native browser APIs (`URL.createObjectURL`, `document.createElement`) |
+
+---
+
+### 7. Open Points
+
+| OP | Required Status | Actual Status | Result |
+|---|---|---|---|
+| OP-03 | resolved | resolved | PASS |
+| OP-04 | resolved | resolved | PASS |
+| OP-05 | resolved or deferred | deferred | PASS |
+| OP-06 | resolved | resolved | PASS |
+| OP-07 | resolved | resolved | PASS |
+| OP-11 | resolved | resolved | PASS |
+| OP-12 | resolved | resolved | PASS |
+| OP-14 | resolved or deferred with ADR | deferred — ADR-008 written | PASS |
+| OP-17 | resolved | resolved | PASS |
+
+All open points in scope have final status. No open points remain in indeterminate state.
+
+---
+
+### 8. Story-Level DoD Checkbox Verification
+
+#### Story 11-01 — Markdown Renderer
+
+| Checkbox | Verified | Notes |
+|---|---|---|
+| `backend/artifacts/renderer.py` exists | PASS | File present, 135 lines |
+| `ArtifaktRenderer` class with all 4 methods | PASS | `render_exploration`, `render_structure`, `render_algorithm`, `render_all` all present |
+| `backend/tests/test_export.py` exists with tests | PASS | 14 tests present (6 required by DoD + 8 additional T-7/T-1 hardening) |
+| All 6 required test assertions are falsifiable | PASS | QA pass (STEP 4) replaced two tautological assertions and added 8 boundary tests |
+| `ruff check .` | PASS | see DoD commands above |
+| `ruff format --check .` | PASS | see DoD commands above |
+| `python -m mypy . --explicit-package-bases` | PASS | see DoD commands above |
+| `pytest --tb=short -q` | PASS | 370 passed |
+
+#### Story 11-02 — Export REST Endpoint
+
+| Checkbox | Verified | Notes |
+|---|---|---|
+| `ExportResponse` model in `backend/api/schemas.py` with 4 fields | PASS | lines 133–139 |
+| `GET /api/projects/{projekt_id}/export` in `backend/api/router.py` | PASS | lines 379–400 |
+| `ArtifaktRenderer.render_all()` called inside endpoint | PASS | line 390, router.py |
+| HTTP 404 returned for unknown project | PASS | via `_load_or_404` helper |
+| 3 new tests in `backend/tests/test_api.py` | PASS | 5 export tests present (exceeds requirement) |
+| `api-contract/openapi.json` regenerated | PASS | ExportResponse visible in schema |
+| `frontend/src/generated/api.d.ts` regenerated in same commit | PASS | ExportResponse type present |
+| `ExportResponse` visible in `/openapi.json` with all 4 fields typed | PASS | all 4 fields required and typed |
+| ruff/mypy/pytest | PASS | see DoD commands above |
+
+#### Story 11-03 — Frontend ExportButton
+
+| Checkbox | Verified | Notes |
+|---|---|---|
+| `frontend/src/components/ExportButton.tsx` exists | PASS | 84 lines |
+| Button labelled `Exportieren` in German | PASS | line 79 |
+| Uses `openapi-fetch` client | PASS | `apiClient.GET(...)` via `frontend/src/api/client` |
+| Uses generated `ExportResponse` type — not hand-written | PASS | `components["schemas"]["ExportResponse"]` from `frontend/src/generated/api` |
+| Downloads `artifacts.json` on success | PASS | `triggerDownload(jsonPayload, "artifacts.json", ...)` |
+| Downloads `artifacts.md` on success | PASS | `triggerDownload(response.markdown, "artifacts.md", ...)` |
+| Loading state while request in progress | PASS | `loading` state; button disabled + label `Exportiere...` |
+| German error message on failure | PASS | `"Export fehlgeschlagen"` |
+| `ExportButton` visible in active project view | PASS | integrated in `ArtifactPane.tsx` |
+| `npm run lint` | PASS | 0 warnings |
+| `npm run format:check` | PASS | Prettier clean |
+| `npm run typecheck` | PASS | exit 0 |
+| `npm run build` | PASS | exit 0, 171 kB bundle |
+
+#### Story 11-04 — Open Points Resolution
+
+| Checkbox | Verified | Notes |
+|---|---|---|
+| All open points have `resolved` or `deferred` status | PASS | see Open Points section above |
+| OP-03 through OP-17 addressed | PASS | all 9 required OPs have final status |
+| All new ADRs have status `accepted` | PASS | ADR-008 status: `accepted` |
+
+#### Story 11-05 — UI Polish, Production Build & README
+
+| Checkbox | Verified | Notes |
+|---|---|---|
+| All visible UI strings in German | PASS | ExportButton, PhaseHeader, DebugPanel all German |
+| Phase names in German in `PhaseHeader` | PASS | `Exploration`, `Strukturierung`, `Spezifikation`, `Validierung` |
+| "Projekt abgeschlossen" indicator visible when `projektstatus === "abgeschlossen"` | PASS | badge at PhaseHeader.tsx line 70 |
+| `npm run lint` | PASS | exit 0 |
+| `npm run format:check` | PASS | exit 0 |
+| `npm run typecheck` | PASS | exit 0 |
+| `npm run build` | PASS | exit 0 |
+| `README.md` has "Schnellstart" section with install + run commands | PASS | lines 9–31 |
+| `README.md` has "Benutzerhandbuch" section with 5-step walkthrough | PASS | lines 38–54 |
+| `README.md` references `backend/.env.example` | PASS | line 19: `cp .env.example .env` |
+
+---
+
+### 9. Issues Found
+
+| # | Severity | Description | Action |
+|---|---|---|---|
+| 1 | OBSERVATION (pre-existing, not Epic 11) | `AGENTS.md` references `hla_architecture.md` at root; actual file is at `docs/hla_architecture.md`. This discrepancy predates Epic 11 and does not block any Epic 11 DoD item. | No fix required for Epic 11. Noted for completeness. |
+
+No blocking issues were found. No fixes were applied by this audit pass.
+
+---
+
+### 10. Fixes Applied
+
+None. All DoD items verified as-is. The single observation above is pre-existing and out of scope for Epic 11.
+
+---
+
+### 11. Final Status
+
+| Compliance Dimension | Status |
+|---|---|
+| **AGENTS.md compliant** | **YES** — All Rules 1–7 satisfied: DoD commands run and pass; every AC has a checkbox; epic doc updated; all stories done; HLA paths used; Pydantic fields complete; backend logic has tests |
+| **HLA compliant** | **YES** — `backend/artifacts/renderer.py` and `frontend/src/components/ExportButton.tsx` are both within HLA Section 6 defined paths; no new directories; no undeclared deviations |
+| **SDD compliant** | **YES** — FR-B-07 (export at any phase) implemented and verified; FR-A-08 (German UI) verified throughout; ExportResponse schema complete with all 4 required fields |
+
+**Epic 11 is COMPLETE. All 5 stories pass all DoD checks. 370 backend tests passing. Production build succeeds.**
