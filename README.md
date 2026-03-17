@@ -2,7 +2,56 @@
 
 AI-geführtes System zur Prozesserhebung für Digitalisierungsprojekte.
 
-**Status:** Implementierung läuft — Epics 00–08 abgeschlossen.
+**Status:** Epics 00–11 abgeschlossen — Prototyp vollständig.
+
+---
+
+## Schnellstart
+
+Voraussetzungen: Python ≥ 3.11, Node.js ≥ 18, npm ≥ 9.
+
+```bash
+# 1. Backend einrichten
+cd backend
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env             # .env öffnen und LLM_API_KEY eintragen
+
+# 2. Backend starten
+uvicorn main:app --reload        # Port 8000
+
+# 3. Frontend einrichten (zweites Terminal)
+cd frontend
+npm install
+npm run generate-api:file        # OpenAPI-Typen generieren
+
+# 4. Frontend starten
+npm run dev                      # Port 5173
+```
+
+Öffne http://localhost:5173 im Browser. Das Backend ist unter http://localhost:8000 erreichbar.
+Konfiguration: alle Parameter sind in `backend/.env.example` beschrieben.
+
+---
+
+## Benutzerhandbuch
+
+Das System führt durch fünf Schritte:
+
+1. **Projekt anlegen** — Auf der Startseite "Neues Projekt" ausfüllen und "Projekt erstellen" klicken. Das Projekt erscheint in der Liste. Klick öffnet die Gesprächsansicht.
+
+2. **Exploration** — Das System fragt nach dem Prozessauslöser, Ziel, Beschreibung, Beteiligten usw. Die Antworten werden im Explorationsartefakt (rechte Seite) gespeichert. Wenn alle neun Pflichtfelder gefüllt sind, schlägt der Moderator den Wechsel zur nächsten Phase vor.
+
+3. **Strukturierung** — Das System analysiert den beschriebenen Prozess und entwirft Prozessschritte. Korrekturen und Ergänzungen sind per Chat möglich. Nach Bestätigung erfolgt der Phasenwechsel.
+
+4. **Spezifikation** — Jeder Prozessschritt wird als EMMA-Aktionssequenz formalisiert. Das Algorithmusartefakt entsteht durch Dialog mit dem System.
+
+5. **Validierung** — Das System prüft die Artefakte auf Konsistenz und Vollständigkeit. Bei bestandener Validierung erscheint der Status "Projekt abgeschlossen" in der Kopfzeile.
+
+**Exportieren:** Nach Abschluss der Validierung im Artefaktbereich (rechts) auf "Exportieren" klicken. Es werden zwei Dateien heruntergeladen:
+- `artifacts.json` — alle drei Artefakte als JSON-Bundle
+- `artifacts.md` — lesbare Markdown-Darstellung aller Artefakte
 
 ---
 
@@ -198,6 +247,6 @@ Vollständige Begründung: `agent-docs/decisions/ADR-001-openapi-contract.md`
 | 06 | React Frontend | ✅ abgeschlossen |
 | 07 | Moderator & Phasenwechsel | ✅ abgeschlossen |
 | 08 | Strukturierungsmodus | ✅ abgeschlossen |
-| 09 | Spezifikationsmodus | ⏳ ausstehend |
-| 10 | Validierung & Korrektur | ⏳ ausstehend |
-| 11 | End-to-End-Stabilisierung | ⏳ ausstehend |
+| 09 | Spezifikationsmodus | ✅ abgeschlossen |
+| 10 | Validierung & Korrektur | ✅ abgeschlossen |
+| 11 | End-to-End-Stabilisierung | ✅ abgeschlossen |

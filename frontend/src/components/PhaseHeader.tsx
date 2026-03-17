@@ -9,9 +9,19 @@
 import { useSession, useSessionDispatch } from "../store/session";
 import { apiClient } from "../api/client";
 
+const PHASE_LABELS: Record<string, string> = {
+  exploration: "Exploration",
+  strukturierung: "Strukturierung",
+  spezifikation: "Spezifikation",
+  validierung: "Validierung",
+};
+
 export function PhaseHeader() {
-  const { activeProjectId, activePhase, progress } = useSession();
+  const { activeProjectId, activePhase, progress, projects } = useSession();
   const dispatch = useSessionDispatch();
+
+  const activeProject = projects.find((p) => p.projekt_id === activeProjectId);
+  const istAbgeschlossen = activeProject?.projektstatus === "abgeschlossen";
 
   const handleBack = () => {
     dispatch({ type: "DESELECT_PROJECT" });
@@ -19,7 +29,6 @@ export function PhaseHeader() {
 
   const handlePanic = () => {
     // Sends panic via WebSocket — handled in websocket.ts
-    // For now, dispatched as a flag; websocket.ts sendPanic() called from here
     import("../api/websocket").then((ws) => ws.sendPanic());
   };
 
@@ -42,7 +51,11 @@ export function PhaseHeader() {
     }
   };
 
-  const phaseLabel =
+  const phaseLabel = istAbgeschlossen
+    ? "Abgeschlossen"
+    : (PHASE_LABELS[activePhase] ?? activePhase);
+
+  const phasenstatus =
     progress.phasenstatus === "phase_complete"
       ? "Phase abgeschlossen"
       : progress.phasenstatus === "nearing_completion"
@@ -52,20 +65,21 @@ export function PhaseHeader() {
   return (
     <header className="phase-header">
       <div className="phase-info">
-        <span>
-          {activePhase.charAt(0).toUpperCase() + activePhase.slice(1)}
-        </span>
+        <span>{phaseLabel}</span>
+        {istAbgeschlossen && (
+          <span className="abgeschlossen-badge">Projekt abgeschlossen</span>
+        )}
         <span className="slot-counter">
           {progress.befuellte_slots} von {progress.bekannte_slots} Slots befüllt
         </span>
-        <span className="status-badge">{phaseLabel}</span>
+        <span className="status-badge">{phasenstatus}</span>
       </div>
       <div className="actions">
         <button className="panic-btn" onClick={handlePanic}>
           Panik
         </button>
         <button className="download-btn" onClick={handleDownload}>
-          Download
+          Herunterladen
         </button>
         <button onClick={handleBack}>Zurück</button>
       </div>

@@ -20,7 +20,7 @@ export function DebugPanel() {
   return (
     <div className="debug-panel">
       <div className="debug-toggle" onClick={() => setExpanded(!expanded)}>
-        {expanded ? "▼" : "▶"} Debug
+        {expanded ? "▼" : "▶"} Diagnose
       </div>
       {expanded && (
         <div className="debug-content">
