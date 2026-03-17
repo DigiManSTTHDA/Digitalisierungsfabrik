@@ -15,6 +15,7 @@ from llm.base import LLMClient, LLMResponse
 from modes.base import BaseMode
 from modes.exploration import ExplorationMode
 from modes.moderator import Moderator
+from core.models import Project
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
@@ -73,7 +74,7 @@ def _make_orchestrator(repo: ProjectRepository, llm_client: LLMClient) -> Orches
     return Orchestrator(repository=repo, modes=modes)
 
 
-def _set_exploration_mode(repo: ProjectRepository, project) -> None:  # type: ignore[type-arg]
+def _set_exploration_mode(repo: ProjectRepository, project: Project) -> None:
     """Force a freshly-created project into exploration mode (FR-D-11 changed default to moderator)."""
     project.aktiver_modus = "exploration"
     project.working_memory.aktiver_modus = "exploration"

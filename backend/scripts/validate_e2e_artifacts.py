@@ -22,8 +22,8 @@ from pathlib import Path
 backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from persistence.database import Database
-from persistence.project_repository import ProjectRepository
+from persistence.database import Database  # noqa: E402
+from persistence.project_repository import ProjectRepository  # noqa: E402
 
 
 def _load_project(repo: ProjectRepository, projekt_id: str | None):  # noqa: ANN201
@@ -81,9 +81,15 @@ def validate_exploration(project, result: ValidationResult) -> None:
     )
 
     expected_slots = [
-        "prozessausloeser", "prozessziel", "prozessbeschreibung",
-        "scope", "beteiligte_systeme", "umgebung",
-        "randbedingungen", "ausnahmen", "prozesszusammenfassung",
+        "prozessausloeser",
+        "prozessziel",
+        "prozessbeschreibung",
+        "scope",
+        "beteiligte_systeme",
+        "umgebung",
+        "randbedingungen",
+        "ausnahmen",
+        "prozesszusammenfassung",
     ]
     for sid in expected_slots:
         slot = slots.get(sid)
@@ -155,7 +161,9 @@ def validate_structure(project, result: ValidationResult) -> None:
     )
 
     # All beschreibung filled
-    empty_beschr = [sid for sid, s in schritte.items() if not s.beschreibung or not s.beschreibung.strip()]
+    empty_beschr = [
+        sid for sid, s in schritte.items() if not s.beschreibung or not s.beschreibung.strip()
+    ]
     result.check(
         "STRUCT_BESCHREIBUNG",
         len(empty_beschr) == 0,
@@ -209,10 +217,7 @@ def validate_structure(project, result: ValidationResult) -> None:
             )
 
     # Spannungsfeld check
-    has_spannungsfeld = any(
-        s.spannungsfeld and s.spannungsfeld.strip()
-        for s in schritte.values()
-    )
+    has_spannungsfeld = any(s.spannungsfeld and s.spannungsfeld.strip() for s in schritte.values())
     print(f"\n  Spannungsfeld vorhanden: {'JA' if has_spannungsfeld else 'NEIN'}")
 
     # Print step summary
@@ -279,7 +284,8 @@ def validate_algorithm(project, result: ValidationResult) -> None:
     # Hallucination check
     neg_kws = ["PowerShell", "SharePoint", "REST API", "SQL", "XML", "VBA", "Python", "JavaScript"]
     all_text = " ".join(
-        f"{a.titel} " + " ".join(f"{ak.aktionstyp} {json.dumps(ak.parameter)}" for ak in a.aktionen.values())
+        f"{a.titel} "
+        + " ".join(f"{ak.aktionstyp} {json.dumps(ak.parameter)}" for ak in a.aktionen.values())
         for a in abschnitte.values()
     ).lower()
     hallucinations = [kw for kw in neg_kws if kw.lower() in all_text]
@@ -304,7 +310,7 @@ def validate_cross_phase(project, result: ValidationResult) -> None:
     _print_header("PHASENÜBERGREIFEND")
 
     phase = project.aktive_phase.value
-    status = project.projektstatus.value if hasattr(project, 'projektstatus') else "?"
+    status = project.projektstatus.value if hasattr(project, "projektstatus") else "?"
     print(f"  Aktive Phase: {phase}")
     print(f"  Projektstatus: {status}")
     print(f"  Aktiver Modus: {project.aktiver_modus}")

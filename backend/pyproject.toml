@@ -29,3 +29,21 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "anthropic"
 ignore_missing_imports = true
+
+# E2E tests and scripts use dynamic typing patterns; suppress strict errors
+[[tool.mypy.overrides]]
+module = [
+    "tests.test_e2e_structurer",
+    "tests.test_e2e_specifier",
+    "tests.test_e2e_moderator",
+    "tests.test_e2e_full_chain",
+    "tests.e2e_reisekosten",
+    "scripts.validate_e2e_artifacts",
+    "conftest",
+]
+ignore_errors = true
+
+# Fix unused type: ignore comments that were written for older mypy
+[[tool.mypy.overrides]]
+module = ["tests.test_orchestrator", "tests.test_exploration_mode"]
+warn_unused_ignores = false

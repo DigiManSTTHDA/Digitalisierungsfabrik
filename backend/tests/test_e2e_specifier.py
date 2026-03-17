@@ -72,9 +72,7 @@ def _seed_artifacts(repo, project_id: str, dialog: dict) -> None:
             inhalt=slot_data["inhalt"],
             completeness_status=CompletenessStatus(slot_data["completeness_status"]),
         )
-    exploration_artifact = ExplorationArtifact(
-        slots=exp_slots, version=exp_seed.get("version", 12)
-    )
+    exploration_artifact = ExplorationArtifact(slots=exp_slots, version=exp_seed.get("version", 12))
 
     # ── Seed structure artifact ───────────────────────────────────────────────
     struct_seed = dialog["structure_seed"]
@@ -118,8 +116,7 @@ def _seed_artifacts(repo, project_id: str, dialog: dict) -> None:
 def _algo_snapshot(project) -> dict:
     """Snapshot algorithm artifact state for moderator no-write checks."""
     return {
-        aid: a.completeness_status.value
-        for aid, a in project.algorithm_artifact.abschnitte.items()
+        aid: a.completeness_status.value for aid, a in project.algorithm_artifact.abschnitte.items()
     }
 
 
@@ -274,7 +271,9 @@ async def test_e2e_specifier_flow() -> None:
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[2]["message"]))
     entry = log_turn(turn_nr, "U3", mode_before, result)
     pre_escalation_response_lengths.append(len(result.nutzeraeusserung))
-    print(f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}"
+    )
     if result.error:
         print(f"  ERROR: {result.error}")
 
@@ -285,7 +284,9 @@ async def test_e2e_specifier_flow() -> None:
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[3]["message"]))
     entry = log_turn(turn_nr, "U4", mode_before, result)
     pre_escalation_response_lengths.append(len(result.nutzeraeusserung))
-    print(f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # CP3: Nach U4 sollte mindestens 1 Algorithmusabschnitt existieren
     p4 = get_project()
@@ -302,7 +303,9 @@ async def test_e2e_specifier_flow() -> None:
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[4]["message"]))
     entry = log_turn(turn_nr, "U5", mode_before, result)
     pre_escalation_response_lengths.append(len(result.nutzeraeusserung))
-    print(f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:150]}")
+    print(
+        f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:150]}"
+    )
 
     # CP4 (soft): System sollte eine Folgefrage stellen (Fragezeichen)
     check(
@@ -313,18 +316,21 @@ async def test_e2e_specifier_flow() -> None:
 
     # ── U6: WIDERSPRUCH — E-Mail-Prozess-Korrektur ────────────────────────────
     print("\n=== U6: WIDERSPRUCH — automatische Weiterleitung statt manuell ===")
-    abschnitte_before_u6 = len(get_project().algorithm_artifact.abschnitte)
+    _abschnitte_before_u6 = len(get_project().algorithm_artifact.abschnitte)
     turn_nr += 1
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[5]["message"]))
     entry = log_turn(turn_nr, "U6", mode_before, result)
     pre_escalation_response_lengths.append(len(result.nutzeraeusserung))
-    print(f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # CP_contradiction: Korrektur muss im Algorithmusartefakt reflektiert werden
     p6 = get_project()
     all_algo_text = " ".join(
-        f"{a.titel} " + " ".join(f"{ak.aktionstyp} {json.dumps(ak.parameter)}" for ak in a.aktionen.values())
+        f"{a.titel} "
+        + " ".join(f"{ak.aktionstyp} {json.dumps(ak.parameter)}" for ak in a.aktionen.values())
         for a in p6.algorithm_artifact.abschnitte.values()
     ).lower()
     corrected_kws = ["weiterleitung", "automatisch", "unterordner", "regel"]
@@ -351,7 +357,7 @@ async def test_e2e_specifier_flow() -> None:
     print("\n=== S1: Panik-Button ===")
     p_esc = repo.load(pid)
     abschnitte_before_esc = len(p_esc.algorithm_artifact.abschnitte)
-    algo_snapshot_before_esc = _algo_snapshot(p_esc)
+    _algo_snapshot_before_esc = _algo_snapshot(p_esc)
     p_esc.working_memory.vorheriger_modus = p_esc.working_memory.aktiver_modus
     p_esc.working_memory.aktiver_modus = "moderator"
     p_esc.aktiver_modus = "moderator"
@@ -423,7 +429,7 @@ async def test_e2e_specifier_flow() -> None:
     check(
         "CP7_mod_no_write",
         algo_snapshot_before_u9 == algo_snapshot_after_u9,
-        f"CP7_mod_no_write: Moderator hat Algorithmusartefakt bei Rückkehr verändert.",
+        "CP7_mod_no_write: Moderator hat Algorithmusartefakt bei Rückkehr verändert.",
     )
 
     # ── U10-U12: Spezifikation nach Eskalation ────────────────────────────────
@@ -434,7 +440,9 @@ async def test_e2e_specifier_flow() -> None:
         mode_before = get_mode()
         result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[idx]["message"]))
         entry = log_turn(turn_nr, uid, mode_before, result)
-        print(f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}")
+        print(
+            f"  [{entry['mode_after']}] Abschnitte: {entry['abschnitte_count']} | {result.nutzeraeusserung[:100]}"
+        )
         if result.error:
             print(f"  ERROR: {result.error}")
 
@@ -453,7 +461,9 @@ async def test_e2e_specifier_flow() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[12]["message"]))
     entry = log_turn(turn_nr, "U13", mode_before, result)
-    print(f"  Mode: {entry['mode_after']}, flags: {entry['flags']}, Abschnitte: {entry['abschnitte_count']}")
+    print(
+        f"  Mode: {entry['mode_after']}, flags: {entry['flags']}, Abschnitte: {entry['abschnitte_count']}"
+    )
 
     # Nudge-Schleife wenn Spezifikationsmodus kein phase_complete meldet
     p_pre = get_project()
@@ -477,6 +487,7 @@ async def test_e2e_specifier_flow() -> None:
             # Force advance wenn LLM partout nicht kooperiert
             print("  Spezifikationsmodus meldet kein phase_complete. Forciere Phasenwechsel.")
             from artifacts.models import Phasenstatus as _PS
+
             p_force = get_project()
             p_force.working_memory.vorheriger_modus = "specification"
             p_force.working_memory.aktiver_modus = "moderator"
@@ -500,8 +511,7 @@ async def test_e2e_specifier_flow() -> None:
 
     # CP10_aktionen: Alle Abschnitte müssen mindestens 1 EMMA-Aktion haben
     empty_aktionen = [
-        aid for aid, a in p10.algorithm_artifact.abschnitte.items()
-        if len(a.aktionen) == 0
+        aid for aid, a in p10.algorithm_artifact.abschnitte.items() if len(a.aktionen) == 0
     ]
     check(
         "CP10_abschnitte_have_aktionen",
@@ -571,7 +581,9 @@ async def test_e2e_specifier_flow() -> None:
 
     abschnitte = algo_art.abschnitte
     print(f"  Anzahl Abschnitte: {len(abschnitte)}")
-    print(f"  Prozesszusammenfassung: {'JA' if algo_art.prozesszusammenfassung.strip() else 'NEIN'}")
+    print(
+        f"  Prozesszusammenfassung: {'JA' if algo_art.prozesszusammenfassung.strip() else 'NEIN'}"
+    )
 
     if expected.get("structural_requirements", {}).get("must_have_prozesszusammenfassung"):
         check(
@@ -618,10 +630,9 @@ async def test_e2e_specifier_flow() -> None:
 
     # Gesamter Algorithmustext für Keyword-Suche
     all_algo_text_lower = " ".join(
-        f"{a.titel} {a.struktur_ref} " +
-        " ".join(
-            f"{ak.aktionstyp} {' '.join(ak.parameter.values())}"
-            for ak in a.aktionen.values()
+        f"{a.titel} {a.struktur_ref} "
+        + " ".join(
+            f"{ak.aktionstyp} {' '.join(ak.parameter.values())}" for ak in a.aktionen.values()
         )
         for a in abschnitte.values()
     ).lower()
@@ -665,7 +676,9 @@ async def test_e2e_specifier_flow() -> None:
     spec_turns = [e for e in turn_log if e["mode_before"] == "specification"]
     turns_with_question = [e for e in spec_turns if "?" in e["nutzeraeusserung_preview"]]
     q_ratio = len(turns_with_question) / len(spec_turns) if spec_turns else 0
-    print(f"  Spezifikations-Turns mit Frage: {len(turns_with_question)}/{len(spec_turns)} ({q_ratio:.0%})")
+    print(
+        f"  Spezifikations-Turns mit Frage: {len(turns_with_question)}/{len(spec_turns)} ({q_ratio:.0%})"
+    )
     check(
         "CP_asks_questions",
         q_ratio >= 0.5,  # >= 50% für Spezifikation (weniger Fragen als Explorer, da technischer)
@@ -681,7 +694,8 @@ async def test_e2e_specifier_flow() -> None:
     has_nearing = "nearing_completion" in status_seq
     has_complete = "phase_complete" in status_seq
     jumped_directly = (
-        not has_nearing and has_complete
+        not has_nearing
+        and has_complete
         and len([e for e in turn_log if e["phasenstatus"] == "in_progress"]) > 2
     )
     print(f"  Status-Sequenz: {status_seq}")
@@ -724,7 +738,9 @@ async def test_e2e_specifier_flow() -> None:
     print(f"  Structure schritte: {len(struct_art.schritte)}/11")
     print(f"  Algorithm Abschnitte: {len(abschnitte)}")
     print(f"  EMMA-Typen: {sorted(all_emma_types)}")
-    print(f"  Prozesszusammenfassung: {'JA' if algo_art.prozesszusammenfassung.strip() else 'NEIN'}")
+    print(
+        f"  Prozesszusammenfassung: {'JA' if algo_art.prozesszusammenfassung.strip() else 'NEIN'}"
+    )
     print(f"  Halluzinationen: {hallucinations if hallucinations else 'Keine'}")
     print()
     for cp_name, cp_ok in checkpoint_results.items():

@@ -55,6 +55,7 @@ def _load_dialog() -> dict:
 # Snapshot helpers for moderator no-write checks
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _exp_snapshot(project) -> dict:
     """Snapshot exploration artifact: {slot_id: inhalt}."""
     return {sid: s.inhalt for sid, s in project.exploration_artifact.slots.items()}
@@ -69,14 +70,14 @@ def _struct_snapshot(project) -> tuple[int, dict]:
 def _algo_snapshot(project) -> dict:
     """Snapshot algorithm artifact: {abschnitt_id: completeness_status}."""
     return {
-        aid: a.completeness_status.value
-        for aid, a in project.algorithm_artifact.abschnitte.items()
+        aid: a.completeness_status.value for aid, a in project.algorithm_artifact.abschnitte.items()
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Main test
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_e2e_full_chain() -> None:
@@ -227,7 +228,9 @@ async def test_e2e_full_chain() -> None:
         result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[3 + i]["message"]))
         entry = log_turn(turn_nr, uid, mode_before, result)
         pre_esc_exp_lens.append(len(result.nutzeraeusserung))
-        print(f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}")
+        print(
+            f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}"
+        )
 
     # ── U6: WIDERSPRUCH SETUP — "dreistufig" ──────────────────────────────────
     print("\n=== U6: WIDERSPRUCH-Setup (dreistufig) ===")
@@ -236,7 +239,9 @@ async def test_e2e_full_chain() -> None:
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[5]["message"]))
     entry = log_turn(turn_nr, "U6", mode_before, result)
     pre_esc_exp_lens.append(len(result.nutzeraeusserung))
-    print(f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # ── U7: WIDERSPRUCH — Korrektur ───────────────────────────────────────────
     print("\n=== U7: WIDERSPRUCH — Korrektur '5000 EUR' ===")
@@ -245,7 +250,9 @@ async def test_e2e_full_chain() -> None:
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[6]["message"]))
     entry = log_turn(turn_nr, "U7", mode_before, result)
     pre_esc_exp_lens.append(len(result.nutzeraeusserung))
-    print(f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # CP_contradiction_tracked: 5000-EUR-Grenze muss im Artefakt landen
     p7 = get_project()
@@ -277,7 +284,7 @@ async def test_e2e_full_chain() -> None:
     print("\n=== S1: Panik-Button (Exploration) ===")
     p_esc1 = repo.load(pid)
     exp_slots_before_esc1 = len(p_esc1.exploration_artifact.slots)
-    exp_snap_before_esc1 = _exp_snapshot(p_esc1)
+    _exp_snap_before_esc1 = _exp_snapshot(p_esc1)
     p_esc1.working_memory.vorheriger_modus = p_esc1.working_memory.aktiver_modus
     p_esc1.working_memory.aktiver_modus = "moderator"
     p_esc1.aktiver_modus = "moderator"
@@ -341,16 +348,18 @@ async def test_e2e_full_chain() -> None:
         print(f"\n=== {uid}: Exploration (post-Eskalation) ===")
         turn_nr += 1
         mode_before = get_mode()
-        result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[10 + i]["message"]))
+        result = await orchestrator.process_turn(
+            pid, TurnInput(text=user_inputs[10 + i]["message"])
+        )
         entry = log_turn(turn_nr, uid, mode_before, result)
-        print(f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}")
+        print(
+            f"  [{entry['mode_after']}] Slots: {entry['exp_slots']} | {result.nutzeraeusserung[:100]}"
+        )
 
     # Soft: Escalation-Effect — Antworten nach Eskalation nicht länger als 1.5x vor-Esc-Durchschnitt
     if pre_esc_exp_lens:
         avg_pre_exp = sum(pre_esc_exp_lens) / len(pre_esc_exp_lens)
-        post_u11_entry = next(
-            (e for e in reversed(turn_log) if e["input_id"] == "U11"), None
-        )
+        post_u11_entry = next((e for e in reversed(turn_log) if e["input_id"] == "U11"), None)
         if post_u11_entry:
             check(
                 "CP_escalation_effect_exp",
@@ -395,6 +404,7 @@ async def test_e2e_full_chain() -> None:
         else:
             print("  Explorer meldet kein phase_complete. Forciere Wechsel.")
             from artifacts.models import Phasenstatus as _PS
+
             p_force = get_project()
             p_force.working_memory.vorheriger_modus = "exploration"
             p_force.working_memory.aktiver_modus = "moderator"
@@ -483,8 +493,7 @@ async def test_e2e_full_chain() -> None:
     # CP: Mindestens eine Entscheidung nach U17-U19
     p19 = get_project()
     has_entscheidung = any(
-        s.typ.value == "entscheidung"
-        for s in p19.structure_artifact.schritte.values()
+        s.typ.value == "entscheidung" for s in p19.structure_artifact.schritte.values()
     )
     check(
         "CP_entscheidung_after_U19",
@@ -495,19 +504,20 @@ async def test_e2e_full_chain() -> None:
 
     # ── U20: VERWEIGERUNG — Reihenfolge falsch ────────────────────────────────
     print("\n=== U20: VERWEIGERUNG — Vorerfassung vor Freigabe ===")
-    struct_count_before_u20 = len(get_project().structure_artifact.schritte)
+    _struct_count_before_u20 = len(get_project().structure_artifact.schritte)
     turn_nr += 1
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[19]["message"]))
     entry = log_turn(turn_nr, "U20", mode_before, result)
     pre_esc_struct_lens.append(len(result.nutzeraeusserung))
-    print(f"  [{entry['mode_after']}] Schritte: {entry['struct_schritte']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Schritte: {entry['struct_schritte']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # CP: Verweigerung verarbeitet — Vorerfassung muss im Artefakt landen
     p20 = get_project()
     all_struct_text = " ".join(
-        f"{s.titel} {s.beschreibung}"
-        for s in p20.structure_artifact.schritte.values()
+        f"{s.titel} {s.beschreibung}" for s in p20.structure_artifact.schritte.values()
     ).lower()
     check(
         "CP13_refusal_handled",
@@ -526,13 +536,15 @@ async def test_e2e_full_chain() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[20]["message"]))
     entry = log_turn(turn_nr, "U21", mode_before, result)
-    print(f"  [{entry['mode_after']}] Schritte: {entry['struct_schritte']} | {result.nutzeraeusserung[:100]}")
+    print(
+        f"  [{entry['mode_after']}] Schritte: {entry['struct_schritte']} | {result.nutzeraeusserung[:100]}"
+    )
 
     # ── S3: Panik-Button Structuring ──────────────────────────────────────────
     print("\n=== S3: Panik-Button (Structuring) ===")
     p_esc3 = repo.load(pid)
     struct_count_before_esc3 = len(p_esc3.structure_artifact.schritte)
-    struct_snap_before_esc3 = _struct_snapshot(p_esc3)
+    _struct_snap_before_esc3 = _struct_snapshot(p_esc3)
     p_esc3.working_memory.vorheriger_modus = p_esc3.working_memory.aktiver_modus
     p_esc3.working_memory.aktiver_modus = "moderator"
     p_esc3.aktiver_modus = "moderator"
@@ -592,7 +604,7 @@ async def test_e2e_full_chain() -> None:
         "CP16_mod_no_write_struct_U23",
         struct_snap_before_u23[0] == struct_snap_after_u23[0]
         and struct_snap_before_u23[1] == struct_snap_after_u23[1],
-        f"CP16: Moderator hat Strukturartefakt bei Rückkehr U23 verändert.",
+        "CP16: Moderator hat Strukturartefakt bei Rückkehr U23 verändert.",
     )
 
     # Soft: Escalation effect Structuring
@@ -611,7 +623,9 @@ async def test_e2e_full_chain() -> None:
     mode_before = get_mode()
     result = await orchestrator.process_turn(pid, TurnInput(text=user_inputs[23]["message"]))
     entry = log_turn(turn_nr, "U24", mode_before, result)
-    print(f"  Mode: {entry['mode_after']}, flags: {entry['flags']}, Schritte: {entry['struct_schritte']}")
+    print(
+        f"  Mode: {entry['mode_after']}, flags: {entry['flags']}, Schritte: {entry['struct_schritte']}"
+    )
 
     # Nudge wenn Structurer kein phase_complete meldet
     p24_check = get_project()
@@ -633,6 +647,7 @@ async def test_e2e_full_chain() -> None:
         else:
             print("  Structurer meldet kein phase_complete. Forciere Wechsel.")
             from artifacts.models import Phasenstatus as _PS
+
             p_force = get_project()
             p_force.working_memory.vorheriger_modus = "structuring"
             p_force.working_memory.aktiver_modus = "moderator"
@@ -800,7 +815,7 @@ async def test_e2e_full_chain() -> None:
     print("\n=== S5: Panik-Button (Specification) ===")
     p_esc5 = repo.load(pid)
     algo_count_before_esc5 = len(p_esc5.algorithm_artifact.abschnitte)
-    algo_snap_before_esc5 = _algo_snapshot(p_esc5)
+    _algo_snap_before_esc5 = _algo_snapshot(p_esc5)
     p_esc5.working_memory.vorheriger_modus = p_esc5.working_memory.aktiver_modus
     p_esc5.working_memory.aktiver_modus = "moderator"
     p_esc5.aktiver_modus = "moderator"
@@ -912,6 +927,7 @@ async def test_e2e_full_chain() -> None:
         else:
             print("  Specifier meldet kein phase_complete. Forciere Wechsel.")
             from artifacts.models import Phasenstatus as _PS
+
             p_force = get_project()
             p_force.working_memory.vorheriger_modus = "specification"
             p_force.working_memory.aktiver_modus = "moderator"
@@ -944,8 +960,11 @@ async def test_e2e_full_chain() -> None:
     all_exp_text_final = " ".join(s.inhalt for s in exp_art.slots.values()).lower()
     print(f"  Slots: {len(exp_art.slots)}/8+, alle gefüllt: {exp_filled}")
 
-    check("EXP_INTACT_FINAL", exp_ok and exp_filled,
-          f"EXP: slots={len(exp_art.slots)}, filled={exp_filled}")
+    check(
+        "EXP_INTACT_FINAL",
+        exp_ok and exp_filled,
+        f"EXP: slots={len(exp_art.slots)}, filled={exp_filled}",
+    )
 
     # Keyword-Prüfung
     for slot_id, slot_def in expected_exp["slots"].items():
@@ -972,8 +991,7 @@ async def test_e2e_full_chain() -> None:
     check(
         "CP_contradiction_in_artifact_exp",
         len(found_corrected) >= 1,
-        f"CP: Korrigierte 5000-EUR-Grenze nicht im Explorationsartefakt. "
-        f"Gesucht: {must_contain}",
+        f"CP: Korrigierte 5000-EUR-Grenze nicht im Explorationsartefakt. Gesucht: {must_contain}",
     )
 
     # ── Strukturartefakt ──────────────────────────────────────────────────────
@@ -983,21 +1001,26 @@ async def test_e2e_full_chain() -> None:
 
     schritte = struct_art.schritte
     all_struct_text_final = " ".join(
-        f"{s.titel} {s.beschreibung} {s.bedingung or ''}"
-        for s in schritte.values()
+        f"{s.titel} {s.beschreibung} {s.bedingung or ''}" for s in schritte.values()
     ).lower()
     print(f"  Anzahl Schritte: {len(schritte)}")
-    print(f"  Prozesszusammenfassung: {'JA' if struct_art.prozesszusammenfassung.strip() else 'NEIN'}")
+    print(
+        f"  Prozesszusammenfassung: {'JA' if struct_art.prozesszusammenfassung.strip() else 'NEIN'}"
+    )
 
-    check("STRUCT_MIN_SCHRITTE_FINAL",
-          len(schritte) >= expected_struct["structural_requirements"]["min_schritte"],
-          f"STRUCT: {len(schritte)} < {expected_struct['structural_requirements']['min_schritte']}")
+    check(
+        "STRUCT_MIN_SCHRITTE_FINAL",
+        len(schritte) >= expected_struct["structural_requirements"]["min_schritte"],
+        f"STRUCT: {len(schritte)} < {expected_struct['structural_requirements']['min_schritte']}",
+    )
 
     actual_typen = {s.typ.value for s in schritte.values()}
     for must_typ in expected_struct["structural_requirements"]["must_have_types"]:
-        check(f"STRUCT_TYPE_{must_typ}",
-              must_typ in actual_typen,
-              f"STRUCT: Typ '{must_typ}' nicht vorhanden. Actual: {actual_typen}")
+        check(
+            f"STRUCT_TYPE_{must_typ}",
+            must_typ in actual_typen,
+            f"STRUCT: Typ '{must_typ}' nicht vorhanden. Actual: {actual_typen}",
+        )
 
     all_nf_ids: set[str] = set()
     for s in schritte.values():
@@ -1005,45 +1028,61 @@ async def test_e2e_full_chain() -> None:
     start_schritte = [sid for sid in schritte if sid not in all_nf_ids]
     end_schritte = [sid for sid, s in schritte.items() if len(s.nachfolger) == 0]
 
-    check("STRUCT_HAS_START", len(start_schritte) >= 1,
-          f"STRUCT: Kein Startschritt. IDs: {list(schritte.keys())}")
-    check("STRUCT_HAS_END", len(end_schritte) >= 1,
-          f"STRUCT: Kein Endschritt. IDs: {list(schritte.keys())}")
+    check(
+        "STRUCT_HAS_START",
+        len(start_schritte) >= 1,
+        f"STRUCT: Kein Startschritt. IDs: {list(schritte.keys())}",
+    )
+    check(
+        "STRUCT_HAS_END",
+        len(end_schritte) >= 1,
+        f"STRUCT: Kein Endschritt. IDs: {list(schritte.keys())}",
+    )
 
     if expected_struct["structural_requirements"].get("must_have_prozesszusammenfassung"):
-        check("STRUCT_ZUSAMMENFASSUNG",
-              struct_art.prozesszusammenfassung.strip() != "",
-              "STRUCT: Prozesszusammenfassung ist leer")
+        check(
+            "STRUCT_ZUSAMMENFASSUNG",
+            struct_art.prozesszusammenfassung.strip() != "",
+            "STRUCT: Prozesszusammenfassung ist leer",
+        )
 
     # Entscheidungsschritte müssen Bedingung + 2+ Nachfolger haben
     if expected_struct["structural_requirements"].get("entscheidung_must_have_bedingung"):
         for sid, s in schritte.items():
             if s.typ.value == "entscheidung":
-                check(f"ENTSCH_BED_{sid}",
-                      s.bedingung is not None and s.bedingung.strip() != "",
-                      f"Entscheidung '{sid}' hat keine Bedingung")
-                check(f"ENTSCH_NACHF_{sid}",
-                      len(s.nachfolger) >= 2,
-                      f"Entscheidung '{sid}' hat nur {len(s.nachfolger)} Nachfolger")
+                check(
+                    f"ENTSCH_BED_{sid}",
+                    s.bedingung is not None and s.bedingung.strip() != "",
+                    f"Entscheidung '{sid}' hat keine Bedingung",
+                )
+                check(
+                    f"ENTSCH_NACHF_{sid}",
+                    len(s.nachfolger) >= 2,
+                    f"Entscheidung '{sid}' hat nur {len(s.nachfolger)} Nachfolger",
+                )
 
     # Halluzinationscheck Struktur
     neg_kws_struct = expected_struct["negative_keywords"]["keywords"]
     hallucinations_struct = [kw for kw in neg_kws_struct if kw.lower() in all_struct_text_final]
     if hallucinations_struct:
         print(f"  WARNUNG Halluzinationen Struktur: {hallucinations_struct}")
-    check("CP_no_hallucination_struct",
-          len(hallucinations_struct) == 0,
-          f"Halluzinationen in Struktur: {hallucinations_struct}")
+    check(
+        "CP_no_hallucination_struct",
+        len(hallucinations_struct) == 0,
+        f"Halluzinationen in Struktur: {hallucinations_struct}",
+    )
 
     # Verweigerungs-Check (Vorerfassung vor Freigabe)
     refusal_must = expected_struct["refusal_check"]["must_contain_corrected"]
     found_refusal = [kw for kw in refusal_must if kw.lower() in all_struct_text_final]
-    check("CP_refusal_in_artifact_struct",
-          len(found_refusal) >= 1,
-          f"CP: Korrigierte Vorerfassung nicht im Strukturartefakt. Gesucht: {refusal_must}")
+    check(
+        "CP_refusal_in_artifact_struct",
+        len(found_refusal) >= 1,
+        f"CP: Korrigierte Vorerfassung nicht im Strukturartefakt. Gesucht: {refusal_must}",
+    )
 
     # Konzept-Abdeckung Struktur (soft)
-    print(f"\n  KONZEPT-ABDECKUNG STRUKTUR (soft)")
+    print("\n  KONZEPT-ABDECKUNG STRUKTUR (soft)")
     for concept in expected_struct["expected_concepts"]:
         kws = concept["keywords"]
         found = [kw for kw in kws if kw.lower() in all_struct_text_final]
@@ -1064,29 +1103,39 @@ async def test_e2e_full_chain() -> None:
 
     all_algo_text_final = " ".join(
         f"{a.titel} {a.struktur_ref} "
-        + " ".join(f"{ak.aktionstyp} {' '.join(ak.parameter.values())}" for ak in a.aktionen.values())
+        + " ".join(
+            f"{ak.aktionstyp} {' '.join(ak.parameter.values())}" for ak in a.aktionen.values()
+        )
         for a in abschnitte.values()
     ).lower()
 
     print(f"  Anzahl Abschnitte: {len(abschnitte)}")
     print(f"  EMMA-Typen: {sorted(all_emma_types)}")
-    print(f"  Prozesszusammenfassung: {'JA' if algo_art.prozesszusammenfassung.strip() else 'NEIN'}")
+    print(
+        f"  Prozesszusammenfassung: {'JA' if algo_art.prozesszusammenfassung.strip() else 'NEIN'}"
+    )
 
-    check("CP27_min_abschnitte",
-          len(abschnitte) >= expected_algo["structural_requirements"]["min_abschnitte"],
-          f"CP27: abschnitte={len(abschnitte)}, "
-          f"expected >= {expected_algo['structural_requirements']['min_abschnitte']}")
+    check(
+        "CP27_min_abschnitte",
+        len(abschnitte) >= expected_algo["structural_requirements"]["min_abschnitte"],
+        f"CP27: abschnitte={len(abschnitte)}, "
+        f"expected >= {expected_algo['structural_requirements']['min_abschnitte']}",
+    )
 
     for must_emma in expected_algo["structural_requirements"]["must_have_emma_types"]:
-        check(f"EMMA_TYPE_{must_emma}",
-              must_emma in all_emma_types,
-              f"EMMA: Typ '{must_emma}' nicht gefunden. Vorhanden: {sorted(all_emma_types)}")
+        check(
+            f"EMMA_TYPE_{must_emma}",
+            must_emma in all_emma_types,
+            f"EMMA: Typ '{must_emma}' nicht gefunden. Vorhanden: {sorted(all_emma_types)}",
+        )
 
     # Alle Abschnitte müssen mindestens 1 Aktion haben
     empty_abschnitte = [aid for aid, a in abschnitte.items() if len(a.aktionen) == 0]
-    check("ALGO_ALL_HAVE_AKTIONEN",
-          len(empty_abschnitte) == 0,
-          f"ALGO: {len(empty_abschnitte)} Abschnitte ohne EMMA-Aktionen: {empty_abschnitte}")
+    check(
+        "ALGO_ALL_HAVE_AKTIONEN",
+        len(empty_abschnitte) == 0,
+        f"ALGO: {len(empty_abschnitte)} Abschnitte ohne EMMA-Aktionen: {empty_abschnitte}",
+    )
 
     # Struktur-Refs valide
     all_schritt_ids_final = set(struct_art.schritte.keys())
@@ -1095,21 +1144,25 @@ async def test_e2e_full_chain() -> None:
         for aid, a in abschnitte.items()
         if a.struktur_ref not in all_schritt_ids_final
     ]
-    check("ALGO_STRUKTUR_REFS_VALID",
-          len(invalid_refs) == 0,
-          f"ALGO: Ungültige struktur_refs: {invalid_refs}")
+    check(
+        "ALGO_STRUKTUR_REFS_VALID",
+        len(invalid_refs) == 0,
+        f"ALGO: Ungültige struktur_refs: {invalid_refs}",
+    )
 
     # Halluzinationscheck Algorithmus
     neg_kws_algo = expected_algo["negative_keywords"]["keywords"]
     hallucinations_algo = [kw for kw in neg_kws_algo if kw.lower() in all_algo_text_final]
     if hallucinations_algo:
         print(f"  WARNUNG Halluzinationen Algorithmus: {hallucinations_algo}")
-    check("CP_no_hallucination_algo",
-          len(hallucinations_algo) == 0,
-          f"Halluzinationen in Algorithmus: {hallucinations_algo}")
+    check(
+        "CP_no_hallucination_algo",
+        len(hallucinations_algo) == 0,
+        f"Halluzinationen in Algorithmus: {hallucinations_algo}",
+    )
 
     # Konzept-Abdeckung Algorithmus (soft)
-    print(f"\n  KONZEPT-ABDECKUNG ALGORITHMUS (soft)")
+    print("\n  KONZEPT-ABDECKUNG ALGORITHMUS (soft)")
     for concept in expected_algo["expected_abschnitte"]:
         kws = concept.get("keywords", [])
         found = [kw for kw in kws if kw.lower() in all_algo_text_final]
@@ -1137,7 +1190,9 @@ async def test_e2e_full_chain() -> None:
         with_q = [e for e in mode_turns if "?" in e["nutzeraeusserung_preview"]]
         ratio = len(with_q) / len(mode_turns) if mode_turns else 0
         status = "OK" if ratio >= 0.5 else "LOW"
-        print(f"  {status}: {phase_label}: {len(with_q)}/{len(mode_turns)} Turns mit Frage ({ratio:.0%})")
+        print(
+            f"  {status}: {phase_label}: {len(with_q)}/{len(mode_turns)} Turns mit Frage ({ratio:.0%})"
+        )
         check(
             f"CP_asks_questions_{mode_name}",
             ratio >= 0.4,
@@ -1192,7 +1247,7 @@ async def test_e2e_full_chain() -> None:
     print(f"{'=' * 72}")
     passed = sum(1 for v in checkpoint_results.values() if v)
     total = len(checkpoint_results)
-    failed = [cp for cp, ok in checkpoint_results.items() if not ok]
+    _failed = [cp for cp, ok in checkpoint_results.items() if not ok]
 
     print(f"  Turns executed:          {turn_nr}")
     print(f"  Checkpoints passed:      {passed}/{total}")
@@ -1203,7 +1258,9 @@ async def test_e2e_full_chain() -> None:
     print(f"  Algorithm abschnitte:    {len(abschnitte)}")
     print(f"  EMMA-Typen:              {sorted(all_emma_types)}")
     print(f"  Halluzinationen (exp):   {hallucinations_exp if hallucinations_exp else 'Keine'}")
-    print(f"  Halluzinationen (struct):{hallucinations_struct if hallucinations_struct else 'Keine'}")
+    print(
+        f"  Halluzinationen (struct):{hallucinations_struct if hallucinations_struct else 'Keine'}"
+    )
     print(f"  Halluzinationen (algo):  {hallucinations_algo if hallucinations_algo else 'Keine'}")
     print()
     for cp_name, cp_ok in sorted(checkpoint_results.items()):

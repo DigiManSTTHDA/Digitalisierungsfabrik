@@ -87,7 +87,7 @@ def _build_first_turn_directive(context: ModeContext) -> str:
 def _apply_guardrails(
     llm_phasenstatus: Phasenstatus,
     context: ModeContext,
-    patches: list[dict],
+    patches: list[dict],  # type: ignore[type-arg]
 ) -> Phasenstatus:
     """Deterministic guardrails on the LLM's phasenstatus decision.
 

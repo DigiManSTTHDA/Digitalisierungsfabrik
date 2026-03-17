@@ -31,6 +31,7 @@ from modes.moderator import Moderator
 from modes.specification import SpecificationMode
 from modes.structuring import StructuringMode
 from modes.validation import ValidationMode
+from core.models import Project
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
@@ -61,7 +62,7 @@ def _make_orchestrator(repo: ProjectRepository) -> Orchestrator:
     return Orchestrator(repository=repo, modes=_make_default_modes())
 
 
-def _set_exploration_mode(repo: ProjectRepository, project) -> None:  # type: ignore[type-arg]
+def _set_exploration_mode(repo: ProjectRepository, project: Project) -> None:
     """Force a freshly-created project into exploration mode (FR-D-11 changed default to moderator)."""
     project.aktiver_modus = "exploration"
     project.working_memory.aktiver_modus = "exploration"
