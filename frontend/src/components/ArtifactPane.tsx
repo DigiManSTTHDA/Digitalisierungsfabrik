@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { useSession } from "../store/session";
 import { ArtifactTab } from "./ArtifactTab";
+import { ExportButton } from "./ExportButton";
 
 const TABS = [
   { key: "exploration", label: "Exploration" },
@@ -54,6 +55,7 @@ export function ArtifactPane() {
         type={activeTab as "exploration" | "struktur" | "algorithmus"}
         flaggedSlots={flaggedSlots}
       />
+      <ExportButton />
     </div>
   );
 }
