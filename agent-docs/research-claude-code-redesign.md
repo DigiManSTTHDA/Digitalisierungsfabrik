@@ -438,7 +438,61 @@ Nicht mitnehmen → Orchestrator, Executor, Working Memory,
 
 ---
 
-## Anhang A: Agentic AI Landschaft (März 2026)
+## Anhang A: Kritische Detailerkenntnisse aus der Research
+
+### A.1 Hooks als stärkster Fit für Phasensteuerung
+
+Hooks sind **deterministisch** — im Gegensatz zu CLAUDE.md-Instruktionen, die in langen Sessions ignoriert werden können, werden Hooks **jedes Mal** ausgeführt.
+
+**Konkretes Beispiel — Phasengate:**
+- Phase-Status in `projekte/{name}/status.json` speichern
+- **PreToolUse-Hook** matched auf Schreibzugriffe auf Phase-2-Artefakte
+- Hook prüft `status.json`: Wenn `phase_1_complete: false` → Exit-Code 2 (blockiert Aktion)
+- Claude erhält das Feedback und passt sein Verhalten an
+
+**Drei Handler-Typen verfügbar:**
+1. **Command Hooks** — Shell-Skripte für einfache Checks (Phasengate)
+2. **Prompt Hooks** — Schneller LLM-Call (Haiku) für semantische Bewertung ("Ist dieses Explorationsartefakt vollständig genug?")
+3. **Agent Hooks** — Sub-Agent mit Tool-Zugriff für Multi-Turn-Verifikation
+
+Der **Prompt Hook** ist besonders interessant: ein leichtgewichtiger LLM-Call bewertet ob ein Artefakt Qualitätskriterien erfüllt — das ist im Wesentlichen das, was der Orchestrator heute tut, nur als Hook statt als Python-Code.
+
+### A.2 Agent SDK Hybrid-Pattern (empfohlener Produktionsansatz)
+
+Das Agent SDK bietet **out of the box:**
+- Agent Loop mit automatischem Tool-Execution
+- Context Management mit automatischer Kompaktierung (lange Sessions)
+- File-Operationen, Shell-Commands, MCP-Integration
+- Custom Tools via `createSdkMcpServer` und `tool`-Helper
+- Subagents mit unabhängigem Kontext
+- Skills aus `.claude/skills/`
+- Session Management und Persistenz
+
+**Mapping auf aktuelle Architektur:**
+
+| Aspekt | Custom App (jetzt) | Agent SDK Ansatz |
+|--------|-------------------|-----------------|
+| Agent Loop | 11-Schritt-Orchestrator (handgebaut) | Built-in, handled Retries/Errors |
+| Context Management | Manuell | Automatische Kompaktierung |
+| Tool Execution | Custom Implementation | Deklarative Tool-Definitionen |
+| Frontend | React + WebSocket | Weiterhin selbst gebaut |
+| State Persistence | SQLite mit Versionierung | Files oder DB (selbst implementiert) |
+
+### A.3 Prompt-Driven vs. Code-Driven: Praxis-Erkenntnisse 2026
+
+**CLAUDE.md sollte unter ~300 Zeilen / ~2.500 Tokens bleiben** (Anthropic interne Praxis).
+
+**Der emerging Middle Ground:**
+- **CLAUDE.md** für kurze, immer-gültige Projektkonventionen (~300 Zeilen)
+- **Skills** für domänenspezifisches Verhalten (kognitive Modi) — lazy-loaded
+- **Hooks** für Invarianten die IMMER gelten müssen (Phasengates, Validierung)
+- **Code** für alles was deterministisch, auditierbar oder testbar sein muss (Schema-Validierung, Persistenz, API)
+
+**Risiko:** Prompt-Instruktionen sind **advisory, nicht deterministisch**. Claude kann in langen Sessions von Instruktionen abdriften. Deshalb sind Hooks für kritische Geschäftsregeln unverzichtbar.
+
+---
+
+## Anhang B: Agentic AI Landschaft (März 2026)
 
 ### Relevante Frameworks
 
@@ -462,7 +516,7 @@ Nicht mitnehmen → Orchestrator, Executor, Working Memory,
 
 ---
 
-## Anhang B: Komponentenmapping (v1 → v2)
+## Anhang C: Komponentenmapping (v1 → v2)
 
 | v1 Komponente | Datei(en) | v2 Äquivalent |
 |---------------|-----------|---------------|
