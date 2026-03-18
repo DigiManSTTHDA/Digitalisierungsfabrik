@@ -503,6 +503,53 @@ Bestehende Szenarien um Nutzerprofile anreichern oder dezidierte Profil-Szenarie
 
 ---
 
+## Nachtrag: Befunde aus der Backend-Analyse
+
+### Befund A: Moderator-Uebergabe-Logik (VORRANG-REGEL)
+
+Der Moderator hat eine hartcodierte Regel: Zustimmungsausdruecke ("ja", "okay", "los", "gut", "klar", "weiter") werden **immer** als `uebergabe=true` interpretiert. Das bedeutet:
+
+- Wenn der Nutzer "Ja, aber..." sagt, wird er trotzdem weitergeleitet
+- Kein Szenario testet **ambige Zustimmung** ("Ja, aber ich hab noch eine Frage")
+- Kein Szenario testet **falsch-positive Uebergabe** ("Gut, dass Sie das sagen, aber nein")
+
+**Empfehlung:** BehaviorProbe in S01 oder neues Szenario: Nutzer sagt etwas das mit "Ja" beginnt aber eine Verneinung enthaelt. System sollte nicht vorschnell uebergeben.
+
+### Befund B: Dialog-History-Limit ist extrem niedrig
+
+`config.py` setzt `dialog_history_n: int = 3` — nur die letzten 3 Turns werden dem LLM als Kontext mitgegeben. Das SDD erwaehnt 20 Turns. Bei einem Szenario mit 40+ Turns koennte das System frueh den Kontext verlieren.
+
+**Empfehlung:**
+- Szenario S01 sollte explizit pruefen ob das System nach Turn 20 noch Bezug auf fruehere Aussagen nehmen kann
+- InvariantChecker: Pruefe ob Artefakt-Inhalte, die auf fruehere Turns zurueckgehen, nach Turn N noch korrekt sind
+- Konfigurationsparameter `dialog_history_n` im Test-Setup dokumentieren — bei zu niedrigem Wert werden Verhaltensbewertungen verfaelscht
+
+### Befund C: Patch-Merging in Exploration — Inhalt wird konkateniert, nicht ersetzt
+
+Der ExplorationMode konkateniert neue Slot-Inhalte mit bestehenden (statt zu ueberschreiben). Das ist fuer die Widerspruch-Korrektur (S05, E3-06) relevant: Wenn ein Widerspruch korrigiert wird, steht moeglicherweise **sowohl die alte als auch die neue Information** im Slot.
+
+**Empfehlung:**
+- BehaviorProbe nach Widerspruch-Korrektur: Pruefe ob der **veraltete** Inhalt noch im Slot steht
+- Assertion: Nach E3-06 darf "manuell durchklicken" nicht mehr im Slot stehen (laut Playbook), aber Patch-Merging koennte beides behalten
+
+### Befund D: Structuring/Specification haben First-Turn-Directives
+
+Beide Modi haben `_build_first_turn_directive()`: Wenn das jeweilige Artefakt leer ist, **muss** das LLM im ersten Turn alle erkennbaren Schritte/Abschnitte anlegen. Das ist ein kritischer Moment — ein einzelner LLM-Call erzeugt die gesamte Grundstruktur.
+
+**Empfehlung:**
+- TurnExpectation fuer den ersten Turn nach Phasenwechsel (Structuring, Specification): `slots_should_increase: true` mit hoher Erwartung (>= 5 Schritte, >= 6 Abschnitte)
+- Wenn der erste Turn fehlschlaegt, ist die gesamte Phase kompromittiert — expliziter Testfall
+
+### Befund E: Executor hat Invalidation-Detection (Structure → Algorithm)
+
+Wenn ein Strukturschritt geaendert wird (beschreibung, typ, bedingung, ausnahme_beschreibung), werden alle referenzierten Algorithmusabschnitte automatisch auf `status: invalidiert` gesetzt. Das ist ein **kaskadeneffekt** den kein Szenario explizit testet.
+
+**Empfehlung:**
+- Szenario S05 (Widersprueche) erweitern: Nach Korrektur in Phase 3 pruefen ob betroffene Algorithmusabschnitte invalidiert wurden
+- Assertion: `status === "invalidiert"` fuer betroffene Abschnitte nach Struktur-Aenderung
+
+---
+
 ## Anmerkung zur Test-Harness-Architektur
 
 Der Plan sieht eine sinnvolle Architektur vor (ScenarioRunner + Evaluator + Reporter). Fuer die Erweiterbarkeit empfehle ich zusaetzlich:
