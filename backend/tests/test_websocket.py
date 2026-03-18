@@ -236,6 +236,71 @@ def test_websocket_turn_missing_text(ws_setup) -> None:  # type: ignore[no-untyp
     assert "text" in event["message"].lower()
 
 
+def test_auto_moderator_call_after_phase_complete(ws_setup) -> None:  # type: ignore[no-untyped-def]
+    """Nach einem Turn mit phase_complete-Flag und aktiver_modus=moderator werden zwei Outputs gesendet."""
+    app, db, repo, pid = ws_setup
+
+    # Erster Output: phase_complete, wechselt zu moderator
+    wm_phase_complete = WorkingMemory(
+        projekt_id=pid,
+        aktive_phase="exploration",  # type: ignore[arg-type]
+        aktiver_modus="moderator",
+        phasenstatus=Phasenstatus.phase_complete,
+        letzte_aenderung=datetime.now(tz=UTC),
+    )
+    first_output = TurnOutput(
+        nutzeraeusserung="Die Phase ist abgeschlossen.",
+        phasenstatus=Phasenstatus.phase_complete,
+        flags=["phase_complete"],
+        working_memory=wm_phase_complete,
+    )
+
+    # Zweiter Output: Moderator-Greeting
+    wm_moderator = WorkingMemory(
+        projekt_id=pid,
+        aktive_phase="exploration",  # type: ignore[arg-type]
+        aktiver_modus="moderator",
+        phasenstatus=Phasenstatus.in_progress,
+        letzte_aenderung=datetime.now(tz=UTC),
+    )
+    greeting_output = TurnOutput(
+        nutzeraeusserung="Möchten Sie mit der Strukturierung fortfahren?",
+        phasenstatus=Phasenstatus.in_progress,
+        flags=[],
+        working_memory=wm_moderator,
+    )
+
+    call_count = 0
+
+    async def mock_process_turn(project_id, turn_input):  # type: ignore[no-untyped-def]
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return first_output
+        return greeting_output
+
+    with patch("api.websocket._build_orchestrator") as mock_build:
+        mock_orch = AsyncMock()
+        mock_orch.process_turn.side_effect = mock_process_turn
+        mock_build.return_value = mock_orch
+
+        with patch("api.websocket.Database", return_value=db):
+            with patch("api.websocket.ProjectRepository", return_value=repo):
+                client = TestClient(app)
+                with client.websocket_connect(f"/ws/session/{pid}") as ws:
+                    ws.send_text(json.dumps({"type": "turn", "text": "Ja, passt so"}))
+                    # Erster Output: 6 Events (chat_done + 3x artifact + progress + debug)
+                    # Zweiter Output (Greeting): 6 Events
+                    events = [ws.receive_json() for _ in range(12)]
+
+    # Beide Outputs wurden gesendet
+    assert mock_orch.process_turn.call_count == 2
+    chat_messages = [e["message"] for e in events if e["event"] == "chat_done"]
+    assert len(chat_messages) == 2
+    assert "Phase ist abgeschlossen" in chat_messages[0]
+    assert "Strukturierung" in chat_messages[1]
+
+
 def test_websocket_turn_output_error_field(ws_setup) -> None:  # type: ignore[no-untyped-def]
     """When TurnOutput.error is set, an ErrorEvent is sent instead of normal events."""
     app, db, repo, pid = ws_setup

@@ -983,6 +983,103 @@ async def test_phase_transition_advances_directly_to_primary_mode() -> None:
     assert reloaded.aktiver_modus == "structuring"
 
 
+# ---------------------------------------------------------------------------
+# S1-T1 — Patch-Retry-Logik (B1)
+# ---------------------------------------------------------------------------
+
+
+def _set_structuring_mode(repo: ProjectRepository, project: Project) -> None:
+    """Force a project into structuring mode (needed for structure template validation)."""
+    project.aktiver_modus = "structuring"
+    project.aktive_phase = Projektphase.strukturierung
+    project.working_memory.aktiver_modus = "structuring"
+    project.working_memory.aktive_phase = Projektphase.strukturierung
+    repo.save(project)
+
+
+@pytest.mark.asyncio
+async def test_patch_retry_with_error_hint() -> None:
+    """Nach ungültigen Patch-Pfaden wird der Modus mit error_hint im Kontext erneut aufgerufen.
+
+    Verwendet /prozesszusammenfassung: gültig im Structure-Template,
+    aber kein bekanntes Präfix für infer_artifact_type → löst Retry aus.
+    """
+    received_hints: list[str | None] = []
+
+    class HintCapturingMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            received_hints.append(context.error_hint)
+            # /prozesszusammenfassung: passes structure template, fails infer_artifact_type
+            return ModeOutput(
+                nutzeraeusserung="patch attempt",
+                patches=[{"op": "replace", "path": "/prozesszusammenfassung", "value": "x"}],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Retry-Test")
+    _set_structuring_mode(repo, project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"structuring": HintCapturingMode(), "moderator": Moderator()},
+    )
+
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+
+    # Ergebnis: Fehler nach allen Retries
+    assert result.error is not None
+    assert "Ein interner Fehler" in result.error
+
+    # Erster Aufruf ohne Hint, dann Retries mit Hint
+    assert received_hints[0] is None
+    for hint in received_hints[1:]:
+        assert hint is not None
+        assert "ungültigen Pfaden" in hint or "Versuch" in hint
+
+
+@pytest.mark.asyncio
+async def test_patch_retry_succeeds_on_second_attempt() -> None:
+    """Wenn der zweite Versuch gültige Patches liefert, wird kein Fehler zurückgegeben."""
+    call_count = 0
+
+    class EventuallyValidMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # Erster Aufruf: Pfad passt nicht zu infer_artifact_type
+                return ModeOutput(
+                    nutzeraeusserung="erster Versuch",
+                    patches=[{"op": "replace", "path": "/prozesszusammenfassung", "value": "x"}],
+                    phasenstatus=Phasenstatus.in_progress,
+                    flags=[],
+                )
+            # Zweiter Aufruf: keine Patches (gültig)
+            return ModeOutput(
+                nutzeraeusserung="kein Patch diesmal",
+                patches=[],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Retry-Success-Test")
+    _set_structuring_mode(repo, project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"structuring": EventuallyValidMode(), "moderator": Moderator()},
+    )
+
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+    assert result.error is None
+    assert call_count == 2
+
+
 @pytest.mark.asyncio
 async def test_moderator_return_to_mode_without_previous_uses_phase_primary() -> None:
     """FR-D-11: return_to_mode with no vorheriger_modus switches to phase primary mode."""

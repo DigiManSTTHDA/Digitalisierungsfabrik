@@ -58,6 +58,11 @@ class ModeContext(BaseModel):
     dialog_history: list[dict]  # type: ignore[type-arg]  # [{role, inhalt, timestamp}]
     completeness_state: dict[str, CompletenessStatus] = Field(default_factory=dict)
     artifact_template: ArtifactTemplate | None = None
+    error_hint: str | None = None  # Retry-Hint bei ungültigen Patches (S1-T1)
+
+    def with_error_hint(self, hint: str) -> "ModeContext":
+        """Kopie des Kontexts mit gesetztem error_hint zurückgeben (S1-T1)."""
+        return self.model_copy(update={"error_hint": hint})
 
 
 class ModeOutput(BaseModel):

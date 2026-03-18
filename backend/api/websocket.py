@@ -22,6 +22,7 @@ from core.events import (
     ProgressUpdateEvent,
 )
 from core.orchestrator import Orchestrator, TurnInput, TurnOutput
+from modes.base import Flag
 from modes.exploration import ExplorationMode
 from modes.specification import SpecificationMode
 from modes.structuring import StructuringMode
@@ -235,6 +236,22 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
                             recoverable=True,
                         ),
                     )
+                    continue
+
+                # Auto-Moderator-Greeting nach phase_complete (S1-T2 / B2, B3)
+                if (
+                    Flag.phase_complete.value in output.flags
+                    and output.working_memory.aktiver_modus == "moderator"
+                ):
+                    log.info("websocket.moderator_auto_greeting", trigger="phase_complete")
+                    try:
+                        moderator_output = await orchestrator.process_turn(
+                            project_id,
+                            TurnInput(text="[Moderator-Einleitung nach Phasenwechsel]"),
+                        )
+                        await _send_turn_events(ws, moderator_output, repo, project_id)
+                    except Exception:
+                        log.exception("websocket.moderator_auto_greeting_error")
 
             elif msg_type == "panic":
                 # FR-D-03: Panic button activates Moderator

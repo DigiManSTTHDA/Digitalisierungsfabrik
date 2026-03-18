@@ -125,3 +125,43 @@ async def test_moderator_stub_includes_vorheriger_modus() -> None:
     ctx = _make_context(vorheriger_modus="exploration")
     output = await mod.call(ctx)
     assert "exploration" in output.nutzeraeusserung
+
+
+@pytest.mark.asyncio
+async def test_moderator_writes_intro_on_phase_complete_trigger() -> None:
+    """Moderator mit Mock-LLM produziert bei Trigger-Text eine nicht-leere Einleitungsnachricht."""
+    from unittest.mock import AsyncMock
+
+    from llm.base import LLMResponse
+
+    mock_llm = AsyncMock()
+    mock_llm.complete = AsyncMock(
+        return_value=LLMResponse(
+            nutzeraeusserung=(
+                "Die Explorationsphase ist abgeschlossen — wir haben Ihren Prozess vollständig "
+                "erfasst. In der Strukturierungsphase ordnen wir die gesammelten Informationen. "
+                "Möchten Sie mit der Strukturierung fortfahren?"
+            ),
+            tool_input={},
+        )
+    )
+    mod = Moderator(llm_client=mock_llm)
+    ctx = _make_context(vorheriger_modus="exploration")
+
+    # Dialog-Eintrag mit dem Trigger-Text simulieren
+    ctx = ctx.model_copy(
+        update={
+            "dialog_history": [
+                {"role": "user", "inhalt": "[Moderator-Einleitung nach Phasenwechsel]", "timestamp": "2026-01-01"},
+            ]
+        }
+    )
+    output = await mod.call(ctx)
+
+    assert len(output.nutzeraeusserung) > 0
+    assert output.patches == []
+
+    # System-Prompt muss die Trigger-Anweisung enthalten
+    call_kwargs = mock_llm.complete.call_args
+    system_prompt = call_kwargs.kwargs.get("system") or call_kwargs.args[0]
+    assert "Phasenwechsel" in system_prompt or "Einleitung" in system_prompt

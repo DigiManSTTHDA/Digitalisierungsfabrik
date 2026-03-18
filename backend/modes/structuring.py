@@ -16,6 +16,7 @@ from pathlib import Path
 
 from artifacts.models import CompletenessStatus, Phasenstatus
 from core.context_assembler import prompt_context_summary
+from core.patch_summarizer import summarize_patches
 from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput, translate_dialog_history
@@ -153,6 +154,10 @@ class StructuringMode(BaseMode):
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
         system_prompt += _build_first_turn_directive(context)
 
+        # Retry-Hint bei ungültigen Patch-Pfaden (S1-T1)
+        if context.error_hint:
+            system_prompt += f"\n\n## FEHLER-HINWEIS\n\n{context.error_hint}"
+
         messages = translate_dialog_history(context.dialog_history)
 
         response = await self._llm_client.complete(
@@ -177,8 +182,16 @@ class StructuringMode(BaseMode):
         if phasenstatus == Phasenstatus.phase_complete:
             flags.append(Flag.phase_complete)
 
+        # Deterministischer Summarizer: überschreibt LLM-Bestätigung bei Patches (S2-T3)
+        # Verhindert halluzinierte Bestätigungen (B10).
+        # Wenn keine Patches vorhanden: LLM-Text bleibt (Rückfragen, Einleitungen).
+        if patches:
+            nutzeraeusserung = summarize_patches(patches, context.structure_artifact)
+        else:
+            nutzeraeusserung = response.nutzeraeusserung
+
         return ModeOutput(
-            nutzeraeusserung=response.nutzeraeusserung,
+            nutzeraeusserung=nutzeraeusserung,
             patches=patches,
             phasenstatus=phasenstatus,
             flags=flags,

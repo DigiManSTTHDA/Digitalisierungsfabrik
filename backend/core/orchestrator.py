@@ -130,16 +130,47 @@ class Orchestrator:
                 internal="Output-Kontrakt-Verletzung: ModeOutput ungültig",
             )
 
-        # Schritt 7: Patches anwenden (wenn vorhanden)
+        # Schritt 7: Patches anwenden (wenn vorhanden) — mit Retry-Logik (S1-T1)
+        _MAX_PATCH_RETRIES = 2
+        _PATCH_RETRY_HINT = (
+            "ACHTUNG: Der letzte Aufruf produzierte Patches mit ungültigen Pfaden. "
+            "Verwende AUSSCHLIESSLICH Pfade mit diesen Präfixen: "
+            "/schritte/{sid}/..., /slots/{slot_id}/..., /abschnitte/{aid}/... "
+            "Numerische Indizes wie /schritte/0/ sind ungültig."
+        )
+
         if mode_output.patches:
             artifact_type = infer_artifact_type(mode_output.patches)
+
+            if artifact_type is None:
+                for attempt in range(_MAX_PATCH_RETRIES):
+                    log.warning("orchestrator.patch_retry", attempt=attempt + 1)
+                    retry_context = context.with_error_hint(
+                        f"Versuch {attempt + 1}: {_PATCH_RETRY_HINT}"
+                    )
+                    mode_output = await mode.call(retry_context)
+                    if not validate(mode_output, context.artifact_template):
+                        continue
+                    # Empty patches on retry: LLM corrected itself — proceed without patching
+                    if not mode_output.patches:
+                        artifact_type = "none"  # type: ignore[assignment]
+                        break
+                    artifact_type = infer_artifact_type(mode_output.patches)
+                    if artifact_type is not None:
+                        break
+
             if artifact_type is None:
                 return self._error_output(
                     wm,
-                    "Ein interner Fehler bei der Datenverarbeitung.",
-                    internal="Patch-Pfade konnten keinem Artefakttyp zugeordnet werden",
+                    "Ein interner Fehler ist aufgetreten. Bitte erneut versuchen.",
+                    internal="Patch-Pfade konnten keinem Artefakttyp zugeordnet werden (nach Retries)",
                 )
 
+            # Skip patch application if LLM corrected to empty patches on retry
+            if not mode_output.patches:
+                artifact_type = None  # reset so the block below is skipped cleanly
+
+        if mode_output.patches and artifact_type is not None:
             artifact = get_artifact(project, artifact_type)
             result = self._executor.apply_patches(artifact_type, artifact, mode_output.patches)
 
@@ -171,7 +202,9 @@ class Orchestrator:
         wm.completeness_state = completeness_state
 
         # Schritt 10: Fortschritt bewerten + Moduswechsel prüfen
-        wm = update_working_memory(wm, mode_output.phasenstatus, befuellte, bekannte)
+        wm = update_working_memory(
+            wm, mode_output.phasenstatus, befuellte, bekannte, project.structure_artifact
+        )
 
         flag_strings = [f.value for f in mode_output.flags]
         wm.flags = flag_strings
