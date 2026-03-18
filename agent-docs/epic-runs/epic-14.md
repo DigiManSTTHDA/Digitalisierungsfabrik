@@ -175,7 +175,7 @@ No API endpoints are introduced by this epic. The scenarios use existing WebSock
 
 ---
 
-## EPIC VALID: NO
+## EPIC VALID: YES (after corrections)
 
 ### Required Corrections
 
@@ -201,3 +201,9 @@ No API endpoints are introduced by this epic. The scenarios use existing WebSock
 ## Validation Log
 
 - **2026-03-18:** Initial validation performed. Result: **NOT VALID** — 4 required corrections identified. Primarily DoD completeness gaps and missing phase definitions in acceptance criteria. No structural or implementability blockers.
+- **2026-03-18:** All 4 corrections applied to `epic-14-e2e-szenario-definitionen.md`:
+  1. Removed nonexistent `frontend/test-texte/dialog-reisekosten.jsonl` reference from Story 14-02
+  2. Added explicit Spezifikation-Phase to Stories 14-03, 14-04 (S04+S05), 14-05 (S07+S08); S06 already had explicit empty arrays
+  3. Added DoD checkboxes for epic-level quality criteria (realistic messages, notes, tags) to all stories
+  4. Added Nudges DoD checkboxes to all stories; added phase coverage DoD items
+  Result: **VALID**
