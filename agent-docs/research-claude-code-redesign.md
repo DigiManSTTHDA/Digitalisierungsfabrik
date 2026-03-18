@@ -499,11 +499,14 @@ Das Agent SDK bietet **out of the box:**
 | Framework | Anbieter | Stärke | Relevanz für Digitalisierungsfabrik |
 |-----------|---------|--------|--------------------------------------|
 | **Claude Code + Agent SDK** | Anthropic | Native LLM-Integration, Skills, Hooks, Agents | ★★★★★ Höchste Relevanz |
-| **LangGraph** | LangChain | Graph-basierte Workflows, State Management | ★★★☆☆ Alternative für komplexe Flows |
-| **CrewAI** | CrewAI | Multi-Agent Kollaboration, Rollen-basiert | ★★☆☆☆ Overkill für diesen Use Case |
-| **Google ADK** | Google | Gemini-optimiert, MCP-Support, Multi-Agent | ★★☆☆☆ Vendor Lock-in (Google) |
-| **AWS Strands Agents** | Amazon | Bedrock-Integration, Enterprise-ready | ★★☆☆☆ Vendor Lock-in (AWS) |
-| **AutoGen** | Microsoft | Multi-Agent Conversations | ★★☆☆☆ Zu generisch |
+| **LangGraph** | LangChain | Graph-basierte State Machine, Checkpointing, Conditional Routing | ★★★★☆ Stärkste Alternative |
+| **CrewAI Flows** | CrewAI | Event-driven Pipelines + Rollen-basierte Crews | ★★★☆☆ Gute Alternative |
+| **Google ADK** | Google | Gemini-optimiert, Sequential/Parallel/Loop Agents | ★★☆☆☆ Vendor Lock-in (Google) |
+| **AWS Strands Agents** | Amazon | Bedrock-Integration, Enterprise-ready, bis 8h Laufzeit | ★★☆☆☆ Vendor Lock-in (AWS) |
+| **AutoGen** | Microsoft | Conversational Agent Architecture, No-Code Studio | ★★☆☆☆ Weniger strukturiert |
+| **OpenAI Agents SDK** | OpenAI | Handoffs (Agenten-Übergaben), Guardrails | ★★☆☆☆ OpenAI-Lock-in |
+
+**Wichtig:** MCP (Model Context Protocol) ist seit Dezember 2025 bei der Linux Foundation und der de-facto Standard für Agent-Tool-Integration. Über 10.000 öffentliche MCP-Server existieren. Alle großen Frameworks unterstützen MCP.
 
 ### Warum Claude Code/Agent SDK die beste Wahl ist
 
@@ -513,6 +516,46 @@ Das Agent SDK bietet **out of the box:**
 4. **Hooks für Guardrails:** Deterministische Validierung ohne Custom-Code
 5. **Agent SDK für Produktion:** Programmatische Steuerung wenn Custom-Backend nötig
 6. **Geringster Migrationsaufwand:** Prompt-zentrische Architektur passt perfekt
+
+### Alternative: LangGraph (falls Framework-Unabhängigkeit gewünscht)
+
+LangGraph v1.0 bietet graph-basierte State Machines mit:
+- **Reducer-driven State**: Explizite Zustandsverwaltung via TypedDict + Annotated
+- **Checkpointing**: Persistiert vollen Workflow-State für Pause/Resume über Sessions
+- **Conditional Edges**: Branching-Logik für Phasenübergänge
+- **Sub-Graphs**: Verschachtelte Workflows für kognitive Modi
+
+→ Wäre die stärkste Alternative, wenn Provider-Unabhängigkeit wichtig ist.
+
+---
+
+## Anhang C: Akademische Forschung — KI-gestützte Prozesselizitierung
+
+### LLMREI: LLM-based Requirements Elicitation Interviews
+- LLM-Bots für Requirements-Elicitation erreichen **vergleichbare Performance wie menschliche Interviewer**
+- Kernregeln: **Eine Frage pro Turn**, strukturierter System-Prompt mit Rollenbeschreibung + 5-Schritt-Prozess
+- Selbst minimale, sorgfältig designte Prompts ermöglichen effektive Interview-Bots
+- Quelle: [arxiv.org/html/2507.02564v1](https://arxiv.org/html/2507.02564v1)
+
+### BPMN-Chatbot (Uni Klagenfurt)
+- Web-basiertes Tool für interaktive BPMN-Generierung via Text/Sprache
+- Nutzt **effiziente JSON-Zwischenrepräsentation** (nicht rohes BPMN-XML)
+- Erreicht höhere Korrektheit bei **bis zu 94% weniger Tokens**
+- Quelle: [ceur-ws.org/Vol-3758/paper-15.pdf](https://ceur-ws.org/Vol-3758/paper-15.pdf)
+
+### BPMN Assistant
+- LLM-Tool für Natural-Language-BPMN-Erstellung/-Bearbeitung
+- Nutzt **spezialisierte JSON-Repräsentation** statt rohes XML
+- Analysiert User-Intent um Konversation von operativen Kommandos zu unterscheiden
+- Quelle: [arxiv.org/html/2509.24592v1](https://arxiv.org/html/2509.24592v1)
+
+### Schlüsselerkenntnis
+**Alle erfolgreichen Systeme nutzen eine strukturierte Zwischenrepräsentation (JSON, POWL, Mermaid) statt direkte BPMN-XML-Generierung.** Das bestätigt den Ansatz der Digitalisierungsfabrik mit dict-keyed JSON-Artefakten.
+
+### Kommerzielle Parallelen
+- **Worktrace AI** ($9M, OpenAI/Conviction-backed): Agent der Arbeitsabläufe am Desktop beobachtet, SOPs dokumentiert und automatisierbare Workflows identifiziert
+- **Celonis MCP Server**: Erster Process-Mining-MCP-Server für KI-Agenten mit dynamischem operativen Kontext
+- **Betty Blocks / Bonitasoft**: Conversational BPMN-Generierung → funktionale Applikationen
 
 ---
 
