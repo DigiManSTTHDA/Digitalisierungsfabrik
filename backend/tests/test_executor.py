@@ -75,6 +75,74 @@ class TestTemplatesDict:
 
 
 # ===========================================================================
+# F1 Bug Fix — Patch-Pfad-Validierung: numerische Keys abgelehnt
+# ===========================================================================
+
+
+class TestStructureTemplateKeyFormat:
+    """Tests for F1 fix: schritte paths must use string IDs (s1, s2, ...) not numeric indices."""
+
+    def test_schema_rejects_numeric_key_for_whole_step(self) -> None:
+        """Numeric index like /schritte/0 must be rejected — schritte is a dict, not an array."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/0") is False
+
+    def test_schema_rejects_numeric_key_for_titel(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/0/titel") is False
+
+    def test_schema_rejects_numeric_key_for_beschreibung(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/0/beschreibung") is False
+
+    def test_schema_rejects_numeric_key_for_typ(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/0/typ") is False
+
+    def test_schema_accepts_string_key_s1(self) -> None:
+        """String key s1 must be accepted."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/s1") is True
+
+    def test_schema_accepts_string_key_s2(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s2/titel") is True
+
+    def test_schema_accepts_string_key_s99(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s99/beschreibung") is True
+
+    def test_schema_accepts_string_key_s01(self) -> None:
+        """Multi-digit padded keys like s01 are also valid."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/s01") is True
+
+    def test_schema_accepts_string_key_s10_titel(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s10/titel") is True
+
+    def test_schema_rejects_bare_text_key(self) -> None:
+        """Pure text key without 's' prefix must be rejected."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/schritt_1") is False
+
+    def test_schema_rejects_key_starting_with_digit(self) -> None:
+        """Key starting with a digit (no 's' prefix) must be rejected."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/1s") is False
+
+
+# ===========================================================================
+# F1b Integration — Executor produces helpful message for invalid key
+# ===========================================================================
+
+
+class TestExecutorNumericKeyMessage:
+    """Integration test: applying a patch with a numeric key produces a useful error message."""
+
+    def test_numeric_key_whole_step_rejected_by_template(
+        self, executor: Executor, structure_artifact_with_refs: StructureArtifact
+    ) -> None:
+        """Numeric path /schritte/0/titel is caught at template-schema step (Step 2)."""
+        patches = [{"op": "replace", "path": "/schritte/0/titel", "value": "Hallo"}]
+        result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
+        assert result.success is False
+        assert result.artifact is None
+        assert result.error is not None
+        # Error should mention the path/op combination — not a raw Python traceback
+        assert "/schritte/0/titel" in result.error or "Template" in result.error
+
+
+# ===========================================================================
 # Fixtures
 # ===========================================================================
 
@@ -439,7 +507,7 @@ class TestInvalidationEdgeCases:
         self, executor: Executor, structure_artifact_with_refs: StructureArtifact
     ) -> None:
         new_step = {
-            "schritt_id": "s_new",
+            "schritt_id": "s99",
             "titel": "Neu",
             "typ": "aktion",
             "beschreibung": "",
@@ -452,7 +520,7 @@ class TestInvalidationEdgeCases:
             "algorithmus_status": "ausstehend",
             "spannungsfeld": None,
         }
-        patches = [{"op": "add", "path": "/schritte/s_new", "value": new_step}]
+        patches = [{"op": "add", "path": "/schritte/s99", "value": new_step}]
         result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
         assert result.success is True
         assert result.invalidated_abschnitt_ids == []

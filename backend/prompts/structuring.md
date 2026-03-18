@@ -80,6 +80,10 @@ Du gibst pro Turn aus:
   - Neuen Schritt hinzufügen: `{"op": "add", "path": "/schritte/s1", "value": {...alle Felder...}}`
   - Feld aktualisieren: `{"op": "replace", "path": "/schritte/s1/beschreibung", "value": "..."}`
   - Zusammenfassung setzen: `{"op": "replace", "path": "/prozesszusammenfassung", "value": "..."}`
+
+**WICHTIG: Pfade für Strukturschritte IMMER mit String-ID, niemals mit Zahl:**
+- KORREKT:  `/schritte/s1/beschreibung`  ← `schritte` ist ein Dict mit String-Keys
+- FALSCH:   `/schritte/0/beschreibung`   ← Das ist ein Dict, kein Array! Numerische Indizes werden abgelehnt.
 - **phasenstatus**: Deine Einschätzung des Fortschritts:
   - `in_progress` — es fehlen noch wesentliche Strukturschritte oder Details
   - `nearing_completion` — Grundstruktur steht, nur noch Feinschliff

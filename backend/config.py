@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
     llm_log_enabled: bool = True
+    log_file: str | None = None  # Optional file path for structured log output (LOG_FILE env var)
 
 
 @lru_cache

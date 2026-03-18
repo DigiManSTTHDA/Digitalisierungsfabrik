@@ -124,7 +124,12 @@ class Executor:
         try:
             patched_data = jsonpatch.apply_patch(data, patches, in_place=False)
         except Exception as exc:
-            return self._fail(artifact_type, f"Patch-Anwendung fehlgeschlagen: {exc}")
+            msg = str(exc)
+            if "not found" in msg and "member" in msg:
+                msg = f"Patch-Pfad ungültig — Key existiert nicht im Artefakt: {exc}"
+            else:
+                msg = f"Patch-Anwendung fehlgeschlagen: {exc}"
+            return self._fail(artifact_type, msg)
 
         # Deserialize back into Pydantic model
         artifact_class = type(artifact)

@@ -78,8 +78,11 @@ def _build_first_turn_directive(context: ModeContext) -> str:
         "mindestens die Hauptschritte des Prozessablaufs. "
         "Nutze completeness_status='teilweise', da Details noch folgen.\n"
         "3. Ordne Reihenfolge und Nachfolger bereits jetzt plausibel zu.\n"
-        "4. Stelle dem Nutzer den Entwurf vor und frage: "
-        "'Ich habe [N] Schritte identifiziert. Fehlt etwas, oder soll ich etwas anpassen?'\n\n"
+        "4. Stelle dem Nutzer den Entwurf vor — liste alle Schritte kurz nummeriert auf:\n"
+        "   '1. [Titel] — [kurze Beschreibung]\n"
+        "    2. [Titel] — [kurze Beschreibung]\n"
+        "    ...\n"
+        "    Fehlt etwas, oder soll ich etwas anpassen?'\n\n"
         "WARTE NICHT auf weitere Eingaben — erstelle den Entwurf JETZT in diesem Turn."
     )
 

@@ -4,6 +4,9 @@ Factory function creates and configures the app. Module-level `app` instance
 is used by uvicorn and the test client.
 """
 
+import logging
+import logging.handlers
+
 import structlog
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,14 +23,31 @@ class HealthResponse(BaseModel):
     status: str
 
 
+def _configure_file_logging(log_file: str, log_level: int) -> None:
+    """Attach a rotating file handler to the root logger when LOG_FILE is set."""
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file,
+        maxBytes=10 * 1024 * 1024,  # 10 MB per file
+        backupCount=5,
+        encoding="utf-8",
+    )
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(logging.Formatter("%(message)s"))
+    root_logger = logging.getLogger()
+    root_logger.addHandler(file_handler)
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
 
+    log_level_int = getattr(logging, settings.log_level.upper(), logging.INFO)
+
     structlog.configure(
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(__import__("logging"), settings.log_level.upper(), 20)
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger(log_level_int),
     )
+
+    if settings.log_file:
+        _configure_file_logging(settings.log_file, log_level_int)
 
     application = FastAPI(
         title="Digitalisierungsfabrik API",

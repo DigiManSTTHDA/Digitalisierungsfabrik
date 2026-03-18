@@ -100,7 +100,9 @@ class Orchestrator:
             mode = self._modes.get("exploration")
         if mode is None:
             return self._error_output(
-                wm, f"Kein Modus '{mode_key}' registriert und kein Fallback 'exploration'"
+                wm,
+                "Ein interner Fehler ist aufgetreten.",
+                internal=f"Kein Modus '{mode_key}' registriert und kein Fallback 'exploration'",
             )
 
         # Schritt 5: Nutzerturn vorab persistieren (FR-E-07) — damit die aktuelle
@@ -122,14 +124,20 @@ class Orchestrator:
 
         # OutputValidator (SDD 6.5.2 — prüft RFC 6902 Syntax + Template-Pfade)
         if not validate(mode_output, context.artifact_template):
-            return self._error_output(wm, "Output-Kontrakt-Verletzung: ModeOutput ungültig")
+            return self._error_output(
+                wm,
+                "Die Systemantwort war fehlerhaft. Bitte erneut versuchen.",
+                internal="Output-Kontrakt-Verletzung: ModeOutput ungültig",
+            )
 
         # Schritt 7: Patches anwenden (wenn vorhanden)
         if mode_output.patches:
             artifact_type = infer_artifact_type(mode_output.patches)
             if artifact_type is None:
                 return self._error_output(
-                    wm, "Patch-Pfade konnten keinem Artefakttyp zugeordnet werden"
+                    wm,
+                    "Ein interner Fehler bei der Datenverarbeitung.",
+                    internal="Patch-Pfade konnten keinem Artefakttyp zugeordnet werden",
                 )
 
             artifact = get_artifact(project, artifact_type)
@@ -137,7 +145,11 @@ class Orchestrator:
 
             if not result.success:
                 log.warning("orchestrator.executor_failure", error=result.error)
-                return self._error_output(wm, f"Executor-Fehler: {result.error}")
+                return self._error_output(
+                    wm,
+                    "Ein interner Fehler ist aufgetreten. Bitte erneut versuchen.",
+                    internal=result.error,
+                )
 
             assert result.artifact is not None
             set_artifact(project, artifact_type, result.artifact)
@@ -180,6 +192,7 @@ class Orchestrator:
             success = do_advance_phase(project, wm)
             if success:
                 log.info("orchestrator.phase_advanced", new_phase=wm.aktive_phase.value)
+                active_flags.add(Flag.return_to_mode)  # skip extra moderator turn
 
         # Moderator signals: return to previous mode (FR-D-09 AC#4)
         # Also handles system start: if no vorheriger_modus, switch to
@@ -217,12 +230,19 @@ class Orchestrator:
             working_memory=wm,
         )
 
-    def _error_output(self, wm: WorkingMemory, error: str) -> TurnOutput:
-        """Fehler-TurnOutput ohne Zustandsänderung zurückgeben."""
+    def _error_output(
+        self, wm: WorkingMemory, user_msg: str, *, internal: str | None = None
+    ) -> TurnOutput:
+        """Fehler-TurnOutput ohne Zustandsänderung zurückgeben.
+
+        user_msg wird dem Nutzer angezeigt (generische Formulierung).
+        internal wird nur ins Log geschrieben (technisches Detail).
+        """
+        logger.warning("orchestrator.error", detail=internal or user_msg)
         return TurnOutput(
             nutzeraeusserung="",
             phasenstatus=wm.phasenstatus,
             flags=[],
             working_memory=wm,
-            error=error,
+            error=user_msg,
         )

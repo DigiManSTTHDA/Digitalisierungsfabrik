@@ -834,12 +834,13 @@ async def test_phase_complete_triggers_moderator_then_advance() -> None:
     assert reloaded1.aktiver_modus == "moderator"
 
     # Turn 2: Moderator confirms advance → phase transitions to strukturierung
+    # F3: advance_phase now auto-sets return_to_mode, so the primary mode is activated directly
     result2 = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Ja, weiter"))
     assert result2.error is None
     reloaded2 = repo.load(project.projekt_id)
     assert reloaded2.aktive_phase == Projektphase.strukturierung
-    # Per SDD 6.1.2, moderator introduces the new phase; primary mode is in vorheriger_modus
-    assert reloaded2.aktiver_modus == "moderator"
+    # F3 fix: after advance_phase succeeds, return_to_mode is auto-set → switches to primary mode
+    assert reloaded2.aktiver_modus == "structuring"
 
 
 @pytest.mark.asyncio
@@ -867,6 +868,119 @@ async def test_moderator_return_to_mode_restores_previous() -> None:
     reloaded = repo.load(project.projekt_id)
     assert reloaded.aktiver_modus == "exploration"
     assert reloaded.working_memory.vorheriger_modus is None
+
+
+# ---------------------------------------------------------------------------
+# F2 — Error sanitization: user-visible messages must be generic
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_error_output_sanitizes_user_message() -> None:
+    """TurnOutput.error shown to the user must not contain internal technical details."""
+
+    class BadPatchMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            # Patch that passes OutputValidator but fails at Executor level (template schema)
+            return ModeOutput(
+                nutzeraeusserung="patch attempt",
+                patches=[{"op": "replace", "path": "/invalid_path", "value": "x"}],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Error-Sanitize-Test")
+    _set_exploration_mode(repo, project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"exploration": BadPatchMode(), "moderator": Moderator()},
+    )
+
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+    assert result.error is not None
+    # User-facing message must not contain raw Python exceptions or technical detail strings
+    assert "Executor-Fehler" not in result.error
+    assert "Output-Kontrakt" not in result.error
+    assert "Patch-Pfade konnten" not in result.error
+    assert "Kein Modus" not in result.error
+
+
+@pytest.mark.asyncio
+async def test_error_output_executor_failure_generic_message() -> None:
+    """When executor fails, the user sees a generic error, not the raw executor detail."""
+
+    class InvalidPatchMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            return ModeOutput(
+                nutzeraeusserung="patch attempt",
+                patches=[{"op": "replace", "path": "/invalid_path", "value": "x"}],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Generic-Error-Test")
+    _set_exploration_mode(repo, project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"exploration": InvalidPatchMode(), "moderator": Moderator()},
+    )
+
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+    assert result.error is not None
+    # The user-visible error message should be a short, friendly German sentence
+    assert len(result.error) < 200  # not a raw stack trace or repr()
+    assert "Ein interner Fehler" in result.error or "fehlerhaft" in result.error or "Datenverarbeitung" in result.error
+
+
+# ---------------------------------------------------------------------------
+# F3 — Phase transition: advance_phase auto-triggers return_to_mode
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_phase_transition_advances_directly_to_primary_mode() -> None:
+    """After advance_phase, aktiver_modus should be the new phase's primary mode (F3 fix)."""
+
+    class AdvanceMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            return ModeOutput(
+                nutzeraeusserung="Phasenwechsel.",
+                patches=[],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[Flag.advance_phase],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Phase-Direct-Test")
+
+    # Start in exploration phase, moderator mode (as after phase_complete trigger)
+    project.working_memory.aktiver_modus = "moderator"
+    project.working_memory.vorheriger_modus = "exploration"
+    project.aktiver_modus = "moderator"
+    repo.save(project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={
+            "exploration": ExplorationMode(),
+            "moderator": AdvanceMode(),
+            "structuring": ExplorationMode(),  # stub for primary mode
+        },
+    )
+
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Weiter"))
+    assert result.error is None
+    reloaded = repo.load(project.projekt_id)
+    # F3: advance_phase auto-sets return_to_mode → primary mode activated directly
+    assert reloaded.aktive_phase == Projektphase.strukturierung
+    assert reloaded.aktiver_modus == "structuring"
 
 
 @pytest.mark.asyncio

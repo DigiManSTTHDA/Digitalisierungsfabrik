@@ -403,7 +403,9 @@ async def test_output_validator_rejects_invalid_path() -> None:
     # The init patches (9 Pflicht-Slots) are combined with the invalid LLM patch.
     # The validator should reject the combined patches because of the invalid path.
     assert result.error is not None
-    assert "Kontrakt" in result.error or "ungültig" in result.error.lower()
+    # F2 fix: user-visible error is a generic German message (no internal technical details)
+    assert len(result.error) > 0
+    assert "fehlerhaft" in result.error.lower() or "Fehler" in result.error
 
     # Artifact should be unchanged (no patches applied)
     reloaded = repo.load(project.projekt_id)
