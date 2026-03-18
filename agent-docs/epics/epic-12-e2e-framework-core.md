@@ -80,11 +80,11 @@ Szenario S02 (Happy Path).
 
 **Definition of Done:**
 
-- [ ] `e2e/package.json` existiert mit korrekten Feldern
-- [ ] `e2e/tsconfig.json` existiert mit `strict: true`
-- [ ] `e2e/.gitignore` enthält `node_modules/` und `reports/`
-- [ ] `npm install` in `e2e/` exit 0
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/package.json` existiert mit korrekten Feldern
+- [x] `e2e/tsconfig.json` existiert mit `strict: true`
+- [x] `e2e/.gitignore` enthält `node_modules/` und `reports/`
+- [x] `npm install` in `e2e/` exit 0
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -211,17 +211,17 @@ Szenario S02 (Happy Path).
 
 **Definition of Done:**
 
-- [ ] `e2e/framework/types.ts` existiert
-- [ ] Scenario + ScenarioIntent + ScenarioPhases Interfaces mit allen AC-Feldern
-- [ ] Turn + TurnExpectation Interfaces mit allen AC-Feldern
-- [ ] BehaviorProbe + BehaviorProbeCheck Interfaces mit allen AC-Feldern
-- [ ] TurnRecord + TurnState + ArtifactSnapshots Interfaces mit allen AC-Feldern
-- [ ] TurnEvaluation + BehaviorProbeResult + TurnMetrics Interfaces mit allen AC-Feldern
-- [ ] ScenarioResult + AssertionResult + BehaviorScore Interfaces mit allen AC-Feldern
-- [ ] TurnResponse Interface mit allen AC-Feldern
-- [ ] Alle 18 Interfaces exportiert
-- [ ] `e2e/framework/types.ts` ist ≤ 300 Zeilen
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/framework/types.ts` existiert
+- [x] Scenario + ScenarioIntent + ScenarioPhases Interfaces mit allen AC-Feldern
+- [x] Turn + TurnExpectation Interfaces mit allen AC-Feldern
+- [x] BehaviorProbe + BehaviorProbeCheck Interfaces mit allen AC-Feldern
+- [x] TurnRecord + TurnState + ArtifactSnapshots Interfaces mit allen AC-Feldern
+- [x] TurnEvaluation + BehaviorProbeResult + TurnMetrics Interfaces mit allen AC-Feldern
+- [x] ScenarioResult + AssertionResult + BehaviorScore Interfaces mit allen AC-Feldern
+- [x] TurnResponse Interface mit allen AC-Feldern
+- [x] Alle 18 Interfaces exportiert
+- [x] `e2e/framework/types.ts` ist ≤ 300 Zeilen (170 Zeilen)
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -264,16 +264,16 @@ Szenario S02 (Happy Path).
 
 **Definition of Done:**
 
-- [ ] `e2e/framework/ws-client.ts` existiert und exportiert `SessionClient`
-- [ ] Constructor akzeptiert `baseUrl` mit Default `http://localhost:8000`
-- [ ] `createProject()` erstellt Projekt via REST API
-- [ ] `sendMessage()` kommuniziert via WebSocket und gibt `TurnResponse` zurück
-- [ ] `pressButton()` sendet Panik-Button via WebSocket
-- [ ] `getArtifacts()` liest Artefakte via REST API
-- [ ] Timeout- und Fehlerbehandlung implementiert (ConnectionError, TimeoutError, BackendError)
-- [ ] `TurnResponse` Type in `types.ts` definiert (Story 12-02 AC18)
-- [ ] `e2e/framework/ws-client.ts` ist ≤ 300 Zeilen
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/framework/ws-client.ts` existiert und exportiert `SessionClient`
+- [x] Constructor akzeptiert `baseUrl` mit Default `http://localhost:8000`
+- [x] `createProject()` erstellt Projekt via REST API
+- [x] `sendMessage()` kommuniziert via WebSocket und gibt `TurnResponse` zurück
+- [x] `pressButton()` sendet Panik-Button via WebSocket
+- [x] `getArtifacts()` liest Artefakte via REST API
+- [x] Timeout- und Fehlerbehandlung implementiert (ConnectionError, TimeoutError, BackendError)
+- [x] `TurnResponse` Type in `types.ts` definiert (Story 12-02 AC18)
+- [x] `e2e/framework/ws-client.ts` ist ≤ 300 Zeilen (259 Zeilen)
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -321,17 +321,17 @@ Szenario S02 (Happy Path).
 
 **Definition of Done:**
 
-- [ ] `e2e/framework/scenario-runner.ts` existiert und exportiert `ScenarioRunner`
-- [ ] `run()` iteriert über alle Phasen und Turns
-- [ ] Nudge-Handling implementiert (sendet Nudges wenn `phase_complete` ausbleibt)
-- [ ] `phase_complete`-Erkennung via `state.flags`
-- [ ] Artefakt-Snapshots nach jedem 5. Turn und am Phasenende
-- [ ] `TurnExpectation`-Auswertung für alle 6 Felder
-- [ ] `BehaviorProbe`-Auswertung nach korrektem Turn
-- [ ] Fortschritts-Logging auf stderr
-- [ ] `ScenarioResult` mit TurnRecords, finalen Artefakten, Gesamtdauer
-- [ ] `e2e/framework/scenario-runner.ts` ist ≤ 300 Zeilen
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/framework/scenario-runner.ts` existiert und exportiert `ScenarioRunner`
+- [x] `run()` iteriert über alle Phasen und Turns
+- [x] Nudge-Handling implementiert (sendet Nudges wenn `phase_complete` ausbleibt)
+- [x] `phase_complete`-Erkennung via `state.flags`
+- [x] Artefakt-Snapshots nach jedem 5. Turn und am Phasenende
+- [x] `TurnExpectation`-Auswertung für alle 6 Felder
+- [x] `BehaviorProbe`-Auswertung nach korrektem Turn
+- [x] Fortschritts-Logging auf stderr
+- [x] `ScenarioResult` mit TurnRecords, finalen Artefakten, Gesamtdauer
+- [x] `e2e/framework/scenario-runner.ts` ist ≤ 300 Zeilen (286 Zeilen)
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -372,13 +372,13 @@ Szenario S02 (Happy Path).
 
 **Definition of Done:**
 
-- [ ] `e2e/scenarios/s02-reisekosten.json` existiert mit ≥10 Turns
-- [ ] `e2e/run-campaign.ts` existiert mit `--scenario` Flag
-- [ ] Szenario-Laden aus `e2e/scenarios/` Verzeichnis funktioniert
-- [ ] Fehlermeldung bei nicht erreichbarem Backend
+- [x] `e2e/scenarios/s02-reisekosten.json` existiert mit ≥10 Turns (12 Turns)
+- [x] `e2e/run-campaign.ts` existiert mit `--scenario` Flag
+- [x] Szenario-Laden aus `e2e/scenarios/` Verzeichnis funktioniert
+- [x] Fehlermeldung bei nicht erreichbarem Backend
 - [ ] Smoke-Test: `npx tsx e2e/run-campaign.ts --scenario S02` erzeugt TurnRecords (manuell gegen laufendes Backend verifiziert)
-- [ ] `e2e/run-campaign.ts` ist ≤ 150 Zeilen
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/run-campaign.ts` ist ≤ 150 Zeilen (143 Zeilen)
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
