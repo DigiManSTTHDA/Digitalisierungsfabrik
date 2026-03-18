@@ -23,6 +23,9 @@ from core.events import (
 )
 from core.orchestrator import Orchestrator, TurnInput, TurnOutput
 from modes.exploration import ExplorationMode
+from modes.specification import SpecificationMode
+from modes.structuring import StructuringMode
+from modes.validation import ValidationMode
 from persistence.database import Database
 from persistence.project_repository import ProjectRepository
 
@@ -42,6 +45,9 @@ def _build_orchestrator(repo: ProjectRepository, settings: Settings) -> Orchestr
     llm = create_llm_client(settings)
     modes: dict[str, BaseMode] = {
         "exploration": ExplorationMode(llm_client=llm),
+        "structuring": StructuringMode(llm_client=llm),
+        "specification": SpecificationMode(llm_client=llm),
+        "validation": ValidationMode(llm_client=llm),
         "moderator": Moderator(llm_client=llm),
     }
     return Orchestrator(repository=repo, modes=modes, settings=settings)

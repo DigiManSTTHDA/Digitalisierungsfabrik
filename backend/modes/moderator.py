@@ -122,7 +122,7 @@ class Moderator(BaseMode):
             system=system_prompt,
             messages=messages,
             tools=[_MODERATOR_TOOL],
-            tool_choice=None,
+            tool_choice={"type": "tool", "name": "moderator_antwort"},
         )
 
         uebergabe = bool(response.tool_input.get("uebergabe", False))

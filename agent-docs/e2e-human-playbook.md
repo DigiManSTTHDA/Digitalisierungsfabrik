@@ -180,6 +180,210 @@ Erwartung: Phase wechselt zu `strukturierung`.
 
 ---
 
+### Zusatzfragen Phase 1 — Antworten zum Copy-Paste
+
+Wenn der Agent Fragen stellt die nicht im Skript oben stehen, hier fertige Antworten.
+
+---
+
+**Agent fragt:** *Womit möchten Sie beginnen? / Was können Sie mir über Ihren Prozess erzählen? / Über welchen Prozess möchten Sie sprechen?*
+```
+Wir wollen unsere Eingangsrechnungsverarbeitung beschreiben. Das ist der Prozess
+von Rechnungseingang bis zur Bezahlung, 400 bis 500 Rechnungen pro Monat.
+```
+
+---
+
+**Agent fragt:** *Wie lange steht Ihnen Zeit zur Verfügung?*
+```
+Ich hab eine Stunde, das sollte reichen. Können wir anfangen?
+```
+
+---
+
+**Agent fragt (Slot prozessausloeser):** *Was löst diesen Prozess aus? / Wie beginnt der Prozess? / Was ist der Startpunkt?*
+```
+Der Prozess beginnt wenn eine Rechnung von einem Lieferanten eingeht. Das passiert
+auf zwei Wegen: per Post als Papierrechnung, oder per E-Mail an unser Sammelpostfach
+rechnungen@firma.de. Manchmal schicken Lieferanten die Rechnung auch direkt an den
+Besteller, das ist dann ein Problem weil wir das nicht mitkriegen.
+```
+
+---
+
+**Agent fragt (Slot prozessausloeser):** *Wer initiiert den Prozess? / Gibt es einen konkreten Zeitpunkt?*
+```
+Niemand initiiert das aktiv — es wird durch den Rechnungseingang ausgelöst.
+Frau Becker im Sekretariat bemerkt das morgens bei der Postöffnung, oder das
+Sammelpostfach zeigt neue E-Mails an.
+```
+
+---
+
+**Agent fragt (Slot prozessziel):** *Was ist das Ziel des Prozesses? / Was soll am Ende erreicht sein?*
+```
+Das Ziel ist dass die Rechnung korrekt geprüft, freigegeben, in DATEV gebucht
+und fristgerecht bezahlt wird. Und wenn möglich wollen wir Skonto ziehen —
+das sind 2% wenn wir innerhalb von 10 Tagen zahlen. Das schaffen wir leider
+meistens nicht wegen der langen Freigabe.
+```
+
+---
+
+**Agent fragt (Slot prozessziel):** *Gibt es Nebenziele oder Qualitätsziele?*
+```
+Ja, Skonto-Ausnutzung ist wichtig — wir verschenken laut Geschäftsführung
+etwa 30.000 Euro pro Jahr weil wir zu langsam sind. Und natürlich keine
+Mahnungen kriegen, das ist peinlich und kostet extra.
+```
+
+---
+
+**Agent fragt (Slot prozessbeschreibung):** *Können Sie mir den Prozess Schritt für Schritt beschreiben?*
+```
+Rechnung kommt rein, per Post oder E-Mail. Frau Becker scannt Papierrechnungen ein,
+E-Mails werden aus dem Sammelpostfach geholt. Dann prüft die Sachbearbeiterin ob es
+eine passende Bestellung gibt. Wenn ja, prüft sie ob Betrag und Daten stimmen.
+Dann Freigabe durch den Abteilungsleiter, bei über 5000 Euro auch Geschäftsführung.
+Dann Buchung in DATEV, dann Zahlung. So grob.
+```
+
+---
+
+**Agent fragt (Slot prozessbeschreibung):** *Wie häufig läuft der Prozess? / Wie viele Rechnungen?*
+```
+Täglich, wir kriegen 400 bis 500 Rechnungen im Monat. Das sind rund 20 pro
+Arbeitstag. Der Scan passiert jeden Morgen, die Bearbeitung läuft den ganzen Tag.
+```
+
+---
+
+**Agent fragt (Slot prozessbeschreibung):** *Welche Rollen sind beteiligt?*
+```
+Frau Becker im Sekretariat macht den Scan. Frau Müller in der Buchhaltung macht die
+Prüfung und Zuordnung. Der jeweilige Abteilungsleiter gibt frei. Bei über 5000 Euro
+noch die Geschäftsführung. 4 Personen in der Buchhaltung, eine davon fast
+ausschließlich für Eingangsrechnungen.
+```
+
+---
+
+**Agent fragt (Slot prozessbeschreibung):** *Was sind die größten Schwachstellen?*
+```
+Erstens die lange Freigabe — die Leute lassen das tagelang liegen, deswegen
+verpassen wir Skonto. Zweitens der Medienbruch bei Herrn Krause: der druckt sich
+alles aus und stempelt das, dann muss Frau Becker den Zettel wieder einscannen.
+Drittens Rechnungen ohne Bestellnummer — da weiß keiner wer das bestellt hat.
+```
+
+---
+
+**Agent fragt (Slot scope):** *Wo beginnt und wo endet der Prozess? / Was ist nicht im Scope?*
+```
+Anfang: wenn die Rechnung eingeht. Ende: wenn die Zahlung rausgegangen ist.
+Nicht dazu gehört der Bestellprozess, das Lieferantenmanagement und die
+Ausgangsrechnungen — das sind andere Prozesse.
+```
+
+---
+
+**Agent fragt (Slot beteiligte_systeme):** *Welche IT-Systeme werden genutzt?*
+```
+DATEV für die Buchung und den Zahlungslauf. ELO für den Freigabe-Workflow.
+Microsoft Outlook für das Sammelpostfach. Und der Scanner im Sekretariat
+für die Papierrechnungen. Das ist eigentlich alles.
+```
+
+---
+
+**Agent fragt (Slot beteiligte_systeme):** *Gibt es Schnittstellen zwischen den Systemen?*
+```
+Nicht wirklich automatisch. Die Rechnungs-PDFs liegen auf dem W-Laufwerk und
+werden manuell in ELO hochgeladen. Zwischen ELO und DATEV gibt es auch keine
+automatische Verbindung. Alles Handarbeit.
+```
+
+---
+
+**Agent fragt (Slot umgebung):** *In welchem Unternehmenskontext findet das statt?*
+```
+Mittelständisches Maschinenbauunternehmen, etwa 200 Mitarbeiter, ein Standort
+in Nürnberg. Buchhaltung hat 4 Leute, eine davon macht fast nur Eingangs-
+rechnungen. Sekretariat mit Frau Becker ist für Post und Scan zuständig.
+```
+
+---
+
+**Agent fragt (Slot umgebung):** *Gibt es besondere technische Einschränkungen?*
+```
+Windows-Umgebung, alles on-premise. Das W-Laufwerk ist ein Netzlaufwerk das
+alle sehen können. Keine Cloud-Lösungen. Der Scanner ist ein Einzugsscanner
+im Sekretariat.
+```
+
+---
+
+**Agent fragt (Slot randbedingungen):** *Welche Regeln oder Fristen müssen eingehalten werden?*
+```
+Wichtigste Frist: Skonto — 2% Rabatt wenn wir innerhalb von 10 Tagen zahlen.
+Zweites: die Freigabeschwelle von 5000 Euro — darüber muss die Geschäftsführung
+freigeben. Und die gesetzliche Aufbewahrungspflicht für Belege, 10 Jahre.
+```
+
+---
+
+**Agent fragt (Slot randbedingungen):** *Was passiert wenn eine Frist versäumt wird?*
+```
+Bei Skonto-Frist: wir zahlen den vollen Betrag, kein Rabatt. Bei Zahlungsfristen
+allgemein: der Lieferant schickt eine Mahnung, das kostet extra und ist peinlich.
+Ist uns letztes Jahr auch passiert.
+```
+
+---
+
+**Agent fragt (Slot ausnahmen):** *Welche Ausnahmen gibt es? / Was passiert wenn etwas schiefläuft?*
+```
+Gutschriften — die gehen andersrum, da kriegen wir Geld zurück, das bucht die
+Kollegin in DATEV umgekehrt. Dann Teilrechnungen bei großen Projekten — da kommen
+mehrere Rechnungen für eine Bestellung, die müssen zusammengerechnet werden.
+Rechnungen ohne Bestellnummer — da weiß keiner wer das bestellt hat, Frau Müller
+muss rumtelefonieren. Und manchmal stimmt was nicht auf der Rechnung, dann geht
+sie zurück zum Lieferanten, das kann mehrfach hin- und hergehen.
+```
+
+---
+
+**Agent fragt (Slot ausnahmen):** *Was ist mit Mahnungen?*
+```
+Wenn wir zu spät zahlen kommt eine Mahnung vom Lieferanten. Frau Müller muss dann
+prüfen ob die Rechnung wirklich noch offen ist und entweder zahlen oder erklären
+warum nicht. Kostet Zeit und manchmal auch Mahngebühren.
+```
+
+---
+
+**Agent fragt (Zusammenfassung):** *Kann ich jetzt eine Zusammenfassung schreiben? / Darf ich zusammenfassen?*
+```
+Ja, bitte schreiben Sie die Zusammenfassung selbst aus dem was ich erzählt habe.
+Ich möchte nicht nochmal alles wiederholen.
+```
+
+---
+
+**Agent fragt:** *Bitte bestätigen Sie ob diese Zusammenfassung korrekt ist: [Zusammenfassung]*
+```
+Ja das passt soweit. Können wir weitermachen?
+```
+
+---
+
+**Agent fragt:** *Ist dieser Slot / diese Information vollständig und korrekt?*
+```
+Ja das ist korrekt, so haben wir das besprochen.
+```
+
+---
+
 ## Phase 2: STRUKTURIERUNG
 
 ### Eingaben
@@ -272,6 +476,149 @@ Falls kein phase_complete:
 **E2-12** — Phasenwechsel
 ```
 Ja, weiter zur nächsten Phase.
+```
+
+---
+
+### Zusatzfragen Phase 2 — Antworten zum Copy-Paste
+
+---
+
+**Agent fragt (Moderator):** *Soll ich die Strukturierung starten? / Sind Sie bereit?*
+```
+Ja, legen wir los.
+```
+
+---
+
+**Agent fragt:** *Können Sie die Schritte des Prozesses in der richtigen Reihenfolge nennen?*
+```
+Von Anfang an: Rechnung kommt rein per Post oder Mail. Frau Becker scannt die
+Papierrechnungen ein. Dann prüft die Kollegin ob eine Bestellung dazu passt.
+Wenn ja, prüft sie ob alles stimmt. Dann Freigabe durch den Abteilungsleiter,
+bei über 5000 Euro auch Geschäftsführung. Dann DATEV-Buchung. Dann Zahlung.
+Das ist der Normalfall.
+```
+
+---
+
+**Agent fragt:** *Was passiert beim Rechnungseingang genau?*
+```
+Papierpost: kommt morgens an, Frau Becker öffnet die Post, erkennt Rechnungen,
+legt sie zum Scannen. E-Mail: landen im Sammelpostfach rechnungen@firma.de.
+Seit März gibt es eine automatische Weiterleitung in einen Unterordner, Frau
+Müller muss nur noch diesen Unterordner prüfen.
+```
+
+---
+
+**Agent fragt:** *Was passiert beim Scannen?*
+```
+Frau Becker legt den ganzen Stapel Papierrechnungen in den Einzugsscanner. Der
+zieht die Seiten automatisch durch, erzeugt PDFs. Die werden gespeichert auf dem
+W-Laufwerk im Ordner Eingang-Rechnungen. E-Mail-Rechnungen legt Frau Müller auch
+als PDF in denselben Ordner.
+```
+
+---
+
+**Agent fragt:** *Was passiert wenn keine Bestellnummer auf der Rechnung steht?*
+```
+Dann beginnt die Detektivarbeit. Frau Müller schaut sich an welcher Lieferant das
+ist und was auf der Rechnung steht. Dann ruft sie in den Abteilungen an oder
+schreibt E-Mails: "Hat jemand beim Lieferanten XY was bestellt?" Das kann Tage
+dauern.
+```
+
+---
+
+**Agent fragt:** *Was ist der Unterschied zwischen Abteilungsleiter-Freigabe und GF-Freigabe?*
+```
+Alle Rechnungen müssen vom Abteilungsleiter freigegeben werden. Nur wenn der
+Betrag über 5000 Euro ist, braucht es zusätzlich die Geschäftsführung. Also:
+unter 5000 Euro — nur Abteilungsleiter. Über 5000 Euro — erst Abteilungsleiter,
+dann Geschäftsführer.
+```
+
+---
+
+**Agent fragt:** *Was genau passiert bei der sachlichen Prüfung?*
+```
+Frau Müller prüft: stimmt der Betrag mit der Bestellung überein, sind die
+gelieferten Positionen korrekt, stimmt das Datum, ist die Rechnung an uns
+adressiert. Wenn was nicht stimmt, geht sie zurück zum Lieferanten.
+```
+
+---
+
+**Agent fragt:** *Was passiert wenn eine Rechnung fehlerhaft ist?*
+```
+Frau Müller kontaktiert den Lieferanten und erklärt den Fehler. Der schickt
+eine korrigierte Rechnung — manchmal mehrfach hin- und her. Die fehlerhafte
+Rechnung bleibt so lange offen.
+```
+
+---
+
+**Agent fragt:** *Was ist eine Gutschrift und wie wird sie verarbeitet?*
+```
+Eine Gutschrift ist wenn der Lieferant uns Geld zurückgibt. Die kommt auch
+per Post oder E-Mail. In DATEV wird das umgekehrt gebucht — als Einnahme
+statt Ausgabe. Die Kollegin macht das anders rum.
+```
+
+---
+
+**Agent fragt:** *Wie werden Teilrechnungen behandelt?*
+```
+Bei großen Projekten kommen manchmal 3 oder 4 Rechnungen für eine einzige
+Bestellung. Frau Müller muss dann alle zusammenrechnen und prüfen ob die
+Gesamtsumme mit dem Auftrag übereinstimmt.
+```
+
+---
+
+**Agent fragt:** *An welchen Stellen gibt es Ja/Nein-Entscheidungen?* (wenn Fachbegriffe vermieden werden)
+```
+Erstens bei der Bestellnummer: Bestellnummer vorhanden oder nicht?
+Zweitens beim Betrag: über 5000 Euro oder nicht? Das sind die zwei
+Hauptweggabelungen im normalen Ablauf.
+```
+
+---
+
+**Agent fragt:** *Was passiert wenn [Entscheidung] Ja / wenn Nein?*
+```
+Bei Bestellnummer vorhanden: direkt zur sachlichen Prüfung.
+Bei keine Bestellnummer: erst manuelle Zuordnung, dann weiter.
+
+Bei über 5000 Euro: Abteilungsleiter-Freigabe UND dann GF-Freigabe.
+Bei unter 5000 Euro: nur Abteilungsleiter-Freigabe.
+```
+
+---
+
+**Agent fragt:** *Gibt es Schleifen im Prozess? / Passiert etwas mehrfach?*
+```
+Ja, bei fehlerhaften Rechnungen: das Hin- und Herschicken mit dem Lieferanten
+kann mehrfach passieren. Und beim Bestellabgleich ohne Bestellnummer: man
+telefoniert vielleicht mehrmals. Das ist kein schöner Ablauf aber so ist es.
+```
+
+---
+
+**Agent fragt:** *Soll ich das als Problem vermerken?* (beim ELO-Medienbruch)
+```
+Ja bitte. Das Problem: ELO ist das offizielle Freigabesystem, digital.
+Aber Herr Krause benutzt es nicht, macht das auf Papier. Das verursacht
+Medienbruch, Extra-Scanarbeit und Zeitverlust. Das ist ein bekanntes Problem.
+```
+
+---
+
+**Agent fragt:** *Haben Sie noch Schritte die fehlen? / Ist die Struktur vollständig?*
+```
+Ich glaub das passt so. Ich seh da alles was wir besprochen haben.
 ```
 
 ---
@@ -380,6 +727,276 @@ Falls kein phase_complete:
 **E3-14** — Phasenwechsel
 ```
 Ja gut, dann weiter zur Prüfung. Was auch immer das bedeutet.
+```
+
+---
+
+### Zusatzfragen Phase 3 — Antworten zum Copy-Paste
+
+---
+
+**Agent fragt (Moderator):** *Soll ich die Spezifikation starten? / Wissen Sie was diese Phase bedeutet?*
+```
+Ah ok, also nochmal aber jetzt noch genauer was wir konkret tun.
+Na gut, dann fangen wir halt an.
+```
+
+---
+
+**Agent fragt (E-Mail-Eingang):** *Wie genau wird der E-Mail-Eingang abgearbeitet?*
+```
+Frau Müller öffnet Outlook und geht in den Unterordner — da landen seit März alle
+E-Mails automatisch drin wegen der Weiterleitung. Sie öffnet jede Mail, speichert
+den PDF-Anhang auf das W-Laufwerk in den Ordner Eingang-Rechnungen. Das macht sie
+manuell für jede Mail.
+```
+
+---
+
+**Agent fragt:** *Wie erkennt Frau Müller welche E-Mails Rechnungen sind?*
+```
+Die kommen alle in den speziellen Unterordner für Rechnungen, da ist also schon
+klar was das ist. Den Anhang erkennt man daran dass es ein PDF ist.
+```
+
+---
+
+**Agent fragt:** *Wo genau auf dem W-Laufwerk wird gespeichert?*
+```
+W:\Eingang-Rechnungen oder so ähnlich, ich weiß den genauen Pfad nicht auswendig.
+Es gibt einen definierten Ordner dafür, den kennt Frau Müller.
+```
+
+---
+
+**Agent fragt (Scan):** *Wie genau funktioniert der Scanvorgang?*
+```
+Frau Becker legt morgens den Stapel Papierrechnungen in den Einzugsscanner. Der
+scannt alles durch und erzeugt für jede Rechnung eine PDF-Datei. Die landen direkt
+auf dem W-Laufwerk in Eingang-Rechnungen. Frau Becker benennt die Dateien dann noch,
+nach Lieferant und Datum oder so.
+```
+
+---
+
+**Agent fragt:** *Was passiert mit den Originalen nach dem Scannen?*
+```
+Die werden aufbewahrt, Aufbewahrungspflicht 10 Jahre. Die kommen in Ablageordner
+nach Datum sortiert. Das Original muss bleiben, die Digitalisierung ist für die
+Bearbeitung.
+```
+
+---
+
+**Agent fragt (Bestellabgleich):** *Was macht Frau Müller konkret in DATEV?*
+```
+Sie öffnet DATEV auf ihrem Computer, geht in den Bereich Eingangsrechnungen, dort
+gibt es eine Suchfunktion. Sie gibt die Bestellnummer aus der Rechnung ein und DATEV
+zeigt die passende Bestellung an. Sie vergleicht dann Betrag, Positionen und Lieferant
+visuell — kein automatischer Abgleich.
+```
+
+---
+
+**Agent fragt:** *Was macht sie wenn keine Bestellnummer da ist?*
+```
+Sie schaut auf den Lieferantennamen und die Beschreibung. Dann sucht sie in der
+E-Mail-Korrespondenz oder fragt in den Abteilungen nach. Meistens telefoniert sie
+oder schreibt eine kurze E-Mail: "Hat jemand beim Lieferanten XY was bestellt?"
+Das kann Tage dauern.
+```
+
+---
+
+**Agent fragt:** *Wie lange wartet Frau Müller auf Rückmeldungen?*
+```
+Meistens ein bis zwei Tage. Wenn niemand antwortet fragt sie nochmal nach.
+Nach einer Woche wird der Chef informiert. Einen festen Eskalationsprozess
+gibt es da nicht wirklich.
+```
+
+---
+
+**Agent fragt (ELO-Freigabe):** *Wie genau startet der Freigabeprozess in ELO?*
+```
+Frau Müller lädt die geprüfte Rechnung in ELO hoch. ELO schickt dann automatisch
+eine E-Mail an den zuständigen Abteilungsleiter mit einem direkten Link zur Rechnung.
+```
+
+---
+
+**Agent fragt:** *Was macht der Abteilungsleiter in ELO?*
+```
+Er klickt auf den Link, ELO öffnet sich im Browser, er sieht die Rechnung und
+einen Freigabe-Button. Er klickt drauf, fertig. ELO benachrichtigt dann Frau Müller.
+```
+
+---
+
+**Agent fragt:** *Was passiert wenn der Abteilungsleiter ablehnt?*
+```
+ELO schickt eine Benachrichtigung an Frau Müller mit dem Ablehnungsgrund. Dann
+klärt sie intern was nicht stimmt. Es gibt keinen automatischen Prozess dafür.
+```
+
+---
+
+**Agent fragt:** *Wie lange wartet das System auf Freigabe? / Gibt es eine Frist?*
+```
+Keine automatische Erinnerung in ELO. Frau Müller schaut nach ein bis zwei Tagen
+ob eine Freigabe noch aussteht und erinnert dann manuell per E-Mail oder Telefon.
+```
+
+---
+
+**Agent fragt (GF-Freigabe):** *Wie läuft die GF-Freigabe ab?*
+```
+Genauso wie beim Abteilungsleiter: ELO schickt eine E-Mail mit Link. Der
+Geschäftsführer klickt drauf und gibt frei. Das Problem ist wenn der auf
+Dienstreise ist — dann hängt alles. Eine Vertretungsregelung gibt es nicht.
+```
+
+---
+
+**Agent fragt (DATEV-Buchung):** *Was genau gibt Frau Müller in DATEV ein?*
+```
+Sie öffnet das Buchungsformular für Eingangsrechnungen. Felder: Rechnungsnummer,
+Rechnungsdatum, Betrag, Lieferant (aus dem Lieferantenstamm), Kostenstelle, manchmal
+Mehrwertsteuer-Schlüssel. Das füllt sie manuell von der Rechnung ab und speichert.
+```
+
+---
+
+**Agent fragt:** *Wie wählt sie den Lieferanten in DATEV?*
+```
+Es gibt eine Suchfunktion, sie gibt den Lieferantennamen ein, DATEV zeigt die
+Treffer. Bekannte Lieferanten sind schon im System, neue müssen erst angelegt
+werden — Name, Adresse, Bankdaten, Steuernummer.
+```
+
+---
+
+**Agent fragt:** *Wie wird die Mehrwertsteuer behandelt?*
+```
+Für normale deutsche Lieferanten ist der Standard-MwSt-Schlüssel vorgegeben.
+Bei ausländischen Lieferanten gibt es andere Schlüssel. Frau Müller wählt das
+manuell aus — sie kennt die Lieferanten und weiß welcher Schlüssel passt.
+```
+
+---
+
+**Agent fragt (Zahlungslauf):** *Wie funktioniert der Zahlungslauf in DATEV?*
+```
+In DATEV gibt es einen Menüpunkt Zahlungslauf. Da werden alle offenen, freige-
+gebenen Rechnungen angezeigt. Die Buchhalterin wählt alle aus die bezahlt werden
+sollen, dann wird eine Datei erzeugt die ans Online-Banking geht. Der Chef
+bestätigt das im Online-Banking, dann gehen die Überweisungen raus.
+```
+
+---
+
+**Agent fragt:** *Wer hat die Berechtigung den Zahlungslauf zu starten?*
+```
+Die Chefbuchhalterin startet den Zahlungslauf in DATEV. Die finale Freigabe
+im Online-Banking macht der Geschäftsführer oder eine zeichnungsberechtigte Person.
+```
+
+---
+
+**Agent fragt:** *Wie wird die Rechnung nach der Buchung archiviert?*
+```
+Das Papier-Original kommt in den Ablageordner. Die digitale PDF ist auf dem
+W-Laufwerk. In ELO bleibt die Rechnung auch gespeichert. DATEV hat die Buchung.
+Also an drei Orten, aber das ist so gewachsen.
+```
+
+---
+
+**Agent fragt:** *Gibt es noch Schritte die wir nicht spezifiziert haben?*
+```
+Ich glaub das war alles was wir so machen. Mir fällt nichts mehr ein.
+```
+
+---
+
+### Eskalation — Universelle Antworten (alle Phasen)
+
+---
+
+**Agent benutzt Fachbegriffe** (Verzweigung, Kontrollfluss, Entscheidungsknoten, Iteration, Parameter...):
+```
+Reden Sie bitte Deutsch mit mir, ich bin Sachbearbeiterin und kein Programmierer.
+Was meinen Sie konkret in einfachen Worten?
+```
+
+---
+
+**Agent benutzt EMMA-Aktionstypen direkt** (READ, FIND, TYPE, FILE_OPERATION...):
+```
+Diese technischen Kürzel sagen mir nichts. Erklären Sie mir in normalen Worten
+was das System tun soll, dann kann ich Ihnen sagen ob das so stimmt.
+```
+
+---
+
+**Agent (Moderator) fragt nach dem Problem:**
+```
+Der Explorer / Strukturierungsmodus redet die ganze Zeit in Fachbegriffen die ich
+nicht verstehe. Ich will einfach meinen Prozess erklären, kein Informatik-Studium
+machen.
+```
+
+---
+
+**Agent (Moderator) fragt ob zurück zur vorherigen Phase:**
+```
+Ja, aber sagen Sie ihm er soll normale Wörter benutzen und immer nur eine Sache
+auf einmal fragen. Nicht so viel auf einmal und kein Computerfachchinesisch.
+```
+
+---
+
+**Agent (Moderator) fasst zusammen was noch fehlt:**
+```
+Ok, dann sagen Sie ihm er soll das holen was fehlt, aber kurz und bündig bitte.
+Ich hab nicht ewig Zeit.
+```
+
+---
+
+**Agent (Moderator) fragt ob bereit zurückzugehen:**
+```
+Ja, los.
+```
+
+---
+
+**Agent fragt etwas Technisches das Sie nicht wissen:**
+```
+Das weiß ich nicht genau, das würde ich normalerweise unsere IT fragen.
+Können wir das erstmal offen lassen oder mit einem Platzhalter weiterarbeiten?
+```
+
+---
+
+**Agent wiederholt eine Frage die schon beantwortet wurde:**
+```
+Das hab ich doch schon gesagt. Können wir weitermachen?
+```
+
+---
+
+**Agent meldet kein phase_complete und Sie wollen abschließen:**
+```
+Ich hab alles gesagt was ich weiß. Bitte schließen Sie diese Phase ab
+und gehen wir weiter.
+```
+
+---
+
+**Agent antwortet auf Englisch:**
+```
+Bitte auf Deutsch antworten.
 ```
 
 ---

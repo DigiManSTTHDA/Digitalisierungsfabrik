@@ -173,11 +173,15 @@ def _apply_guardrails(
             return Phasenstatus.in_progress
         return Phasenstatus.nearing_completion
 
-    # Guardrail 2: PROMOTE — LLM says nearing but all slots are nutzervalidiert
-    # (FR-C-07: user must explicitly confirm each slot). If all are validated
-    # and no new content was written, the conservative LLM just won't say phase_complete.
-    all_validated = all(s == CompletenessStatus.nutzervalidiert for s in projected.values())
-    if llm_phasenstatus == Phasenstatus.nearing_completion and all_validated:
+    # Guardrail 2: PROMOTE — LLM says nearing but all slots are vollstaendig or nutzervalidiert.
+    # If all slots have sufficient content and no new content was written this turn,
+    # promote to phase_complete. This covers the common case where the user provides
+    # all information without explicitly confirming each slot individually.
+    all_sufficiently_complete = all(
+        s in (CompletenessStatus.vollstaendig, CompletenessStatus.nutzervalidiert)
+        for s in projected.values()
+    )
+    if llm_phasenstatus == Phasenstatus.nearing_completion and all_sufficiently_complete:
         content_patches = [
             p for p in patches if p.get("path", "").endswith("/inhalt") and p.get("value")
         ]
