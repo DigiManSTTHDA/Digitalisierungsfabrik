@@ -1,0 +1,212 @@
+{
+  "id": "S03",
+  "name": "Mitarbeiter-Einstellung",
+  "description": "Komplexes Szenario: Mehrstufiger Einstellungsprozess mit vielen Schritten. Prueft ob das System bei >15 Strukturschritten skaliert und die Artefaktqualitaet beibehalt.",
+  "tags": ["komplex", "skalierung", "viele-schritte"],
+  "intent": {
+    "process_description": "Mitarbeiter-Einstellung — Anforderung, Ausschreibung, Bewerbung, Interview, Vertrag, Onboarding",
+    "expected_structure_steps": 16,
+    "expected_complexity": "komplex",
+    "key_concepts": ["Stellenausschreibung", "Bewerbung", "Interview", "Arbeitsvertrag", "Onboarding", "Personalabteilung", "Fachabteilung"],
+    "forbidden_concepts": ["Kuendigung", "Abmahnung"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E3-01",
+        "message": "Unser Einstellungsprozess ist ziemlich umfangreich. Das faengt an wenn eine Fachabteilung eine neue Stelle braucht. Der Abteilungsleiter fuellt eine Personalanforderung aus, da steht drin welches Profil gesucht wird, welche Qualifikationen noetig sind, ab wann die Stelle besetzt werden soll und in welcher Gehaltsgruppe.",
+        "note": "Start — Bedarfsanforderung",
+        "expect": {
+          "mode_should_be": "exploration"
+        }
+      },
+      {
+        "id": "E3-02",
+        "message": "Die Personalanforderung geht dann an die Geschaeftsleitung zur Genehmigung. Erst wenn die den Headcount freigegeben hat, kann die Personalabteilung loslegen. Bei Ersatzbesetzungen geht das schneller, da reicht manchmal die Unterschrift des Bereichsleiters. Aber neue Stellen muessen immer von oben genehmigt werden.",
+        "note": "Genehmigung durch Geschaeftsleitung"
+      },
+      {
+        "id": "E3-03",
+        "message": "Die Personalabteilung erstellt dann die Stellenausschreibung. Die wird intern im Intranet und extern auf den ueblichen Jobportalen veroeffentlicht — StepStone, LinkedIn, manchmal auch die Arbeitsagentur. Die interne Ausschreibung laeuft immer eine Woche vor der externen, das steht so in der Betriebsvereinbarung.",
+        "note": "Ausschreibungsprozess mit internem Vorrang"
+      },
+      {
+        "id": "E3-04",
+        "message": "Dann kommen die Bewerbungen rein. Die gehen alle an ein zentrales Postfach, bewerbungen@firma.de. Die Personalabteilung sichtet die und sortiert vor: passt, passt vielleicht, passt nicht. Bei klaren Absagen geht sofort eine standardisierte Absage raus. Die Vorauswahl wird mit der Fachabteilung abgestimmt.",
+        "note": "Bewerbungseingang und Vorauswahl"
+      },
+      {
+        "id": "E3-05",
+        "message": "Die Kandidaten die in die engere Wahl kommen, werden zu einem Erstgespraech eingeladen. Das fuehrt die Personalabteilung alleine, so 30 bis 45 Minuten. Da geht es um den Lebenslauf, Gehaltsvorstellungen, Verfuegbarkeit. Manchmal machen wir das auch per Video, gerade bei Kandidaten die weit weg wohnen.",
+        "note": "Erstgespraech durch HR"
+      },
+      {
+        "id": "E3-06",
+        "message": "Wer das Erstgespraech besteht, kommt zum Zweitgespraech. Das ist mit der Fachabteilung, da sitzt der kuenftige Vorgesetzte und meistens noch ein Teamkollege mit drin. Das dauert eine Stunde, manchmal laenger. Da geht es um fachliche Themen, Fallbeispiele, wie der Kandidat ins Team passt.",
+        "note": "Zweitgespraech mit Fachabteilung"
+      },
+      {
+        "id": "E3-07",
+        "message": "Bei manchen Positionen gibt es noch eine dritte Runde. Das ist dann mit der Geschaeftsleitung, aber nur bei Fuehrungskraeften oder Positionen ab einer bestimmten Gehaltsklasse. Und fuer IT-Positionen gibt es manchmal einen technischen Test, den entwickelt die IT-Abteilung selbst.",
+        "note": "Dritte Runde und technische Tests"
+      },
+      {
+        "id": "E3-08",
+        "message": "Nach den Gespraechen beraten sich alle Beteiligten. Der Fachbereich gibt eine Empfehlung ab, die Personalabteilung macht einen Gehaltsvorschlag basierend auf der Gehaltsbandbreite der Stelle und der Erfahrung des Kandidaten. Dann wird entschieden wer das Angebot bekommt.",
+        "note": "Entscheidungsprozess"
+      },
+      {
+        "id": "E3-09",
+        "message": "Das Vertragsangebot erstellt die Personalabteilung. Wir haben Vertragsvorlagen fuer verschiedene Positionen — Tarifvertrag, AT-Vertrag, befristet, unbefristet. Die Rechtsabteilung schaut bei speziellen Klauseln nochmal drueber. Der Vertrag geht dann per Post an den Kandidaten, manche wollen das auch per Mail.",
+        "note": "Vertragserstellung und -versand"
+      },
+      {
+        "id": "E3-10",
+        "message": "Wenn der Kandidat zusagt und den Vertrag unterschrieben zurueckschickt, geht das Onboarding los. Da gibt es eine Checkliste die die Personalabteilung abarbeitet: IT-Ausstattung bestellen, Zugangsberechtigungen beantragen, Arbeitsplatz einrichten, Firmenwagen falls im Vertrag vorgesehen. Das muss alles vor dem ersten Arbeitstag fertig sein.",
+        "note": "Onboarding-Vorbereitung"
+      },
+      {
+        "id": "E3-11",
+        "message": "Am ersten Tag gibt es eine Willkommensrunde. Der neue Mitarbeiter bekommt eine Einfuehrung durch die Personalabteilung — Unternehmensstruktur, Betriebsvereinbarungen, Arbeitszeitregelung, Kantinenkarte und so weiter. Dann uebergibt HR an den Fachbereich und der direkte Vorgesetzte stellt den neuen Kollegen vor.",
+        "note": "Erster Arbeitstag"
+      },
+      {
+        "id": "E3-12",
+        "message": "Die ersten Wochen gibt es einen Einarbeitungsplan. Den erstellt der Vorgesetzte zusammen mit einem Paten — das ist ein erfahrener Kollege der als Ansprechpartner dient. Der Plan umfasst Schulungen, Kennenlerngespraeche mit anderen Abteilungen, und erste eigene Aufgaben. Nach zwei Wochen gibt es ein Feedbackgespraech.",
+        "note": "Einarbeitung und Patenprogramm"
+      },
+      {
+        "id": "E3-13",
+        "message": "Dann gibt es noch die Probezeit-Meilensteine. Nach einem Monat erstes offizielles Feedbackgespraech, nach drei Monaten Zwischenbewertung, und kurz vor Ende der Probezeit nach fuenf Monaten die Entscheidung ob der Vertrag entfristet wird. Die Feedbackgespraeche dokumentiert der Vorgesetzte in einem Formular das an HR geht.",
+        "note": "Probezeit-Evaluation"
+      },
+      {
+        "id": "E3-14",
+        "message": "An Systemen nutzen wir hauptsaechlich Personio fuer das Bewerbermanagement, da werden alle Bewerbungen und der Status verwaltet. SAP HR fuer die Vertragsdaten und Gehaltsabrechnung. Und unser Intranet fuer interne Ausschreibungen. Die Fachabteilungen nutzen Excel fuer ihre Personalplanungen, was nicht ideal ist.",
+        "note": "IT-Systeme"
+      },
+      {
+        "id": "E3-15",
+        "message": "Pro Jahr stellen wir ungefaehr 40 bis 50 neue Mitarbeiter ein. Die durchschnittliche Time-to-Hire ist aktuell bei 65 Tagen, das ist zu lang. Der Vorstand will das auf unter 45 Tage bringen. Der Engpass ist meistens die Terminkoordination fuer die Gespraeche, manchmal dauert das Wochen bis alle koennen.",
+        "note": "Mengengeruest und Schmerzpunkte"
+      },
+      {
+        "id": "E3-16",
+        "message": "Absagen muessen wir natuerlich auch verschicken. Fuer die die es nicht in die engere Wahl geschafft haben geht das automatisch. Fuer die die im Gespraech waren, schreibt die Personalabteilung individuelle Absagen. Das ist wichtig fuer unser Employer Branding. Und die Bewerbungsunterlagen muessen nach 6 Monaten geloescht werden, DSGVO.",
+        "note": "Absageprozess und Datenschutz"
+      },
+      {
+        "id": "E3-17",
+        "message": "Ja, ich denke das ist der komplette Prozess von der Bedarfsmeldung bis zur bestandenen Probezeit. Das sind ziemlich viele Schritte, aber jeder ist wichtig. Besonders die Abstimmung zwischen Fachbereich und HR laeuft nicht immer rund, da gibt es Reibungsverluste.",
+        "note": "Abschluss — Signal fuer Phasenende",
+        "nudges": ["Wir haben den gesamten Einstellungsprozess ausfuehrlich besprochen. Koennen wir mit der Strukturierung beginnen?"]
+      }
+    ],
+    "strukturierung": [
+      {
+        "id": "S3-01",
+        "message": "Ja, die Aufteilung in die grossen Bloecke stimmt. Bedarfsmeldung, Genehmigung, Ausschreibung, Bewerbermanagement, Gespraeche, Entscheidung, Vertrag, Onboarding, Probezeit. Das sind die Hauptphasen.",
+        "note": "Grobe Bestaetigung der Hauptphasen",
+        "expect": {
+          "mode_should_be": "strukturierung"
+        }
+      },
+      {
+        "id": "S3-02",
+        "message": "Die Vorauswahl und die Abstimmung mit dem Fachbereich wuerde ich als eigene Schritte trennen. Erst sichtet HR alleine, dann stimmen sie sich mit der Fachabteilung ab. Das sind unterschiedliche Aufgaben mit unterschiedlichen Beteiligten.",
+        "note": "Differenzierung der Vorauswahl"
+      },
+      {
+        "id": "S3-03",
+        "message": "Genau, die Gespraeche sind auf jeden Fall separate Schritte: Erstgespraech mit HR, Zweitgespraech mit Fachbereich, und optional das Drittgespraech mit Geschaeftsleitung. Die haben unterschiedliche Teilnehmer und Fokus.",
+        "note": "Gespraechsrunden als eigene Schritte"
+      },
+      {
+        "id": "S3-04",
+        "message": "Die Reihenfolge muss aber angepasst werden. Die Absagen gehoeren nicht ans Ende, die passieren parallel — nach jeder Runde werden die aussortiert, nicht alle am Schluss. Aber das ist eher ein Sonderfall, kein eigener Hauptschritt.",
+        "note": "Korrektur der Absage-Position"
+      },
+      {
+        "id": "S3-05",
+        "message": "Die IT-Ausstattung und Arbeitsplatz-Einrichtung im Onboarding sind eigentlich vorbereitende Schritte die vor dem ersten Tag passieren. Die wuerde ich von der Einfuehrung am ersten Tag trennen. Also Onboarding-Vorbereitung und Onboarding-Durchfuehrung als zwei separate Schritte.",
+        "note": "Aufspaltung Onboarding"
+      },
+      {
+        "id": "S3-06",
+        "message": "Der Einarbeitungsplan und die Probezeit-Meilensteine sind auch unterschiedlich. Die Einarbeitung ist die ersten zwei bis vier Wochen, die Probezeit-Evaluation zieht sich ueber sechs Monate. Das wuerde ich trennen.",
+        "note": "Trennung Einarbeitung und Probezeit"
+      },
+      {
+        "id": "S3-07",
+        "message": "Ja, mir fehlt noch der Schritt Gehaltsverhandlung. Der kommt nach der Entscheidung fuer einen Kandidaten und vor der Vertragserstellung. Da verhandelt HR mit dem Kandidaten das finale Gehalt basierend auf dem Vorschlag.",
+        "note": "Fehlender Schritt ergaenzt"
+      },
+      {
+        "id": "S3-08",
+        "message": "Jetzt sieht das vollstaendig aus. Von Bedarfsmeldung bis Probezeit-Abschluss sind das — lassen Sie mich zaehlen — ungefaehr 16 Schritte? Das klingt viel, aber der Prozess IST halt komplex. Jeder Schritt hat seinen Grund.",
+        "note": "Bestaetigung der finalen Struktur",
+        "nudges": ["Die Struktur mit allen Schritten ist definiert. Koennen wir zur Spezifikation uebergehen?"]
+      }
+    ],
+    "spezifikation": [
+      {
+        "id": "P3-01",
+        "message": "Die Personalanforderung ist ein Word-Formular das der Abteilungsleiter ausfuellt. Darin steht: Stellenbezeichnung, Anforderungsprofil mit Muss- und Kann-Kriterien, Gehaltsgruppe, gewuenschter Starttermin und Begruendung warum die Stelle besetzt werden muss. Das geht dann per Mail an die Geschaeftsleitung.",
+        "note": "Spezifikation der Bedarfsanforderung",
+        "expect": {
+          "mode_should_be": "spezifikation"
+        }
+      },
+      {
+        "id": "P3-02",
+        "message": "Die Ausschreibung wird von HR in Personio erstellt und von dort auf die Jobportale gepusht. Intern wird sie als News im Intranet veroeffentlicht. Die Ausschreibung enthaelt Stellenprofil, Unternehmensbeschreibung, Benefits und Kontaktdaten. Sie laeuft mindestens 4 Wochen.",
+        "note": "Ausschreibungsspezifikation"
+      },
+      {
+        "id": "P3-03",
+        "message": "In Personio hat jede Bewerbung einen Status: Eingegangen, In Pruefung, Erstgespraech, Zweitgespraech, Angebot, Eingestellt oder Abgesagt. HR aktualisiert den Status nach jedem Schritt. Die Fachabteilung hat Lesezugriff und kann Kommentare hinterlassen.",
+        "note": "Bewerberstatus und Workflow in Personio"
+      },
+      {
+        "id": "P3-04",
+        "message": "Die Vertragserstellung nutzt Word-Vorlagen. HR waehlt die passende Vorlage, fuellt die individuellen Daten ein — Name, Gehalt, Startdatum, Abteilung, besondere Vereinbarungen. Bei Klauseln die von der Standardvorlage abweichen wird die Rechtsabteilung eingebunden. Der fertige Vertrag wird als PDF per Post und optional per Mail verschickt.",
+        "note": "Vertragsspezifikation"
+      },
+      {
+        "id": "P3-05",
+        "message": "Die Onboarding-Checkliste liegt in SharePoint. IT-Equipment wird ueber ein Ticketsystem bestellt, Zugangsberechtigungen ueber ein Formular bei der IT-Abteilung, Firmenwagen falls vorgesehen ueber den Fuhrparkmanager. HR koordiniert das alles und hakt die Checkliste ab.",
+        "note": "Onboarding-Vorbereitung",
+        "nudges": ["Die Spezifikation der wichtigsten Schritte ist abgeschlossen."]
+      }
+    ],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E3-17",
+      "name": "Skalierungs-Check: Viele Informationen erfasst",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 5
+      }
+    },
+    {
+      "after_turn": "S3-08",
+      "name": "Nachfolger-Integritaet: Keine verwaisten Schritte",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 8
+      }
+    },
+    {
+      "after_turn": "P3-05",
+      "name": "Key Concepts im Artefakt vorhanden",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Stellenausschreibung", "Bewerbung", "Interview", "Arbeitsvertrag", "Onboarding"],
+        "should_not_contain": ["Kuendigung", "Abmahnung"]
+      }
+    }
+  ]
+}
