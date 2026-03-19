@@ -1,0 +1,83 @@
+{
+  "id": "S06",
+  "name": "Abbruch nach Phase 1",
+  "description": "Randfall-Szenario: Nur Exploration-Phase, dann kein weiterer Input. Prueft ob der Systemzustand konsistent bleibt und kein unkontrollierter Phasensprung passiert.",
+  "tags": ["randfall", "abbruch", "phase1-only"],
+  "intent": {
+    "process_description": "Reklamationsbearbeitung — Eingang, Pruefung, Entscheidung, Kommunikation",
+    "expected_structure_steps": 5,
+    "expected_complexity": "mittel",
+    "key_concepts": ["Reklamation", "Kunde", "Pruefung", "Ersatzlieferung", "Gutschrift"],
+    "forbidden_concepts": ["Blockchain", "Machine Learning", "IoT"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E6-01",
+        "message": "Ich moechte unseren Reklamationsprozess beschreiben. Also wenn ein Kunde sich beschwert ueber ein Produkt, dann kommt das bei uns im Kundenservice an. Meistens per Telefon oder Mail, manchmal auch ueber das Kontaktformular auf der Website.",
+        "note": "Start der Exploration"
+      },
+      {
+        "id": "E6-02",
+        "message": "Der Kundenservice-Mitarbeiter nimmt die Reklamation auf und erfasst sie in unserem CRM-System. Da wird eingetragen: Kundennummer, Produkt, Kaufdatum, Art der Beschwerde und was der Kunde will — Ersatz, Reparatur oder Geld zurueck.",
+        "note": "Erfassungsschritt",
+        "expect": {
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E6-03",
+        "message": "Dann geht die Reklamation an die Qualitaetsabteilung. Die pruefen ob die Beschwerde berechtigt ist. Bei Produktmaengeln wird manchmal das Produkt eingeschickt und untersucht. Das kann ein paar Tage dauern.",
+        "note": "Pruefungsschritt"
+      },
+      {
+        "id": "E6-04",
+        "message": "Je nach Ergebnis gibt es verschiedene Moeglichkeiten: Ersatzlieferung, Gutschrift, Reparatur oder Ablehnung. Bei Ablehnung muss das begruendet werden und der Kunde wird informiert. Bei Gutschriften ueber 200 Euro muss der Teamleiter freigeben.",
+        "note": "Entscheidungsmatrix"
+      },
+      {
+        "id": "E6-05",
+        "message": "Die Kommunikation zum Kunden laeuft dann wieder ueber den Kundenservice. Die schreiben eine Mail oder rufen an, je nachdem wie der Kunde es will. Und der ganze Vorgang wird im CRM dokumentiert fuer die Statistik.",
+        "note": "Kommunikation und Dokumentation"
+      },
+      {
+        "id": "E6-06",
+        "message": "Pro Monat haben wir so 150 bis 200 Reklamationen. Davon sind vielleicht 60% berechtigt. Die Durchlaufzeit soll unter 10 Arbeitstagen liegen, aber das schaffen wir nicht immer, besonders wenn Produkte eingeschickt werden muessen.",
+        "note": "Mengengeruest und Zeiten"
+      },
+      {
+        "id": "E6-07",
+        "message": "An Systemen nutzen wir Salesforce als CRM und SAP fuer die Buchhaltung wenn Gutschriften erstellt werden. Die Qualitaetsabteilung hat noch ein eigenes Tool fuer die Pruefergebnisse, das heisst QualityOne.",
+        "note": "Systeme"
+      },
+      {
+        "id": "E6-08",
+        "message": "Hmm, ich muss leider Schluss machen, da kommt gerade ein dringender Anruf rein. Koennen wir ein andermal weitermachen? Was wir bisher besprochen haben sollte erstmal gesichert werden.",
+        "note": "Abbruch durch Nutzer — System muss Zustand sichern",
+        "nudges": ["Der Nutzer hat die Sitzung beendet. Bitte sichern Sie den aktuellen Stand."]
+      }
+    ],
+    "strukturierung": [],
+    "spezifikation": [],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E6-08",
+      "name": "Exploration-Artefakte gespeichert nach Abbruch",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 3,
+        "expected_phase": "exploration"
+      }
+    },
+    {
+      "after_turn": "E6-08",
+      "name": "Kein unkontrollierter Phasensprung",
+      "type": "state_check",
+      "check": {
+        "expected_mode": "exploration"
+      }
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "id": "S08",
+  "name": "Englisch-Antworten",
+  "description": "Randfall-Szenario: Nutzer antwortet teilweise auf Englisch. Prueft ob das System bei Deutsch bleibt (FR-A-08) und englische Inhalte korrekt ins Deutsche ueberfuehrt.",
+  "tags": ["randfall", "sprache", "englisch", "FR-A-08"],
+  "intent": {
+    "process_description": "Kundenanfrage-Bearbeitung — Eingang, Klassifizierung, Bearbeitung, Antwort",
+    "expected_structure_steps": 6,
+    "expected_complexity": "mittel",
+    "key_concepts": ["Kundenanfrage", "Klassifizierung", "Bearbeitung", "Antwort", "CRM"],
+    "forbidden_concepts": ["Blockchain", "Deep Learning"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E8-01",
+        "message": "Wir haben einen Prozess fuer die Bearbeitung von Kundenanfragen. Die kommen per Mail, Telefon oder ueber unser Webformular rein. Der Kundenservice nimmt die Anfragen entgegen und leitet sie weiter.",
+        "note": "Start auf Deutsch"
+      },
+      {
+        "id": "E8-02",
+        "message": "The process starts when a customer sends an email or fills out the contact form on our website. The customer service team receives the inquiry and logs it in our CRM system. Each inquiry gets a ticket number.",
+        "note": "Englischer Turn — System muss auf Deutsch antworten",
+        "expect": {
+          "response_should_not_contain": ["the", "process", "customer service team", "inquiry"],
+          "mode_should_be": "exploration"
+        }
+      },
+      {
+        "id": "E8-03",
+        "message": "Then the responsible person checks the request and classifies it. There are three categories: product questions, complaints, and general inquiries. Product questions go to the product team, complaints to the quality department.",
+        "note": "Zweiter englischer Turn — Kategorisierung beschrieben",
+        "expect": {
+          "response_should_not_contain": ["the responsible person", "three categories", "complaints"]
+        }
+      },
+      {
+        "id": "E8-04",
+        "message": "Ja, also die Produktfragen werden vom Produktteam beantwortet, die haben die Expertise. Fuer Beschwerden ist die Qualitaetsabteilung zustaendig, die pruefen dann ob der Kunde recht hat. Allgemeine Anfragen bearbeitet der Kundenservice selbst.",
+        "note": "Zurueck auf Deutsch — selbe Info wie englischer Turn"
+      },
+      {
+        "id": "E8-05",
+        "message": "After approval, the answer is sent back to the customer. Usually by email, sometimes by phone if it's a sensitive topic. The whole thing should take less than 48 hours, that's our SLA.",
+        "note": "Dritter englischer Turn — Antwortprozess",
+        "expect": {
+          "response_should_not_contain": ["after approval", "sent back", "sensitive topic"]
+        }
+      },
+      {
+        "id": "E8-06",
+        "message": "We use Salesforce as our CRM and also have a knowledge base in Confluence where the standard answers are stored. The team can copy-paste from there for common questions.",
+        "note": "Vierter englischer Turn — Systeme",
+        "expect": {
+          "response_should_not_contain": ["we use", "knowledge base", "copy-paste", "common questions"]
+        }
+      },
+      {
+        "id": "E8-07",
+        "message": "Pro Tag kriegen wir ungefaehr 80 bis 100 Anfragen. Davon sind vielleicht die Haelfte Standardfragen die man schnell beantworten kann. Der Rest braucht laenger, besonders die Beschwerden.",
+        "note": "Mengengeruest auf Deutsch"
+      },
+      {
+        "id": "E8-08",
+        "message": "Ach so, wichtig ist noch: wenn eine Beschwerde berechtigt ist, dann muss der Teamleiter freigeben welche Kompensation der Kunde bekommt. Also Gutschein, Preisnachlass oder Ersatzlieferung. Das darf der normale Mitarbeiter nicht alleine entscheiden.",
+        "note": "Genehmigungslogik fuer Beschwerden"
+      },
+      {
+        "id": "E8-09",
+        "message": "Dann gibt es noch Eskalationen. Wenn der Kunde nicht zufrieden ist mit der Antwort, kann er eskalieren. Das geht dann an den Teamleiter und wenn der es nicht loesen kann an die Geschaeftsleitung. Aber das kommt selten vor, vielleicht einmal im Monat.",
+        "note": "Eskalationspfad"
+      },
+      {
+        "id": "E8-10",
+        "message": "Ja, das ist der komplette Prozess. Von der Anfrage bis zur Antwort, mit Klassifizierung und Kompensation bei Beschwerden. Haben wir alles?",
+        "note": "Abschluss-Signal",
+        "nudges": ["Wir haben alle Aspekte der Kundenanfrage-Bearbeitung besprochen. Koennen wir zur Strukturierung uebergehen?"]
+      }
+    ],
+    "strukturierung": [
+      {
+        "id": "S8-01",
+        "message": "Yes, the structure looks correct. Inquiry comes in, gets classified, forwarded to the right team, processed, and answered. That's basically it.",
+        "note": "Englische Bestaetigung — System soll weiter auf Deutsch arbeiten",
+        "expect": {
+          "mode_should_be": "strukturierung",
+          "response_should_not_contain": ["yes", "structure looks correct", "basically"]
+        }
+      },
+      {
+        "id": "S8-02",
+        "message": "Stimmt, die Kompensationsentscheidung bei Beschwerden ist ein eigener Schritt. Das sollte man nicht mit der Pruefung zusammenfassen, weil da unterschiedliche Leute zustaendig sind.",
+        "note": "Differenzierung eines Schritts"
+      },
+      {
+        "id": "S8-03",
+        "message": "Ja, die Eskalation ist ein Sonderfall, kein regulaerer Schritt. Die kommt nur vor wenn der Kunde unzufrieden ist. Das koennte man als Verzweigung darstellen.",
+        "note": "Klaerung Eskalation als Sonderfall"
+      },
+      {
+        "id": "S8-04",
+        "message": "Genau, die Reihenfolge ist: Eingang, Klassifizierung, Weiterleitung, Bearbeitung durch Fachabteilung, Freigabe bei Kompensation, Antwort an Kunden. Das passt so.",
+        "note": "Finale Bestaetigung der Reihenfolge"
+      },
+      {
+        "id": "S8-05",
+        "message": "Ja, bin zufrieden. Weiter bitte.",
+        "note": "Strukturierung abgeschlossen",
+        "nudges": ["Die Struktur ist bestaetigt. Koennen wir zur Spezifikation uebergehen?"]
+      }
+    ],
+    "spezifikation": [
+      {
+        "id": "P8-01",
+        "message": "The classification is done manually by the service agent. They read the inquiry and assign one of the three categories in Salesforce. There's a dropdown field for that.",
+        "note": "Englischer Spezifikations-Turn",
+        "expect": {
+          "mode_should_be": "spezifikation",
+          "response_should_not_contain": ["the classification", "dropdown field"]
+        }
+      },
+      {
+        "id": "P8-02",
+        "message": "Die Bearbeitung durch die Fachabteilung ist auch manuell. Die recherchieren die Antwort, schreiben sie in Salesforce rein, und wenn es eine Beschwerde ist, legen sie einen Kompensationsvorschlag bei.",
+        "note": "Bearbeitung auf Deutsch"
+      },
+      {
+        "id": "P8-03",
+        "message": "Die Freigabe bei Kompensation laeuft so: Der Mitarbeiter legt den Vorschlag an, der Teamleiter bekommt eine Benachrichtigung und gibt frei oder lehnt ab. Bei ueber 500 Euro muss der Abteilungsleiter auch noch zustimmen.",
+        "note": "Freigabelogik mit Schwellenwert"
+      },
+      {
+        "id": "P8-04",
+        "message": "Die Antwort an den Kunden wird per Mail geschickt, aus Salesforce heraus. Es gibt Vorlagen in Confluence die man nutzen kann. Der Mitarbeiter passt die Vorlage an und schickt ab. Der Kunde bekommt automatisch eine Zufriedenheitsumfrage hinterher.",
+        "note": "Antwortprozess",
+        "nudges": ["Die Spezifikation ist vollstaendig. Vielen Dank!"]
+      }
+    ],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E8-02",
+      "name": "Systemantwort nach englischem Turn ist auf Deutsch",
+      "type": "dialog_check",
+      "check": {
+        "response_pattern": "[äöüÄÖÜß]|\\b(der|die|das|und|ist|hat|mit|ein|eine|fuer|dass)\\b"
+      }
+    },
+    {
+      "after_turn": "E8-06",
+      "name": "Artefakt-Inhalte sind auf Deutsch nach englischen Turns",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Kundenanfrage", "CRM"],
+        "should_not_contain": ["inquiry", "knowledge base"]
+      }
+    },
+    {
+      "after_turn": "S8-01",
+      "name": "System bleibt Deutsch in Strukturierung trotz englischem Input",
+      "type": "dialog_check",
+      "check": {
+        "response_pattern": "[äöüÄÖÜß]|\\b(der|die|das|und|ist|hat|Schritt|Struktur)\\b"
+      }
+    }
+  ]
+}

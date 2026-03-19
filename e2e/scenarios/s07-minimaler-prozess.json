@@ -1,0 +1,99 @@
+{
+  "id": "S07",
+  "name": "Minimaler Prozess",
+  "description": "Randfall-Szenario: Nutzer beschreibt einen trivialen Ein-Schritt-Prozess. Prueft ob das System mit minimalem Input gueltige Artefakte erzeugt und keine Komplexitaet halluziniert.",
+  "tags": ["randfall", "minimal", "halluzinations-check"],
+  "intent": {
+    "process_description": "Dokument ausdrucken — Drucker waehlen, drucken",
+    "expected_structure_steps": 2,
+    "expected_complexity": "minimal",
+    "key_concepts": ["Dokument", "drucken"],
+    "forbidden_concepts": ["Genehmigung", "Workflow", "Freigabe", "Pruefung", "Eskalation"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E7-01",
+        "message": "Also, der Prozess ist eigentlich ganz simpel. Ich drucke ein Dokument aus. Das wars.",
+        "note": "Minimaler Input — System muss damit klarkommen"
+      },
+      {
+        "id": "E7-02",
+        "message": "Na, ich oeffne das Dokument am Computer, gehe auf Drucken, waehle den Drucker aus und druecke auf OK. Dann kommt das Blatt aus dem Drucker und ich hole es ab. Mehr ist das nicht.",
+        "note": "Etwas mehr Detail, aber immer noch trivial"
+      },
+      {
+        "id": "E7-03",
+        "message": "Wir haben drei Drucker im Buero. Einen Farblaser und zwei Schwarzweiss. Den Farblaser nimmt man fuer Praesentationen und sowas, die anderen fuer normalen Kram. Die stehen im Kopierraum, alle Mitarbeiter haben Zugriff.",
+        "note": "Kontextinformationen zum Druckumfeld"
+      },
+      {
+        "id": "E7-04",
+        "message": "Nein, es gibt keinen Genehmigungsprozess fuers Drucken. Jeder kann drucken wann er will. Es gibt auch kein Druckkontingent oder sowas. Einfach drucken und fertig.",
+        "note": "Explizite Abwesenheit von Komplexitaet — System darf keine erfinden",
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      },
+      {
+        "id": "E7-05",
+        "message": "Ja, das ist wirklich alles. Dokument oeffnen, Drucker auswaehlen, drucken, Ausdruck abholen. Vier Schritte wenn man es genau nimmt, aber eigentlich ist es ja ein Vorgang.",
+        "note": "Nutzer bestaetigt Einfachheit",
+        "nudges": ["Der Prozess ist sehr einfach. Koennen wir mit der Strukturierung fortfahren?"]
+      }
+    ],
+    "strukturierung": [
+      {
+        "id": "S7-01",
+        "message": "Ja, die zwei Schritte stimmen so. Dokument drucken und Ausdruck abholen. Oder meinetwegen auch drei wenn Sie das Oeffnen des Dokuments mitzaehlen. Aber mehr ist es wirklich nicht.",
+        "note": "Bestaetigung der minimalen Struktur",
+        "expect": {
+          "mode_should_be": "strukturierung"
+        }
+      },
+      {
+        "id": "S7-02",
+        "message": "Nein, es gibt keine Verzweigungen und keine Sonderfaelle. Hoechstens dass der Drucker mal kein Papier hat, aber das ist ja kein Prozessschritt. Dann legt man halt Papier nach.",
+        "note": "Keine zusaetzliche Komplexitaet",
+        "nudges": ["Die Struktur ist abgeschlossen. Weiter zur Spezifikation."]
+      }
+    ],
+    "spezifikation": [
+      {
+        "id": "P7-01",
+        "message": "Der Druckvorgang ist eine Standardfunktion vom Betriebssystem. Windows-Druckdialog, Drucker auswaehlen, Anzahl Kopien eingeben, drucken. Alles Standard.",
+        "note": "Standard-Betriebssystem-Funktion",
+        "expect": {
+          "mode_should_be": "spezifikation"
+        }
+      },
+      {
+        "id": "P7-02",
+        "message": "Ja genau. Kein spezielles System, keine SAP-Anbindung, nichts. Einfach Windows und ein Netzwerkdrucker. Das wars.",
+        "note": "Minimale Spezifikation abgeschlossen",
+        "nudges": ["Die Spezifikation ist abgeschlossen."]
+      }
+    ],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E7-05",
+      "name": "System halluziniert keine Komplexitaet",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Dokument", "drucken"],
+        "should_not_contain": ["Genehmigung", "Workflow", "Freigabe"]
+      }
+    },
+    {
+      "after_turn": "S7-02",
+      "name": "Maximal 3 Strukturschritte erzeugt",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 1
+      }
+    }
+  ]
+}
