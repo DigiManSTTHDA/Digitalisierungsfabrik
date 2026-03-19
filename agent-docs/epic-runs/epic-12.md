@@ -93,3 +93,94 @@
 - **Smoke test pending manual verification:** Story 12-05 DoD checkbox for
   `npx tsx e2e/run-campaign.ts --scenario S02` is unchecked — requires a
   running backend to verify. All other checkboxes are `[x]`.
+
+---
+
+## E2E Audit — 2026-03-19
+
+### File Structure Compliance
+
+| Check | Status |
+|-------|--------|
+| `e2e/package.json` exists | PASS |
+| `e2e/tsconfig.json` exists | PASS |
+| `e2e/run-campaign.ts` exists | PASS |
+| `e2e/framework/types.ts` exists | PASS |
+| `e2e/framework/ws-client.ts` exists | PASS |
+| `e2e/framework/scenario-runner.ts` exists | PASS |
+| `e2e/scenarios/s02-reisekosten.json` exists | PASS |
+| `e2e/.gitignore` has `node_modules/` and `reports/` | PASS |
+| No files outside `e2e/` for E2E code | PASS |
+| No invented directory structure | PASS |
+
+### Plan Compliance
+
+| Check | Status |
+|-------|--------|
+| `Scenario` interface matches plan | PASS |
+| `ScenarioIntent` interface matches plan | PASS |
+| `ScenarioPhases` interface matches plan | PASS |
+| `Turn` interface matches plan | PASS |
+| `TurnExpectation` interface matches plan | PASS |
+| `BehaviorProbe` + `BehaviorProbeCheck` interfaces match plan | PASS |
+| `TurnRecord` interface matches plan | PASS |
+| `TurnState` interface matches plan | PASS |
+| `ArtifactSnapshots` interface matches plan | PASS |
+| `TurnEvaluation` + `BehaviorProbeResult` + `TurnMetrics` match plan | PASS |
+| `ScenarioResult` interface matches plan | PASS |
+| `AssertionResult` + `BehaviorScore` interfaces match plan | PASS |
+| `TurnResponse` interface matches plan | PASS |
+| S02 scenario JSON matches `Scenario` interface | PASS |
+| All 18 interfaces exported | PASS |
+
+### Dependency Compliance
+
+| Dependency | Type | Approved by Epic 12 |
+|------------|------|---------------------|
+| `ws` | dependency | YES |
+| `tsx` | dependency | YES |
+| `typescript` | devDependency | YES |
+| `@types/ws` | devDependency | YES |
+| `@types/node` | devDependency | YES |
+| Unapproved dependencies | — | NONE |
+
+### Type Safety
+
+| Check | Status |
+|-------|--------|
+| `tsconfig.json` has `strict: true` | PASS |
+| No `any` types | PASS |
+| Type assertions justified | PASS (1 redundant `as string` removed) |
+| All exported functions have explicit return types | PASS |
+
+### DoD Results
+
+| Command | Status |
+|---------|--------|
+| `npm run typecheck` | PASS (exit 0) |
+| `npx tsx --test framework/__tests__/*.test.ts` | PASS (exit 0, 0 tests — no evaluators in Epic 12) |
+
+### Code Quality
+
+| File | Lines | Limit | Status |
+|------|-------|-------|--------|
+| `framework/types.ts` | 170 | 300 | PASS |
+| `framework/ws-client.ts` | 259 | 300 | PASS |
+| `framework/scenario-runner.ts` | 286 | 300 | PASS |
+| `run-campaign.ts` | 143 | 150 | PASS |
+
+No missing exports, incorrect imports, unused code, or naming inconsistencies.
+
+### Fixes Applied
+
+| # | Fix |
+|---|-----|
+| 1 | Removed redundant `as string` type assertion in `ws-client.ts:237` — `event.phasenstatus` is already typed as `string` in `ProgressUpdateEvent` |
+
+### Final Status
+
+| Criterion | Status |
+|-----------|--------|
+| AGENTS.md | YES |
+| Test Campaign Plan | YES |
+| Epic ACs | YES (1 DoD checkbox pending: smoke test requires running backend) |

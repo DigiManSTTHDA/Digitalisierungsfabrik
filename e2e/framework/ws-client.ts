@@ -234,7 +234,7 @@ export class SessionClient {
         setArtifactsUpdated();
         break;
       case 'progress_update':
-        state.phasenstatus = event.phasenstatus as string;
+        state.phasenstatus = event.phasenstatus;
         state.befuellte_slots = event.befuellte_slots;
         state.bekannte_slots = event.bekannte_slots;
         break;
