@@ -2,11 +2,15 @@
  * E2E Test Campaign — CLI Entry Point
  *
  * Usage:
- *   npx tsx e2e/run-campaign.ts                    # all scenarios
- *   npx tsx e2e/run-campaign.ts --scenario S02     # single scenario
+ *   npx tsx e2e/run-campaign.ts                             # all scenarios
+ *   npx tsx e2e/run-campaign.ts --scenario S02              # single scenario
+ *   npx tsx e2e/run-campaign.ts --output ./custom-reports   # custom report dir
+ *   npx tsx e2e/run-campaign.ts --verbose                   # full dialog in reports
  *
  * Requires a running backend (default: http://localhost:8000).
  * Set BACKEND_URL environment variable to override.
+ *
+ * Exit codes: 0 = all assertions PASS/WARN, 1 = any assertion FAIL.
  */
 
 import { readdir, readFile } from 'node:fs/promises';
@@ -16,8 +20,29 @@ import { fileURLToPath } from 'node:url';
 import type { Scenario, ScenarioResult } from './framework/types.js';
 import { ScenarioRunner } from './framework/scenario-runner.js';
 import { SessionClient, ConnectionError } from './framework/ws-client.js';
+import { AssertionEvaluator } from './framework/assertion-evaluator.js';
+import { BehaviorEvaluator } from './framework/behavior-evaluator.js';
+import { CampaignReporter } from './framework/campaign-reporter.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
+interface CliArgs {
+  scenarioId?: string;
+  outputDir: string;
+  verbose: boolean;
+}
+
+function parseArgs(): CliArgs {
+  const args = process.argv.slice(2);
+  const result: CliArgs = { outputDir: join(__dirname, 'reports'), verbose: false };
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--scenario' && args[i + 1]) result.scenarioId = args[++i];
+    else if (args[i] === '--output' && args[i + 1]) result.outputDir = args[++i];
+    else if (args[i] === '--verbose') result.verbose = true;
+  }
+  return result;
+}
 
 async function loadScenarios(scenarioDir: string, filterId?: string): Promise<Scenario[]> {
   const files = await readdir(scenarioDir);
@@ -27,114 +52,82 @@ async function loadScenarios(scenarioDir: string, filterId?: string): Promise<Sc
   for (const file of jsonFiles) {
     const content = await readFile(join(scenarioDir, file), 'utf-8');
     const scenario = JSON.parse(content) as Scenario;
-    if (!filterId || scenario.id === filterId) {
-      scenarios.push(scenario);
-    }
+    if (!filterId || scenario.id === filterId) scenarios.push(scenario);
   }
-
   return scenarios;
 }
 
-function parseArgs(): { scenarioId?: string } {
-  const args = process.argv.slice(2);
-  const idx = args.indexOf('--scenario');
-  if (idx !== -1 && args[idx + 1]) {
-    return { scenarioId: args[idx + 1] };
-  }
-  return {};
-}
-
-function printResult(result: ScenarioResult): void {
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`Szenario: ${result.scenario_name} (${result.scenario_id})`);
-  console.log(`${'='.repeat(60)}`);
-  console.log(`  Turns:     ${result.turns.length}`);
-  console.log(`  Dauer:     ${(result.duration_ms / 1000).toFixed(1)}s`);
-  console.log(`  Summary:   ${result.summary}`);
-
-  const assertions = result.turns.reduce(
-    (acc, t) => {
-      acc.passed += t.evaluation.assertions_passed.length;
-      acc.failed += t.evaluation.assertions_failed.length;
-      return acc;
-    },
-    { passed: 0, failed: 0 },
-  );
-
-  if (assertions.passed + assertions.failed > 0) {
-    console.log(`  Assertions: ${assertions.passed} passed, ${assertions.failed} failed`);
-  }
-
-  const probes = result.turns.flatMap(t => t.evaluation.behavior_probes);
-  if (probes.length > 0) {
-    console.log(`  Probes:    ${probes.filter(p => p.passed).length}/${probes.length} passed`);
-  }
-
-  // Show first few turns as preview
-  const previewCount = Math.min(3, result.turns.length);
-  console.log(`\n  Erste ${previewCount} Turns:`);
-  for (const turn of result.turns.slice(0, previewCount)) {
-    const responsePreview = turn.assistant_response.slice(0, 80).replace(/\n/g, ' ');
-    console.log(`    [${turn.step_id}] ${turn.state.aktiver_modus} | ${turn.state.befuellte_slots}/${turn.state.bekannte_slots} slots | ${turn.response_time_ms}ms`);
-    console.log(`      → "${responsePreview}..."`);
-  }
+function printScenarioSummary(result: ScenarioResult): void {
+  const passed = result.assertion_results.filter(a => a.status === 'PASS').length;
+  const total = result.assertion_results.length;
+  const durationSec = (result.duration_ms / 1000).toFixed(0);
+  const status = result.assertion_results.some(a => a.status === 'FAIL') ? 'FAIL' : 'PASS';
+  const icon = status === 'PASS' ? '✓' : '✗';
+  console.log(`${icon} ${result.scenario_id} ${result.scenario_name} — ${result.turns.length} Turns, ${durationSec}s, Assertions: ${passed}/${total} ${status}`);
 }
 
 async function main(): Promise<void> {
-  const { scenarioId } = parseArgs();
+  const { scenarioId, outputDir, verbose } = parseArgs();
   const backendUrl = process.env['BACKEND_URL'] ?? 'http://localhost:8000';
   const scenarioDir = join(__dirname, 'scenarios');
 
   console.log(`E2E Test Campaign — Digitalisierungsfabrik`);
   console.log(`Backend: ${backendUrl}`);
-  console.log(`Filter:  ${scenarioId ?? 'alle Szenarien'}\n`);
+  console.log(`Filter:  ${scenarioId ?? 'alle Szenarien'}`);
+  console.log(`Output:  ${outputDir}${verbose ? ' (verbose)' : ''}\n`);
 
-  // Load scenarios
   const scenarios = await loadScenarios(scenarioDir, scenarioId);
   if (scenarios.length === 0) {
     console.error(`Keine Szenarien gefunden${scenarioId ? ` mit ID "${scenarioId}"` : ''}.`);
     process.exit(1);
   }
-  console.log(`${scenarios.length} Szenario(s) geladen: ${scenarios.map(s => s.id).join(', ')}`);
+  console.log(`${scenarios.length} Szenario(s) geladen: ${scenarios.map(s => s.id).join(', ')}\n`);
 
-  // Verify backend is reachable
-  try {
-    await fetch(`${backendUrl}/api/projects`);
-  } catch {
-    console.error(`\nBackend nicht erreichbar unter ${backendUrl}. Bitte Backend starten.`);
+  // Verify backend
+  try { await fetch(`${backendUrl}/api/projects`); } catch {
+    console.error(`Backend nicht erreichbar unter ${backendUrl}. Bitte Backend starten.`);
     process.exit(1);
   }
 
-  // Run scenarios
+  const assertionEvaluator = new AssertionEvaluator();
+  const behaviorEvaluator = new BehaviorEvaluator();
+  const reporter = new CampaignReporter();
   const results: ScenarioResult[] = [];
+  let hasFailure = false;
 
   for (const scenario of scenarios) {
-    console.log(`\nStarte Szenario: ${scenario.name} (${scenario.id})`);
-    const runClient = new SessionClient(backendUrl);
-    const runner = new ScenarioRunner(runClient, scenario);
+    const client = new SessionClient(backendUrl);
+    const runner = new ScenarioRunner(client, scenario);
 
     try {
       const result = await runner.run();
+
+      // Evaluate
+      result.assertion_results = assertionEvaluator.runAll(result.turns, result.final_artifacts);
+      result.behavior_scores = behaviorEvaluator.evaluateAll(
+        result.turns, result.final_artifacts, scenario.intent,
+      );
+
+      if (result.assertion_results.some(a => a.status === 'FAIL')) hasFailure = true;
+
+      reporter.addScenarioResult(result);
       results.push(result);
-      printResult(result);
+      printScenarioSummary(result);
     } catch (err) {
       if (err instanceof ConnectionError) {
-        console.error(`\nBackend nicht erreichbar unter ${backendUrl}. Bitte Backend starten.`);
+        console.error(`\nBackend nicht erreichbar. Abbruch.`);
         process.exit(1);
       }
-      console.error(`\nFehler bei Szenario ${scenario.id}:`, err);
+      console.error(`✗ ${scenario.id} Fehler:`, err instanceof Error ? err.message : err);
     }
   }
 
+  // Write reports
+  await reporter.writeReport(outputDir);
+
   // Final summary
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`KAMPAGNE ABGESCHLOSSEN`);
-  console.log(`${'='.repeat(60)}`);
-  console.log(`  Szenarien:  ${results.length}/${scenarios.length} erfolgreich`);
-  const totalTurns = results.reduce((s, r) => s + r.turns.length, 0);
-  const totalDuration = results.reduce((s, r) => s + r.duration_ms, 0);
-  console.log(`  Turns:      ${totalTurns}`);
-  console.log(`  Gesamtdauer: ${(totalDuration / 1000).toFixed(1)}s`);
+  console.log(`\nKampagne abgeschlossen. ${results.length}/${scenarios.length} Szenarien. Report: ${outputDir}/campaign-summary.md`);
+  process.exit(hasFailure ? 1 : 0);
 }
 
 main().catch((err) => {
