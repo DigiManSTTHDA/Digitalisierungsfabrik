@@ -98,18 +98,18 @@ Durchlauf kalibriert werden können.
 
 **Definition of Done:**
 
-- [ ] `e2e/scenarios/s01-eingangsrechnung.json` existiert und ist valides JSON
-- [ ] Intent mit key_concepts und forbidden_concepts definiert
-- [ ] Exploration-Phase mit ≥15 Turns, 1 Widerspruch, 1 Eskalation
-- [ ] Strukturierung-Phase mit ≥8 Turns, 1 Eskalation
-- [ ] Spezifikation-Phase mit ≥8 Turns, 1 Eskalation
-- [ ] ≥5 BehaviorProbes an kritischen Stellen
-- [ ] TurnExpectations bei Moduswechsel-Turns
-- [ ] Nudges an Phasenenden definiert
-- [ ] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
-- [ ] Kritische Turns mit `note` annotiert
-- [ ] `tags` korrekt gesetzt: `["referenz", "komplex", "eskalation", "widerspruch"]`
-- [ ] `npm run typecheck` in `e2e/` exit 0 (JSON wird im Runner geladen, Type-Check prüft Ladelogik)
+- [x] `e2e/scenarios/s01-eingangsrechnung.json` existiert und ist valides JSON
+- [x] Intent mit key_concepts und forbidden_concepts definiert
+- [x] Exploration-Phase mit ≥15 Turns, 1 Widerspruch, 1 Eskalation
+- [x] Strukturierung-Phase mit ≥8 Turns, 1 Eskalation
+- [x] Spezifikation-Phase mit ≥8 Turns, 1 Eskalation
+- [x] ≥5 BehaviorProbes an kritischen Stellen
+- [x] TurnExpectations bei Moduswechsel-Turns
+- [x] Nudges an Phasenenden definiert
+- [x] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [x] Kritische Turns mit `note` annotiert
+- [x] `tags` korrekt gesetzt: `["referenz", "komplex", "eskalation", "widerspruch"]`
+- [x] `npm run typecheck` in `e2e/` exit 0 (JSON wird im Runner geladen, Type-Check prüft Ladelogik)
 
 ---
 
@@ -143,15 +143,15 @@ Strukturierung + Spezifikation + Intent + BehaviorProbes erweitern,
 
 **Definition of Done:**
 
-- [ ] `e2e/scenarios/s02-reisekosten.json` um Strukturierung + Spezifikation erweitert
-- [ ] Intent mit key_concepts und forbidden_concepts
-- [ ] ≥2 BehaviorProbes
-- [ ] Keine Eskalationen im Szenario
-- [ ] Nudges als Fallback an Phasenenden definiert
-- [ ] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
-- [ ] Kritische Turns mit `note` annotiert
-- [ ] `tags` korrekt gesetzt: `["happy-path", "einfach", "baseline"]`
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/scenarios/s02-reisekosten.json` um Strukturierung + Spezifikation erweitert
+- [x] Intent mit key_concepts und forbidden_concepts
+- [x] ≥2 BehaviorProbes
+- [x] Keine Eskalationen im Szenario
+- [x] Nudges als Fallback an Phasenenden definiert
+- [x] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [x] Kritische Turns mit `note` annotiert
+- [x] `tags` korrekt gesetzt: `["happy-path", "einfach", "baseline"]`
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -184,17 +184,17 @@ hochwertige Artefakte erzeugt.
 
 **Definition of Done:**
 
-- [ ] `e2e/scenarios/s03-mitarbeiter-einstellung.json` existiert und ist valides JSON
-- [ ] Intent mit ≥7 key_concepts
-- [ ] Exploration-Phase mit ≥12 Turns
-- [ ] Strukturierung-Phase mit ≥8 Turns
-- [ ] Spezifikation-Phase mit ~4–6 Turns
-- [ ] ≥3 BehaviorProbes
-- [ ] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
-- [ ] Kritische Turns mit `note` annotiert
-- [ ] Nudges an Phasenenden definiert
-- [ ] `tags` korrekt gesetzt: `["komplex", "skalierung", "viele-schritte"]`
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/scenarios/s03-mitarbeiter-einstellung.json` existiert und ist valides JSON
+- [x] Intent mit ≥7 key_concepts
+- [x] Exploration-Phase mit ≥12 Turns
+- [x] Strukturierung-Phase mit ≥8 Turns
+- [x] Spezifikation-Phase mit ~4–6 Turns
+- [x] ≥3 BehaviorProbes
+- [x] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [x] Kritische Turns mit `note` annotiert
+- [x] Nudges an Phasenenden definiert
+- [x] `tags` korrekt gesetzt: `["komplex", "skalierung", "viele-schritte"]`
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -244,20 +244,20 @@ hochwertige Artefakte erzeugt.
 
 **Definition of Done:**
 
-- [ ] `e2e/scenarios/s04-ungeduldiger-nutzer.json` existiert und ist valides JSON
-- [ ] S04: Kurzantworten-Turns mit TurnExpectations gegen vorzeitiges phase_complete
-- [ ] S04: ≥2 BehaviorProbes zum Nachfrage- und Annahmen-Verhalten
-- [ ] S04: Strukturierung- und Spezifikation-Phase definiert
-- [ ] S04: Nudges an Phasenenden definiert
-- [ ] `e2e/scenarios/s05-widersprueche.json` existiert und ist valides JSON
-- [ ] S05: 3 explizite Korrekturen mit BehaviorProbes
-- [ ] S05: BehaviorProbe prüft dass alte Werte überschrieben wurden
-- [ ] S05: Strukturierung- und Spezifikation-Phase definiert
-- [ ] S05: Nudges an Phasenenden definiert
-- [ ] S04+S05: Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
-- [ ] S04+S05: Kritische Turns mit `note` annotiert
-- [ ] S04+S05: `tags` korrekt gesetzt
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/scenarios/s04-ungeduldiger-nutzer.json` existiert und ist valides JSON
+- [x] S04: Kurzantworten-Turns mit TurnExpectations gegen vorzeitiges phase_complete
+- [x] S04: ≥2 BehaviorProbes zum Nachfrage- und Annahmen-Verhalten
+- [x] S04: Strukturierung- und Spezifikation-Phase definiert
+- [x] S04: Nudges an Phasenenden definiert
+- [x] `e2e/scenarios/s05-widersprueche.json` existiert und ist valides JSON
+- [x] S05: 3 explizite Korrekturen mit BehaviorProbes
+- [x] S05: BehaviorProbe prüft dass alte Werte überschrieben wurden
+- [x] S05: Strukturierung- und Spezifikation-Phase definiert
+- [x] S05: Nudges an Phasenenden definiert
+- [x] S04+S05: Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [x] S04+S05: Kritische Turns mit `note` annotiert
+- [x] S04+S05: `tags` korrekt gesetzt
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -321,25 +321,25 @@ Sprachmischung stabil bleibt.
 
 **Definition of Done:**
 
-- [ ] `e2e/scenarios/s06-abbruch-phase1.json` existiert mit nur Exploration-Phase
-- [ ] S06: `strukturierung`, `spezifikation`, `validierung` sind explizit leere Arrays `[]`
-- [ ] S06: BehaviorProbes prüfen konsistenten State nach Abbruch
-- [ ] S06: Nudges an Exploration-Phasenende definiert
-- [ ] `e2e/scenarios/s07-minimaler-prozess.json` existiert mit minimalem Prozess
-- [ ] S07: Strukturierung- und Spezifikation-Phase definiert (minimal)
-- [ ] S07: forbidden_concepts gegen Komplexitäts-Halluzination
-- [ ] S07: BehaviorProbe prüft ≤3 Strukturschritte
-- [ ] S07: Nudges an Phasenenden definiert
-- [ ] `e2e/scenarios/s08-englisch-antworten.json` existiert mit gemischter Sprache
-- [ ] S08: Strukturierung- und Spezifikation-Phase definiert
-- [ ] S08: ≥4 englische Nutzer-Turns
-- [ ] S08: BehaviorProbes prüfen deutsche Systemantworten
-- [ ] S08: TurnExpectations bei englischen Turns
-- [ ] S08: Nudges an Phasenenden definiert
-- [ ] S06+S07+S08: Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
-- [ ] S06+S07+S08: Kritische Turns mit `note` annotiert
-- [ ] S06+S07+S08: `tags` korrekt gesetzt
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/scenarios/s06-abbruch-phase1.json` existiert mit nur Exploration-Phase
+- [x] S06: `strukturierung`, `spezifikation`, `validierung` sind explizit leere Arrays `[]`
+- [x] S06: BehaviorProbes prüfen konsistenten State nach Abbruch
+- [x] S06: Nudges an Exploration-Phasenende definiert
+- [x] `e2e/scenarios/s07-minimaler-prozess.json` existiert mit minimalem Prozess
+- [x] S07: Strukturierung- und Spezifikation-Phase definiert (minimal)
+- [x] S07: forbidden_concepts gegen Komplexitäts-Halluzination
+- [x] S07: BehaviorProbe prüft ≤3 Strukturschritte
+- [x] S07: Nudges an Phasenenden definiert
+- [x] `e2e/scenarios/s08-englisch-antworten.json` existiert mit gemischter Sprache
+- [x] S08: Strukturierung- und Spezifikation-Phase definiert
+- [x] S08: ≥4 englische Nutzer-Turns
+- [x] S08: BehaviorProbes prüfen deutsche Systemantworten
+- [x] S08: TurnExpectations bei englischen Turns
+- [x] S08: Nudges an Phasenenden definiert
+- [x] S06+S07+S08: Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [x] S06+S07+S08: Kritische Turns mit `note` annotiert
+- [x] S06+S07+S08: `tags` korrekt gesetzt
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
