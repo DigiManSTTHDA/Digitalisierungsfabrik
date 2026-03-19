@@ -86,18 +86,18 @@ SDD 6.3, 6.1.2, 5.2, 6.6.5, FR-A-08, 6.5.2, FR-B-04.
 
 **Definition of Done:**
 
-- [ ] `e2e/framework/evaluator.ts` existiert und exportiert `AssertionEvaluator`
-- [ ] `checkModeTransitions()` prüft Moduswechsel gegen Flag-Regeln
-- [ ] `checkPhaseTransitions()` prüft Moderator-Bestätigung bei Phasenwechsel
-- [ ] `checkModeratorNoWrite()` prüft dass Moderator keine Artefakte schreibt
-- [ ] `checkLanguage()` erkennt nicht-deutsche Systemantworten
-- [ ] `checkOutputContract()` erkennt Artefakt-Dumps im Chat
-- [ ] `checkArtifactIntegrity()` prüft Nachfolger-Referenzen und Waisen
-- [ ] `checkEMMACompatibility()` prüft EMMA-Aktionstypen gegen Katalog
-- [ ] `runAll()` aggregiert alle 7 Checks
-- [ ] `AssertionEvaluator` ist zustandslos (kein Constructor-State)
-- [ ] `e2e/framework/evaluator.ts` ist ≤ 400 Zeilen (nach 13-02; sonst aufteilen)
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/framework/evaluator.ts` existiert und exportiert `AssertionEvaluator`
+- [x] `checkModeTransitions()` prüft Moduswechsel gegen Flag-Regeln
+- [x] `checkPhaseTransitions()` prüft Moderator-Bestätigung bei Phasenwechsel
+- [x] `checkModeratorNoWrite()` prüft dass Moderator keine Artefakte schreibt
+- [x] `checkLanguage()` erkennt nicht-deutsche Systemantworten
+- [x] `checkOutputContract()` erkennt Artefakt-Dumps im Chat
+- [x] `checkArtifactIntegrity()` prüft Nachfolger-Referenzen und Waisen
+- [x] `checkEMMACompatibility()` prüft EMMA-Aktionstypen gegen Katalog
+- [x] `runAll()` aggregiert alle 7 Checks
+- [x] `AssertionEvaluator` ist zustandslos (kein Constructor-State)
+- [x] `e2e/framework/evaluator.ts` ist ≤ 400 Zeilen (nach 13-02; sonst aufteilen)
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -161,14 +161,14 @@ Dimensionen A–D.
 
 **Definition of Done:**
 
-- [ ] `BehaviorEvaluator` exportiert aus `evaluator.ts`
-- [ ] `evaluateDialogQuality()` mit slot_efficiency, repetition_count, nudge_count Metriken
-- [ ] `evaluateModeratorBehavior()` mit avg_moderator_turns, escalation_resolved Metriken
-- [ ] `evaluateArtifactQuality()` mit slot_completeness, key_concept_coverage, forbidden_concept_violations Metriken
-- [ ] `evaluateUXFluency()` mit median_response_ms, p95_response_ms, mode_pingpong_count, nudge_total Metriken
-- [ ] Vierstufige Bewertungsskala (SEHR_GUT / GUT / BEFRIEDIGEND / MANGELHAFT) korrekt implementiert
-- [ ] `evaluateAll()` aggregiert alle 4 Dimensionen
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `BehaviorEvaluator` exportiert aus `evaluator.ts`
+- [x] `evaluateDialogQuality()` mit slot_efficiency, repetition_count, nudge_count Metriken
+- [x] `evaluateModeratorBehavior()` mit avg_moderator_turns, escalation_resolved Metriken
+- [x] `evaluateArtifactQuality()` mit slot_completeness, key_concept_coverage, forbidden_concept_violations Metriken
+- [x] `evaluateUXFluency()` mit median_response_ms, p95_response_ms, mode_pingpong_count, nudge_total Metriken
+- [x] Vierstufige Bewertungsskala (SEHR_GUT / GUT / BEFRIEDIGEND / MANGELHAFT) korrekt implementiert
+- [x] `evaluateAll()` aggregiert alle 4 Dimensionen
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -200,14 +200,14 @@ und Dialog-Protokoll,
 
 **Definition of Done:**
 
-- [ ] `e2e/framework/campaign-reporter.ts` existiert und exportiert `CampaignReporter`
-- [ ] `addScenarioResult()` speichert Ergebnisse intern
-- [ ] Szenario-Befundliste enthält Eckdaten, Assertions, Verhaltensbewertung, Dialog-Protokoll
-- [ ] Dialog-Protokoll ist gekürzt (keine vollständigen Nachrichten)
-- [ ] Artefakt-Snapshots als JSON-Codeblöcke enthalten
-- [ ] `writeScenarioReport()` schreibt `scenario-<ID>.md`
-- [ ] Verzeichnis wird erstellt wenn nicht vorhanden
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/framework/campaign-reporter.ts` existiert und exportiert `CampaignReporter`
+- [x] `addScenarioResult()` speichert Ergebnisse intern
+- [x] Szenario-Befundliste enthält Eckdaten, Assertions, Verhaltensbewertung, Dialog-Protokoll
+- [x] Dialog-Protokoll ist gekürzt (keine vollständigen Nachrichten)
+- [x] Artefakt-Snapshots als JSON-Codeblöcke enthalten
+- [x] `writeScenarioReport()` schreibt `scenario-<ID>.md`
+- [x] Verzeichnis wird erstellt wenn nicht vorhanden
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -251,14 +251,14 @@ Problemmuster-Erkennung,
 
 **Definition of Done:**
 
-- [ ] `analyzePatterns()` gibt assertion_summary, behavior_matrix, problem_patterns, recommendations zurück
-- [ ] Problemmuster-Erkennung für systemisch schwache Dimensionen
-- [ ] Problemmuster-Erkennung für wiederkehrende Assertion-Fehler
-- [ ] `writeCampaignSummary()` schreibt `campaign-summary.md` mit Bewertungsmatrix
-- [ ] `writeCampaignSummary()` schreibt `raw-data.json`
-- [ ] `writeReport()` erzeugt alle Reports (Szenario + Kampagne)
-- [ ] Bewertungsmatrix-Format entspricht `e2e-testkampagne-plan.md` Abschnitt "Bewertungsmatrix"
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `analyzePatterns()` gibt assertion_summary, behavior_matrix, problem_patterns, recommendations zurück
+- [x] Problemmuster-Erkennung für systemisch schwache Dimensionen
+- [x] Problemmuster-Erkennung für wiederkehrende Assertion-Fehler
+- [x] `writeCampaignSummary()` schreibt `campaign-summary.md` mit Bewertungsmatrix
+- [x] `writeCampaignSummary()` schreibt `raw-data.json`
+- [x] `writeReport()` erzeugt alle Reports (Szenario + Kampagne)
+- [x] Bewertungsmatrix-Format entspricht `e2e-testkampagne-plan.md` Abschnitt "Bewertungsmatrix"
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -292,13 +292,13 @@ und Report-Generierung laufen,
 
 **Definition of Done:**
 
-- [ ] Evaluierung (Assertion + Behavior) läuft automatisch nach jedem Szenario
-- [ ] Reports werden automatisch in `e2e/reports/` geschrieben
-- [ ] `--scenario`, `--output`, `--verbose` Flags implementiert
-- [ ] Fortschritts-Ausgabe pro Szenario auf stdout
-- [ ] Exit-Code 0 bei Erfolg, 1 bei Assertion-FAIL
-- [ ] `e2e/run-campaign.ts` ist ≤ 200 Zeilen
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] Evaluierung (Assertion + Behavior) läuft automatisch nach jedem Szenario
+- [x] Reports werden automatisch in `e2e/reports/` geschrieben
+- [x] `--scenario`, `--output`, `--verbose` Flags implementiert
+- [x] Fortschritts-Ausgabe pro Szenario auf stdout
+- [x] Exit-Code 0 bei Erfolg, 1 bei Assertion-FAIL
+- [x] `e2e/run-campaign.ts` ist ≤ 200 Zeilen
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
@@ -333,14 +333,14 @@ und Report-Generierung laufen,
 
 **Definition of Done:**
 
-- [ ] `e2e/framework/__tests__/evaluator.test.ts` existiert
-- [ ] Mindestens 6 AssertionEvaluator-Tests mit synthetischen TurnRecords
-- [ ] Mindestens 4 BehaviorEvaluator-Tests mit synthetischen TurnRecords
-- [ ] Mindestens 3 Pattern-Detection-Tests mit synthetischen Szenario-Ergebnissen
-- [ ] Mindestens 13 Tests insgesamt
-- [ ] Alle Tests laufen ohne Backend-Abhängigkeit
-- [ ] `npx tsx --test e2e/framework/__tests__/evaluator.test.ts` exit 0
-- [ ] `npm run typecheck` in `e2e/` exit 0
+- [x] `e2e/framework/__tests__/evaluator.test.ts` existiert
+- [x] Mindestens 6 AssertionEvaluator-Tests mit synthetischen TurnRecords
+- [x] Mindestens 4 BehaviorEvaluator-Tests mit synthetischen TurnRecords
+- [x] Mindestens 3 Pattern-Detection-Tests mit synthetischen Szenario-Ergebnissen
+- [x] Mindestens 13 Tests insgesamt
+- [x] Alle Tests laufen ohne Backend-Abhängigkeit
+- [x] `npx tsx --test e2e/framework/__tests__/evaluator.test.ts` exit 0
+- [x] `npm run typecheck` in `e2e/` exit 0
 
 ---
 
