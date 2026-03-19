@@ -141,6 +141,8 @@ export interface ScenarioResult {
   scenario_name: string;
   turns: TurnRecord[];
   final_artifacts: ArtifactSnapshots;
+  assertion_results: AssertionResult[];
+  behavior_scores: BehaviorScore[];
   duration_ms: number;
   summary: string;
 }

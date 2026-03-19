@@ -101,6 +101,8 @@ export class ScenarioRunner {
       scenario_name: this.scenario.name,
       turns: records,
       final_artifacts: lastArtifacts,
+      assertion_results: [],
+      behavior_scores: [],
       duration_ms: duration,
       summary,
     };
