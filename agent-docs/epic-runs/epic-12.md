@@ -34,3 +34,62 @@
 | C5 | Added `error` event reference to Story 12-03 AC4 |
 
 **Post-correction outcome:** VALID (pending ADR-009 creation before implementation)
+
+---
+
+## Implementation — 2026-03-18
+
+### Stories Implemented
+
+| Story | Summary | Commit |
+|-------|---------|--------|
+| ADR-009 | E2E directory at repository root | `af3139c` |
+| 12-01 | TypeScript project setup in `e2e/` | `a4085c9` |
+| 12-02 | `types.ts` — All 18 interfaces | `6000b3f` |
+| 12-03 | `ws-client.ts` — SessionClient | `5761c58` |
+| 12-04 | `scenario-runner.ts` — ScenarioRunner | `06857bd` |
+| 12-05 | S02 scenario + `run-campaign.ts` CLI | `05fe291` |
+
+### Files Created
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `agent-docs/decisions/ADR-009-e2e-test-directory.md` | 53 | ADR for `e2e/` root directory |
+| `e2e/package.json` | 18 | npm project config |
+| `e2e/tsconfig.json` | 14 | TypeScript strict config |
+| `e2e/.gitignore` | 2 | node_modules/ + reports/ |
+| `e2e/framework/types.ts` | 170 | All 18 interfaces (limit: 300) |
+| `e2e/framework/ws-client.ts` | 259 | SessionClient with WS + REST (limit: 300) |
+| `e2e/framework/scenario-runner.ts` | 286 | Turn-loop, nudge, expectations (limit: 300) |
+| `e2e/scenarios/s02-reisekosten.json` | 107 | S02 Happy Path (12 exploration turns) |
+| `e2e/run-campaign.ts` | 143 | CLI entry point (limit: 150) |
+
+### ADRs Written
+
+- ADR-009: E2E Test Directory at Repository Root
+
+### Critic Issues Found and Fixed
+
+| Story | Issues | Details |
+|-------|--------|---------|
+| 12-01 | 0 | — |
+| 12-02 | 0 | — |
+| 12-03 | 1 | Initial implementation was 320 lines (limit 300); compressed event type definitions to 259 lines |
+| 12-04 | 1 | TypeScript type error in nudge logProgress call; fixed by extracting nudgeTurn variable |
+| 12-05 | 1 | Unused `client` variable in main(); removed |
+
+### Mini-Audit Results
+
+| Story | Paths | Lines | Exports | Types | Typecheck |
+|-------|-------|-------|---------|-------|-----------|
+| 12-01 | OK | OK | n/a | n/a | OK |
+| 12-02 | OK | OK (170/300) | OK (18) | OK | OK |
+| 12-03 | OK | OK (259/300) | OK (4) | OK | OK |
+| 12-04 | OK | OK (286/300) | OK (1) | OK | OK |
+| 12-05 | OK | OK (143/150) | n/a | OK | OK |
+
+### Open Items
+
+- **Smoke test pending manual verification:** Story 12-05 DoD checkbox for
+  `npx tsx e2e/run-campaign.ts --scenario S02` is unchecked — requires a
+  running backend to verify. All other checkboxes are `[x]`.
