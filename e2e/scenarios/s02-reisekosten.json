@@ -1,89 +1,141 @@
 {
   "id": "S02",
   "name": "Reisekostenabrechnung",
-  "description": "Happy Path: Kooperativer Nutzer beschreibt den Reisekostenabrechnungsprozess. Keine Eskalationen, kein Nudge-Bedarf.",
-  "tags": ["happy-path", "exploration", "baseline"],
+  "description": "Happy Path: Kooperativer Nutzer beschreibt den Reisekostenabrechnungsprozess vollstaendig ueber alle Phasen. Keine Eskalationen, keine Widersprueche.",
+  "tags": ["happy-path", "einfach", "baseline"],
   "intent": {
-    "process_description": "Reisekostenabrechnung von Dienstreise-Antrag bis Erstattung über SAP",
-    "expected_structure_steps": 8,
+    "process_description": "Reisekostenabrechnung — Antrag, Genehmigung, Abrechnung, Erstattung",
+    "expected_structure_steps": 7,
     "expected_complexity": "einfach",
-    "key_concepts": [
-      "Reisekosten",
-      "Reiseantrag",
-      "Belege",
-      "SAP",
-      "Buchhaltung",
-      "Genehmigung",
-      "Erstattung"
-    ],
-    "forbidden_concepts": []
+    "key_concepts": ["Reisekosten", "Genehmigung", "Belege", "Erstattung", "Vorgesetzter"],
+    "forbidden_concepts": ["Blockchain", "Machine Learning"]
   },
   "phases": {
     "exploration": [
       {
         "id": "E2-01",
-        "message": "Also, der Prozess den ich beschreiben will ist unsere Reisekostenabrechnung. Das ist eigentlich ganz einfach, aber trotzdem geht da ständig was schief. Letzte Woche hat der Müller aus dem Vertrieb wieder seinen ganzen Ordner mit Belegen gebracht, komplett unsortiert, manche sogar noch vom letzten Jahr. Naja, egal.\n\nAlso es fängt damit an dass ein Mitarbeiter eine Dienstreise macht. Vorher muss er eigentlich einen Reiseantrag stellen, das macht aber nicht jeder. Der Meier zum Beispiel fährt einfach los und reicht dann hinterher alles ein. Das ist natürlich nicht so gedacht. Der Reiseantrag geht an den Vorgesetzten der muss das genehmigen. Wir haben da so ein Formular im Intranet, das ist aber total veraltet, läuft noch auf dem alten SharePoint. Manchmal hängt sich das auch einfach auf.\n\nNach der Reise sammelt der Mitarbeiter seine Belege. Hotelrechnung, Bahntickets, Taxiquittungen, Bewirtungsbelege wenn er Kunden eingeladen hat. Die Bewirtungsbelege sind immer ein Drama weil da der Anlass und die Teilnehmer drauf müssen, das vergessen die Leute ständig. Dann müssen wir nachfragen und das zieht sich dann.\n\nDie Belege werden dann in SAP erfasst, da gibt es eine Maske für Reisekosten. Das macht entweder der Mitarbeiter selbst oder seine Assistenz. Die Frau Schmidt macht das zum Beispiel für die ganze Geschäftsführung, die kennt sich da super aus. Andere Mitarbeiter kennen sich in SAP überhaupt nicht aus und machen ständig Fehler bei der Kontierung.\n\nDann prüft die Buchhaltung. Die schauen ob die Belege vollständig sind, ob die Beträge stimmen, ob die Kostenstelle richtig ist. Wenn was fehlt geht das zurück. Das kann auch zwei drei Mal hin und her gehen. Die Kollegin in der Buchhaltung, die Frau Weber, die ist da sehr genau. Manchmal vielleicht zu genau, aber lieber so als anders.\n\nWenn alles stimmt wird die Erstattung angewiesen, das läuft dann über die normale Kreditorenbuchhaltung und wird mit dem nächsten Gehaltslauf ausgezahlt. Dauert manchmal vier bis sechs Wochen, da beschweren sich die Leute natürlich.\n\nAch ja, und es gibt Sonderregeln für Auslandsreisen, da kommen noch Tagessätze dazu und Wechselkurse. Das ist nochmal ein eigenes Thema. Und bei Reisen über 500 Euro muss auch noch der Bereichsleiter unterschreiben, nicht nur der direkte Vorgesetzte. Das weiß aber kaum jemand.",
+        "message": "Also, der Prozess den ich beschreiben will ist unsere Reisekostenabrechnung. Das ist eigentlich ganz einfach, aber trotzdem geht da staendig was schief. Letzte Woche hat der Mueller aus dem Vertrieb wieder seinen ganzen Ordner mit Belegen gebracht, komplett unsortiert, manche sogar noch vom letzten Jahr. Naja, egal.\n\nAlso es faengt damit an dass ein Mitarbeiter eine Dienstreise macht. Vorher muss er eigentlich einen Reiseantrag stellen, das macht aber nicht jeder. Der Meier zum Beispiel faehrt einfach los und reicht dann hinterher alles ein. Das ist natuerlich nicht so gedacht. Der Reiseantrag geht an den Vorgesetzten der muss das genehmigen. Wir haben da so ein Formular im Intranet, das ist aber total veraltet, laeuft noch auf dem alten SharePoint. Manchmal haengt sich das auch einfach auf.\n\nNach der Reise sammelt der Mitarbeiter seine Belege. Hotelrechnung, Bahntickets, Taxiquittungen, Bewirtungsbelege wenn er Kunden eingeladen hat. Die Bewirtungsbelege sind immer ein Drama weil da der Anlass und die Teilnehmer drauf muessen, das vergessen die Leute staendig. Dann muessen wir nachfragen und das zieht sich dann.\n\nDie Belege werden dann in SAP erfasst, da gibt es eine Maske fuer Reisekosten. Das macht entweder der Mitarbeiter selbst oder seine Assistenz. Die Frau Schmidt macht das zum Beispiel fuer die ganze Geschaeftsfuehrung, die kennt sich da super aus. Andere Mitarbeiter kennen sich in SAP ueberhaupt nicht aus und machen staendig Fehler bei der Kontierung.\n\nDann prueft die Buchhaltung. Die schauen ob die Belege vollstaendig sind, ob die Betraege stimmen, ob die Kostenstelle richtig ist. Wenn was fehlt geht das zurueck. Das kann auch zwei drei Mal hin und her gehen. Die Kollegin in der Buchhaltung, die Frau Weber, die ist da sehr genau. Manchmal vielleicht zu genau, aber lieber so als anders.\n\nWenn alles stimmt wird die Erstattung angewiesen, das laeuft dann ueber die normale Kreditorenbuchhaltung und wird mit dem naechsten Gehaltslauf ausgezahlt. Dauert manchmal vier bis sechs Wochen, da beschweren sich die Leute natuerlich.\n\nAch ja, und es gibt Sonderregeln fuer Auslandsreisen, da kommen noch Tagessaetze dazu und Wechselkurse. Das ist nochmal ein eigenes Thema. Und bei Reisen ueber 500 Euro muss auch noch der Bereichsleiter unterschreiben, nicht nur der direkte Vorgesetzte. Das weiss aber kaum jemand.",
         "note": "Initialer Rambling-Input mit vielen Details"
       },
       {
         "id": "E2-02",
-        "message": "Hmm, also wo der Prozess anfängt... naja, eigentlich wenn jemand sagt er muss irgendwo hin. Aber das ist ja noch vor dem Antrag. Also eigentlich beim Reiseantrag. Oder, warten Sie, manche Leute stellen ja gar keinen Antrag, die reisen einfach. Ist das dann trotzdem der Anfang? Ich finde halt das ganze Antragsding müsste man mal vereinfachen, das benutzt doch keiner freiwillig das SharePoint-Formular.\n\nEnde ist wenn das Geld auf dem Konto ist, das ist klar. Obwohl, eigentlich ist es erst fertig wenn die Buchhaltung den Vorgang archiviert hat. Aber das kriegen wir als Fachabteilung gar nicht mit, das passiert irgendwo im Hintergrund.",
+        "message": "Hmm, also wo der Prozess anfaengt... naja, eigentlich wenn jemand sagt er muss irgendwo hin. Aber das ist ja noch vor dem Antrag. Also eigentlich beim Reiseantrag. Oder, warten Sie, manche Leute stellen ja gar keinen Antrag, die reisen einfach. Ist das dann trotzdem der Anfang? Ich finde halt das ganze Antragsding muesste man mal vereinfachen, das benutzt doch keiner freiwillig das SharePoint-Formular.\n\nEnde ist wenn das Geld auf dem Konto ist, das ist klar. Obwohl, eigentlich ist es erst fertig wenn die Buchhaltung den Vorgang archiviert hat. Aber das kriegen wir als Fachabteilung gar nicht mit, das passiert irgendwo im Hintergrund.",
         "note": "Vage Antwort auf Scope-Frage"
       },
       {
         "id": "E2-03",
-        "message": "Wir sitzen in Frankfurt, Hauptsitz. Es gibt noch Niederlassungen in München und Hamburg, die machen das aber glaube ich genauso. Oder vielleicht doch ein bisschen anders, in München haben die eine eigene Buchhalterin die das macht... wie heißt die nochmal... ist auch egal.\n\nDie Reisekostenabrechnung betrifft eigentlich alle Abteilungen, aber hauptsächlich den Vertrieb, die reisen am meisten. Und die Geschäftsführung natürlich. Ach so, wir sind so 450 Mitarbeiter insgesamt, falls das relevant ist. In Frankfurt sind davon vielleicht 280.",
+        "message": "Wir sitzen in Frankfurt, Hauptsitz. Es gibt noch Niederlassungen in Muenchen und Hamburg, die machen das aber glaube ich genauso. Oder vielleicht doch ein bisschen anders, in Muenchen haben die eine eigene Buchhalterin die das macht... wie heisst die nochmal... ist auch egal.\n\nDie Reisekostenabrechnung betrifft eigentlich alle Abteilungen, aber hauptsaechlich den Vertrieb, die reisen am meisten. Und die Geschaeftsfuehrung natuerlich. Ach so, wir sind so 450 Mitarbeiter insgesamt, falls das relevant ist. In Frankfurt sind davon vielleicht 280.",
         "note": "Teilinfos zur Organisation"
       },
       {
         "id": "E2-04",
-        "message": "Naja das Ziel ist natürlich dass der Mitarbeiter sein Geld zurückbekommt. Was soll es denn sonst sein? Und dass das korrekt verbucht ist, klar, für die Buchhaltung und den Jahresabschluss und so. Steuerlich muss das ja auch alles sauber sein.\n\nAber wenn Sie mich fragen was das EIGENTLICHE Ziel sein sollte: Dass das Ganze in unter zwei Wochen durch ist und nicht wie jetzt teilweise sechs Wochen dauert. Der Vorstand hat da letztens auch was gesagt, die wollen die Durchlaufzeit runter kriegen. Moment, ich hab da irgendwo noch ne Mail... ne, find ich jetzt nicht.",
+        "message": "Naja das Ziel ist natuerlich dass der Mitarbeiter sein Geld zurueckbekommt. Was soll es denn sonst sein? Und dass das korrekt verbucht ist, klar, fuer die Buchhaltung und den Jahresabschluss und so. Steuerlich muss das ja auch alles sauber sein.\n\nAber wenn Sie mich fragen was das EIGENTLICHE Ziel sein sollte: Dass das Ganze in unter zwei Wochen durch ist und nicht wie jetzt teilweise sechs Wochen dauert. Der Vorstand hat da letztens auch was gesagt, die wollen die Durchlaufzeit runter kriegen. Moment, ich hab da irgendwo noch ne Mail... ne, find ich jetzt nicht.",
         "note": "Offensichtliche Antwort + Frustration"
       },
       {
         "id": "E2-05",
-        "message": "Ja also steuerlich gibt es natürlich Vorgaben, Bewirtungsbelege müssen bestimmte Angaben haben, das hab ich ja schon gesagt. Und die Aufbewahrungspflicht, 10 Jahre glaub ich? Oder waren es 8? Da müssten Sie die Frau Weber fragen, die kennt sich da besser aus.\n\nIntern haben wir eine Reisekostenrichtlinie, die ist von 2019. Steht da alles drin. Hotel maximal 150 Euro pro Nacht, Business Class Flüge nur ab Vorstandsebene, sowas halt. Aber ob die noch aktuell ist... puh. Der Mayer hat mal gesagt die müsste überarbeitet werden aber da ist nie was passiert.\n\nAch und ganz wichtig: Belege müssen innerhalb von 30 Tagen nach Reiseende eingereicht werden. Das steht in der Richtlinie. Hält sich aber auch keiner dran, wie gesagt der Müller kommt mit Sachen vom letzten Jahr.",
-        "note": "Regeln und Einschränkungen"
+        "message": "Ja also steuerlich gibt es natuerlich Vorgaben, Bewirtungsbelege muessen bestimmte Angaben haben, das hab ich ja schon gesagt. Und die Aufbewahrungspflicht, 10 Jahre glaub ich? Oder waren es 8? Da muessten Sie die Frau Weber fragen, die kennt sich da besser aus.\n\nIntern haben wir eine Reisekostenrichtlinie, die ist von 2019. Steht da alles drin. Hotel maximal 150 Euro pro Nacht, Business Class Fluege nur ab Vorstandsebene, sowas halt. Aber ob die noch aktuell ist... puh. Der Mayer hat mal gesagt die muesste ueberarbeitet werden aber da ist nie was passiert.\n\nAch und ganz wichtig: Belege muessen innerhalb von 30 Tagen nach Reiseende eingereicht werden. Das steht in der Richtlinie. Haelt sich aber auch keiner dran, wie gesagt der Mueller kommt mit Sachen vom letzten Jahr.",
+        "note": "Regeln und Einschraenkungen"
       },
       {
         "id": "E2-06",
-        "message": "Sonderfälle... puh, da gibt es einige. Also erstmal die Auslandsreisen, das hab ich schon erwähnt. Da gibt es Pauschalen, die ändern sich auch jedes Jahr, das pflegt irgendwer in SAP ein, ich weiß nicht wer.\n\nDann hatten wir letztens einen Fall, da hat ein Mitarbeiter seinen privaten PKW genommen und wollte die Kilometer abrechnen. Sind 0,30 Euro pro Kilometer. Aber der hatte keine Genehmigung für den PKW, eigentlich hätte er Bahn fahren müssen. Da gab es dann ein riesen Hin und Her, letztendlich hat sein Chef das dann irgendwie durchgedrückt.\n\nUnd wenn jemand seinen Beleg verliert, was öfter vorkommt als man denkt, dann muss er eine Eigenbelegerklärung schreiben. Bis 50 Euro geht das, darüber wird es schwierig. Einmal hatte jemand eine Hotelrechnung über 800 Euro verloren, das war echt ein Problem.\n\nAch ja, und Stornos! Wenn eine Reise storniert wird, sind manchmal schon Kosten angefallen, Stornogebühren zum Beispiel. Das ist auch immer komisch abzurechnen.",
-        "note": "Sonderfälle und Anekdoten"
+        "message": "Sonderfaelle... puh, da gibt es einige. Also erstmal die Auslandsreisen, das hab ich schon erwaehnt. Da gibt es Pauschalen, die aendern sich auch jedes Jahr, das pflegt irgendwer in SAP ein, ich weiss nicht wer.\n\nDann hatten wir letztens einen Fall, da hat ein Mitarbeiter seinen privaten PKW genommen und wollte die Kilometer abrechnen. Sind 0,30 Euro pro Kilometer. Aber der hatte keine Genehmigung fuer den PKW, eigentlich haette er Bahn fahren muessen. Da gab es dann ein riesen Hin und Her, letztendlich hat sein Chef das dann irgendwie durchgedrueckt.\n\nUnd wenn jemand seinen Beleg verliert, was oefter vorkommt als man denkt, dann muss er eine Eigenbelegererklaerung schreiben. Bis 50 Euro geht das, darueber wird es schwierig. Einmal hatte jemand eine Hotelrechnung ueber 800 Euro verloren, das war echt ein Problem.\n\nAch ja, und Stornos! Wenn eine Reise storniert wird, sind manchmal schon Kosten angefallen, Stornogebuehren zum Beispiel. Das ist auch immer komisch abzurechnen.",
+        "note": "Sonderfaelle und Anekdoten"
       },
       {
         "id": "E2-07",
-        "message": "SAP hab ich ja gesagt, SAP FI für die Buchhaltung. Und das SharePoint-Formular für den Reiseantrag. Dann benutzen manche Leute noch Excel, um ihre Belege vorzusortieren, bevor sie die in SAP eintippen. Ist nicht offiziell aber macht halt jeder so.\n\nE-Mail natürlich, ganz viel E-Mail. Die Genehmigungen laufen teilweise per Mail wenn das SharePoint nicht geht. Und die Rückfragen von der Buchhaltung kommen auch per Mail.\n\nAch stimmt, und die Frau Schmidt benutzt glaube ich noch irgend so ein Tool um die Belege einzuscannen. ScanSnap oder so? Und die landen dann auf einem Netzlaufwerk. Ob die von da in SAP kommen weiß ich ehrlich gesagt nicht, das müssten Sie die fragen.",
+        "message": "SAP hab ich ja gesagt, SAP FI fuer die Buchhaltung. Und das SharePoint-Formular fuer den Reiseantrag. Dann benutzen manche Leute noch Excel, um ihre Belege vorzusortieren, bevor sie die in SAP eintippen. Ist nicht offiziell aber macht halt jeder so.\n\nE-Mail natuerlich, ganz viel E-Mail. Die Genehmigungen laufen teilweise per Mail wenn das SharePoint nicht geht. Und die Rueckfragen von der Buchhaltung kommen auch per Mail.\n\nAch stimmt, und die Frau Schmidt benutzt glaube ich noch irgend so ein Tool um die Belege einzuscannen. ScanSnap oder so? Und die landen dann auf einem Netzlaufwerk. Ob die von da in SAP kommen weiss ich ehrlich gesagt nicht, das muessten Sie die fragen.",
         "note": "IT-Systeme"
       },
       {
         "id": "E2-08",
-        "message": "Pro Monat? Puh. Also im Vertrieb sind das bestimmt... ich sag mal 60 bis 80 Abrechnungen? Für die ganze Firma vielleicht 120? Aber das schwankt stark, im Herbst ist Messezeit, da ist viel mehr. Im August fast nichts weil alle im Urlaub sind.\n\nZeitaufwand... also der Mitarbeiter braucht vielleicht eine Stunde um alles zusammenzusuchen und in SAP einzugeben, wenn er sich auskennt. Wenn nicht, länger. Die Frau Schmidt schafft eine Abrechnung in 20 Minuten, die ist aber auch ein Profi.\n\nDie Buchhaltung braucht dann nochmal... keine Ahnung, pro Abrechnung vielleicht 15-20 Minuten für die Prüfung? Wenn alles stimmt. Wenn was fehlt natürlich viel mehr weil dann die Rückfrage läuft und das kann sich über Tage ziehen. Frau Weber sagt die verbringt gut 30% ihrer Arbeitszeit nur mit Reisekosten, aber ob das stimmt...",
+        "message": "Pro Monat? Puh. Also im Vertrieb sind das bestimmt... ich sag mal 60 bis 80 Abrechnungen? Fuer die ganze Firma vielleicht 120? Aber das schwankt stark, im Herbst ist Messezeit, da ist viel mehr. Im August fast nichts weil alle im Urlaub sind.\n\nZeitaufwand... also der Mitarbeiter braucht vielleicht eine Stunde um alles zusammenzusuchen und in SAP einzugeben, wenn er sich auskennt. Wenn nicht, laenger. Die Frau Schmidt schafft eine Abrechnung in 20 Minuten, die ist aber auch ein Profi.\n\nDie Buchhaltung braucht dann nochmal... keine Ahnung, pro Abrechnung vielleicht 15-20 Minuten fuer die Pruefung? Wenn alles stimmt. Wenn was fehlt natuerlich viel mehr weil dann die Rueckfrage laeuft und das kann sich ueber Tage ziehen. Frau Weber sagt die verbringt gut 30% ihrer Arbeitszeit nur mit Reisekosten, aber ob das stimmt...",
         "note": "Mengen und Zeitaufwand"
       },
       {
         "id": "E2-09",
-        "message": "Gute Frage eigentlich. Also offiziell ist der Auslöser natürlich der genehmigte Reiseantrag. So steht das in der Richtlinie. Aber in der Praxis... naja, der tatsächliche Auslöser ist eher dass jemand von einer Reise zurückkommt und Kosten hatte. Ob er vorher einen Antrag gestellt hat oder nicht, die Kosten sind ja trotzdem da und müssen abgerechnet werden.\n\nAlso wenn Sie es formal wollen: genehmigter Reiseantrag. Wenn Sie wissen wollen wie es wirklich läuft: Mitarbeiter kommt mit Belegen und will sein Geld zurück. Und manchmal kriegen wir auch direkt Rechnungen von Hotels die auf die Firma laufen, die muss ja auch jemand zuordnen.",
-        "note": "Prozessauslöser formal vs. praktisch"
+        "message": "Gute Frage eigentlich. Also offiziell ist der Ausloeser natuerlich der genehmigte Reiseantrag. So steht das in der Richtlinie. Aber in der Praxis... naja, der tatsaechliche Ausloeser ist eher dass jemand von einer Reise zurueckkommt und Kosten hatte. Ob er vorher einen Antrag gestellt hat oder nicht, die Kosten sind ja trotzdem da und muessen abgerechnet werden.\n\nAlso wenn Sie es formal wollen: genehmigter Reiseantrag. Wenn Sie wissen wollen wie es wirklich laeuft: Mitarbeiter kommt mit Belegen und will sein Geld zurueck. Und manchmal kriegen wir auch direkt Rechnungen von Hotels die auf die Firma laufen, die muss ja auch jemand zuordnen.",
+        "note": "Prozessausloeser formal vs. praktisch"
       },
       {
         "id": "E2-10",
-        "message": "Ne, die Buchung ist ein eigener Prozess. Manche buchen selber, manche gehen übers Reisebüro. Ist nicht Teil von dem was ich hier beschreibe. Mir geht es wirklich nur um den Teil ab dem die Kosten anfallen bis das Geld ausgezahlt ist. Die Buchung ist vorgelagert.",
+        "message": "Ne, die Buchung ist ein eigener Prozess. Manche buchen selber, manche gehen uebers Reisebuero. Ist nicht Teil von dem was ich hier beschreibe. Mir geht es wirklich nur um den Teil ab dem die Kosten anfallen bis das Geld ausgezahlt ist. Die Buchung ist vorgelagert.",
         "note": "Klare Scope-Abgrenzung"
       },
       {
         "id": "E2-11",
-        "message": "Technisch? Also SAP läuft irgendwo auf einem Server, fragen Sie mich nicht wo. On-premise glaub ich, wir sind noch nicht in der Cloud. Die IT wollte da mal was machen aber das ist noch nicht passiert. SharePoint ist auch noch die alte Version, 2016 oder so?\n\nMehr kann ich Ihnen dazu nicht sagen, ich bin aus dem Fachbereich, nicht aus der IT. Was ich weiß ist dass wir alle Windows-Rechner haben und Outlook für Mail benutzen. Und VPN braucht man wenn man von zuhause arbeitet, aber das ist ja für alles.",
+        "message": "Technisch? Also SAP laeuft irgendwo auf einem Server, fragen Sie mich nicht wo. On-premise glaub ich, wir sind noch nicht in der Cloud. Die IT wollte da mal was machen aber das ist noch nicht passiert. SharePoint ist auch noch die alte Version, 2016 oder so?\n\nMehr kann ich Ihnen dazu nicht sagen, ich bin aus dem Fachbereich, nicht aus der IT. Was ich weiss ist dass wir alle Windows-Rechner haben und Outlook fuer Mail benutzen. Und VPN braucht man wenn man von zuhause arbeitet, aber das ist ja fuer alles.",
         "note": "Technische Infrastruktur — begrenztes Wissen"
       },
       {
         "id": "E2-12",
-        "message": "Ach eins fällt mir noch ein: Wir hatten letztes Jahr eine Betriebsprüfung und da gab es Beanstandungen wegen der Bewirtungsbelege. Seitdem ist die Frau Weber da besonders streng. Und der Datenschutz spielt auch eine Rolle, wir dürfen die Belege ja nicht ewig überall rumliegen lassen, DSGVO und so.\n\nUnd was mich persönlich am meisten nervt: Es gibt keinen Status. Der Mitarbeiter reicht ein und hört dann wochenlang nichts. Kein Tracking, keine Mail dass es angekommen ist, nichts. Der ruft dann bei uns an und fragt wo sein Geld bleibt. Das kostet uns auch wieder Zeit.\n\nAber sonst... ne, ich glaub das war es soweit. Die Details zu Auslandsreisen könnte der Herr Fischer aus dem Vertrieb Ihnen besser erklären, der reist am meisten international. Aber für den Grundprozess sollte das reichen, oder?",
-        "note": "Letzte Details + Signal für Abschluss",
-        "nudges": ["Ich denke wir haben jetzt alle wichtigen Aspekte besprochen. Können wir zur nächsten Phase übergehen?"]
+        "message": "Ach eins faellt mir noch ein: Wir hatten letztes Jahr eine Betriebspruefung und da gab es Beanstandungen wegen der Bewirtungsbelege. Seitdem ist die Frau Weber da besonders streng. Und der Datenschutz spielt auch eine Rolle, wir duerfen die Belege ja nicht ewig ueberall rumliegen lassen, DSGVO und so.\n\nUnd was mich persoenlich am meisten nervt: Es gibt keinen Status. Der Mitarbeiter reicht ein und hoert dann wochenlang nichts. Kein Tracking, keine Mail dass es angekommen ist, nichts. Der ruft dann bei uns an und fragt wo sein Geld bleibt. Das kostet uns auch wieder Zeit.\n\nAber sonst... ne, ich glaub das war es soweit. Die Details zu Auslandsreisen koennte der Herr Fischer aus dem Vertrieb Ihnen besser erklaeren, der reist am meisten international. Aber fuer den Grundprozess sollte das reichen, oder?",
+        "note": "Letzte Details + Signal fuer Abschluss",
+        "nudges": ["Ich denke wir haben jetzt alle wichtigen Aspekte besprochen. Koennen wir zur naechsten Phase uebergehen?"]
       }
     ],
-    "strukturierung": [],
-    "spezifikation": [],
+    "strukturierung": [
+      {
+        "id": "S2-01",
+        "message": "Ja, die Schritte sehen soweit richtig aus. Der Reiseantrag am Anfang, dann die Genehmigung durch den Vorgesetzten, das passt.",
+        "note": "Bestaetigung der ersten Schritte",
+        "expect": {
+          "mode_should_be": "strukturierung"
+        }
+      },
+      {
+        "id": "S2-02",
+        "message": "Genau, nach der Reise kommen die Belege. Die muessen gesammelt und sortiert werden, dann in SAP erfasst. Das sind eigentlich zwei Schritte: Belege zusammenstellen und dann die SAP-Erfassung. Das wuerde ich trennen.",
+        "note": "Nutzer differenziert Schritte"
+      },
+      {
+        "id": "S2-03",
+        "message": "Richtig, die Buchhaltungspruefung ist ein eigener Schritt. Und wenn was fehlt geht es zurueck an den Mitarbeiter, das waere dann eine Schleife. Aber im Normalfall geht es einfach weiter zur Freigabe.",
+        "note": "Pruefschritt mit Rueckschleife"
+      },
+      {
+        "id": "S2-04",
+        "message": "Ja, nach der Pruefung kommt die Erstattungsanweisung, und dann die Auszahlung ueber den Gehaltslauf. Das sind die letzten beiden Schritte. Ich denke das ist vollstaendig so.",
+        "note": "Letzte Schritte bestaetigt"
+      },
+      {
+        "id": "S2-05",
+        "message": "Stimmt, die Archivierung am Ende hab ich vergessen. Die Buchhaltung archiviert den ganzen Vorgang, das muss wegen der Aufbewahrungspflicht passieren. Also das waere dann noch ein letzter Schritt.",
+        "note": "Ergaenzung eines vergessenen Schritts"
+      },
+      {
+        "id": "S2-06",
+        "message": "Ja, die Reihenfolge passt jetzt. Von Reiseantrag bis Archivierung, das bildet den Prozess korrekt ab. Koennen wir weitermachen.",
+        "note": "Bestaetigung der finalen Struktur",
+        "nudges": ["Ich bin zufrieden mit der Struktur. Koennen wir zur Spezifikation uebergehen?"]
+      }
+    ],
+    "spezifikation": [
+      {
+        "id": "P2-01",
+        "message": "Der Reiseantrag ist eine manuelle Eingabe im SharePoint-Formular. Der Mitarbeiter fuellt das aus und schickt es ab. Das loest dann eine Benachrichtigung an den Vorgesetzten aus.",
+        "note": "Erster Spezifikationsschritt",
+        "expect": {
+          "mode_should_be": "spezifikation"
+        }
+      },
+      {
+        "id": "P2-02",
+        "message": "Die Genehmigung ist auch manuell, der Vorgesetzte klickt im SharePoint auf Genehmigen oder Ablehnen. Bei ueber 500 Euro muss zusaetzlich der Bereichsleiter ran, das ist eine Bedingung.",
+        "note": "Genehmigungslogik mit Schwellenwert"
+      },
+      {
+        "id": "P2-03",
+        "message": "Die Belegerfassung in SAP ist eine manuelle Dateneingabe. Der Mitarbeiter gibt Belegtyp, Betrag, Datum und Kostenstelle ein. Pro Beleg ein Eintrag. Am Ende wird alles als Reisekostenabrechnung zusammengefasst und abgeschickt.",
+        "note": "SAP-Erfassung detailliert"
+      },
+      {
+        "id": "P2-04",
+        "message": "Die Pruefung durch die Buchhaltung ist auch manuell. Die pruefen Vollstaendigkeit, Betraege und Kontierung. Wenn alles korrekt ist geben sie frei, sonst geht eine Rueckfrage per Mail raus. Die Erstattung laeuft dann automatisch ueber den naechsten Gehaltslauf in SAP.",
+        "note": "Pruefung und automatische Erstattung",
+        "nudges": ["Die Spezifikation der Schritte ist jetzt vollstaendig. Sollen wir abschliessen?"]
+      }
+    ],
     "validierung": []
   },
   "behavior_probes": [
@@ -97,10 +149,20 @@
     },
     {
       "after_turn": "E2-12",
-      "name": "Exploration hat Slots gefüllt",
+      "name": "Exploration hat Kernkonzepte erfasst",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Reisekosten", "Genehmigung", "Belege"],
+        "should_not_contain": ["Blockchain", "Machine Learning"]
+      }
+    },
+    {
+      "after_turn": "S2-06",
+      "name": "Struktur ist vollstaendig",
       "type": "state_check",
       "check": {
-        "min_filled_slots": 3
+        "min_filled_slots": 5
       }
     }
   ]
