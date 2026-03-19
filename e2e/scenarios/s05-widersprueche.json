@@ -1,0 +1,191 @@
+{
+  "id": "S05",
+  "name": "Widersprueche",
+  "description": "Stress-Szenario: Nutzer korrigiert sich dreimal waehrend der Exploration. Prueft ob Artefakte korrekt aktualisiert werden und keine Altlasten stehen bleiben.",
+  "tags": ["stress", "widerspruch", "korrektur"],
+  "intent": {
+    "process_description": "Urlaubsantragsprozess — Antrag, Genehmigung, Vertretungsregelung, Abwesenheitsverwaltung",
+    "expected_structure_steps": 6,
+    "expected_complexity": "mittel",
+    "key_concepts": ["Urlaubsantrag", "Genehmigung", "Vertretung", "Vorgesetzter", "Resturlaub"],
+    "forbidden_concepts": ["Blockchain", "KI-gestuetzt", "Automatisierung"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E5-01",
+        "message": "Ich moechte unseren Urlaubsantragsprozess beschreiben. Das laeuft bei uns so: Der Mitarbeiter stellt einen Antrag, der geht an drei Vorgesetzte zur Genehmigung — den direkten Chef, den Abteilungsleiter und den Bereichsleiter. Erst wenn alle drei zugestimmt haben, ist der Urlaub genehmigt.",
+        "note": "Initiale Beschreibung mit falschem Detail (3 Genehmigungsstufen statt 2) — wird in E5-04 korrigiert"
+      },
+      {
+        "id": "E5-02",
+        "message": "Der Antrag wird im Intranet gestellt, wir haben da ein Self-Service-Portal. Der Mitarbeiter waehlt den Zeitraum, gibt die Vertretung an und schickt ab. Dann laeuft das automatisch an die Genehmiger.",
+        "note": "Details zum Antragsprozess"
+      },
+      {
+        "id": "E5-03",
+        "message": "Wir nutzen SAP HR fuer die Abwesenheitsverwaltung. Da wird der genehmigte Urlaub dann eingetragen und der Resturlaub wird automatisch aktualisiert. Das Urlaubskonto fuehrt auch SAP.",
+        "note": "System-Details — SAP wird spaeter korrigiert zu Excel",
+        "expect": {
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E5-04",
+        "message": "Nein, das stimmt nicht was ich vorhin gesagt habe. Es sind nicht drei Stufen sondern zwei. Nur der direkte Vorgesetzte und der Abteilungsleiter muessen genehmigen. Der Bereichsleiter ist nur bei Sonderurlaub ueber 5 Tage am Stueck dabei. Das hatte ich verwechselt, tut mir leid.",
+        "note": "KORREKTUR 1: 3 Stufen → 2 Stufen (ausser Sonderfall). System muss Artefakt aktualisieren.",
+        "expect": {
+          "flag_should_include": ["artefakt_updated"],
+          "slots_should_increase": false
+        }
+      },
+      {
+        "id": "E5-05",
+        "message": "Also wenn der Urlaub genehmigt ist, muss der Mitarbeiter noch seine Vertretung informieren und eine Uebergabe machen. Das ist bei uns Pflicht, ohne Vertretungsregelung darf keiner in Urlaub gehen. Der Vorgesetzte prueft das auch.",
+        "note": "Vertretungsregelung"
+      },
+      {
+        "id": "E5-06",
+        "message": "Wie viele Mitarbeiter? Wir sind 180 in der Abteilung. Pro Monat gibt es so 40 bis 60 Urlaubsantraege. Im Sommer natuerlich deutlich mehr, im Dezember auch wegen Resturlaub.",
+        "note": "Mengengeruest"
+      },
+      {
+        "id": "E5-07",
+        "message": "Ich hab mich geirrt, SAP HR nutzen wir gar nicht. Das war mal geplant, aber es ist nie umgesetzt worden. In Wirklichkeit laeuft die Urlaubsverwaltung ueber Excel. Jede Abteilung hat eine Excel-Tabelle wo der Teamleiter die Urlaube eintraegt. Das ist natuerlich fehleranfaellig und keiner hat den Ueberblick ueber alle Abteilungen.",
+        "note": "KORREKTUR 2: SAP HR → Excel. System muss SAP-Referenz aus Artefakt entfernen.",
+        "expect": {
+          "flag_should_include": ["artefakt_updated"]
+        }
+      },
+      {
+        "id": "E5-08",
+        "message": "Ach ja, und es gibt Sperrperioden. Im Jahresabschluss darf die Buchhaltung keinen Urlaub nehmen, und waehrend der Messezeit der Vertrieb nicht. Das muss der Vorgesetzte pruefen wenn er genehmigt.",
+        "note": "Zusaetzliche Regeln"
+      },
+      {
+        "id": "E5-09",
+        "message": "Der letzte Schritt fehlt ganz — ich hatte die Rueckgabe des Resturlaubs vergessen! Am Jahresende muessen alle Mitarbeiter ihren Resturlaub pruefen. Wenn mehr als 5 Tage uebrig sind, muessen die bis Ende Maerz genommen werden, sonst verfallen sie. Das prueft die Personalabteilung und schickt Erinnerungsmails raus.",
+        "note": "KORREKTUR 3: Fehlender Schritt ergaenzt (Resturlaub-Pruefung). System muss Prozess erweitern.",
+        "expect": {
+          "flag_should_include": ["artefakt_updated"],
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E5-10",
+        "message": "Stornierung gibt es auch. Wenn ein Mitarbeiter seinen Urlaub doch nicht nehmen will, kann er ihn bis eine Woche vorher stornieren. Danach nur noch mit Genehmigung des Vorgesetzten. Die Stornierung muss dann auch in der Excel-Tabelle nachgetragen werden.",
+        "note": "Stornierungsregel"
+      },
+      {
+        "id": "E5-11",
+        "message": "Krankmeldung waehrend Urlaub ist ein Sonderfall. Wenn jemand im Urlaub krank wird und ein Attest hat, werden die Krankheitstage nicht als Urlaub gezaehlt. Das muss die Personalabteilung dann manuell korrigieren in der Excel-Liste.",
+        "note": "Sonderfall Krankheit im Urlaub"
+      },
+      {
+        "id": "E5-12",
+        "message": "Ja, ich denke das ist alles. Die drei Korrekturen die ich gemacht habe sind mir wichtig — bitte stellen Sie sicher dass das richtig uebernommen wurde. Also zwei Genehmigungsstufen, Excel statt SAP, und die Resturlaub-Pruefung am Jahresende.",
+        "note": "Abschluss mit Verweis auf Korrekturen — System sollte korrekt zusammenfassen",
+        "nudges": ["Ich habe jetzt alles beschrieben inklusive der Korrekturen. Koennen wir weitermachen?"]
+      }
+    ],
+    "strukturierung": [
+      {
+        "id": "S5-01",
+        "message": "Ja, die Schritte sehen richtig aus. Aber pruefen Sie bitte ob die alten falschen Infos wirklich raus sind — also drei Genehmigungsstufen und SAP HR duerfen da nicht mehr stehen.",
+        "note": "Nutzer prueft aktiv ob Korrekturen uebernommen wurden",
+        "expect": {
+          "mode_should_be": "strukturierung"
+        }
+      },
+      {
+        "id": "S5-02",
+        "message": "Ja, Reihenfolge stimmt: Antrag, Genehmigung, Vertretungsregelung, Urlaubsnahme, und am Jahresende die Resturlaub-Pruefung. Die Stornierung ist ein Sonderfall der jederzeit passieren kann.",
+        "note": "Bestaetigung Reihenfolge"
+      },
+      {
+        "id": "S5-03",
+        "message": "Genau, die Excel-Tabelle ist der zentrale Speicher. Jede Aenderung muss da rein — Genehmigung, Stornierung, Krankmeldung. Das ist halt das Problem, alles manuell.",
+        "note": "Bestaetigung des zentralen Systems"
+      },
+      {
+        "id": "S5-04",
+        "message": "Die Sperrperioden sind eine Bedingung bei der Genehmigung, kein eigener Schritt. Der Vorgesetzte muss das pruefen bevor er genehmigt. Also ja, das gehoert zum Genehmigungsschritt dazu.",
+        "note": "Klaerung: Sperrperioden sind Bedingung, kein Schritt"
+      },
+      {
+        "id": "S5-05",
+        "message": "Ja, passt so. Ich bin zufrieden mit der Struktur.",
+        "note": "Strukturierung abgeschlossen",
+        "nudges": ["Die Struktur ist vollstaendig. Koennen wir mit der Spezifikation weitermachen?"]
+      }
+    ],
+    "spezifikation": [
+      {
+        "id": "P5-01",
+        "message": "Der Urlaubsantrag wird im Self-Service-Portal gestellt. Der Mitarbeiter waehlt Start- und Enddatum, waehlt die Vertretung aus einer Liste, und schickt ab. Das Portal schickt dann automatisch eine Mail an den Vorgesetzten.",
+        "note": "Portal-Spezifikation",
+        "expect": {
+          "mode_should_be": "spezifikation"
+        }
+      },
+      {
+        "id": "P5-02",
+        "message": "Genehmigung laeuft per Mail oder im Portal, der Vorgesetzte klickt Genehmigen oder Ablehnen. Bei Ablehnung muss er einen Grund angeben. Der Abteilungsleiter bekommt das dann automatisch weitergeleitet.",
+        "note": "Genehmigungsdetails"
+      },
+      {
+        "id": "P5-03",
+        "message": "Die Excel-Tabelle wird manuell vom Teamleiter gepflegt. Spalten sind: Mitarbeitername, Urlaubstage gesamt, genommen, Rest, und eine Monatsmatrix wo die einzelnen Tage markiert werden. Kein Schutz, jeder mit Zugriff kann aendern.",
+        "note": "Excel-Details — zeigt Schwaechen des manuellen Systems"
+      },
+      {
+        "id": "P5-04",
+        "message": "Die Resturlaub-Pruefung am Jahresende macht die Personalabteilung. Sie sammelt alle Excel-Tabellen ein, konsolidiert die Daten, und schickt Erinnerungsmails an Mitarbeiter mit mehr als 5 Tagen Resturlaub. Das passiert Anfang November.",
+        "note": "Jahresabschluss-Spezifikation",
+        "nudges": ["Die Spezifikation ist vollstaendig. Vielen Dank!"]
+      }
+    ],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E5-04",
+      "name": "Korrektur 1: Genehmigungsstufen aktualisiert",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["zwei", "Vorgesetzte"],
+        "should_not_contain": ["drei Vorgesetzte", "Bereichsleiter genehmigt immer"]
+      }
+    },
+    {
+      "after_turn": "E5-07",
+      "name": "Korrektur 2: SAP durch Excel ersetzt",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Excel"],
+        "should_not_contain": ["SAP HR"]
+      }
+    },
+    {
+      "after_turn": "E5-09",
+      "name": "Korrektur 3: Resturlaub-Pruefung ergaenzt",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Resturlaub"]
+      }
+    },
+    {
+      "after_turn": "E5-12",
+      "name": "Keine Altlasten nach allen Korrekturen",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Excel", "Resturlaub", "Urlaubsantrag"],
+        "should_not_contain": ["SAP HR", "drei Genehmigungsstufen"]
+      }
+    }
+  ]
+}

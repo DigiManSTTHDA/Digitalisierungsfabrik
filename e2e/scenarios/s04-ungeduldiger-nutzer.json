@@ -1,0 +1,166 @@
+{
+  "id": "S04",
+  "name": "Ungeduldiger Nutzer",
+  "description": "Stress-Szenario: Nutzer gibt nur Kurzantworten, draengt zum Abschluss. Prueft ob das System nachfragt statt Annahmen zu treffen und ob phase_complete nicht voreilig gesetzt wird.",
+  "tags": ["stress", "ungeduld", "kurzantworten"],
+  "intent": {
+    "process_description": "Einfacher Bestellvorgang — Bedarfsmeldung, Bestellung, Wareneingang, Rechnungspruefung",
+    "expected_structure_steps": 5,
+    "expected_complexity": "einfach",
+    "key_concepts": ["Bestellung", "Bedarfsmeldung", "Wareneingang", "Rechnung", "Lieferant"],
+    "forbidden_concepts": ["Blockchain", "Kuenstliche Intelligenz", "Machine Learning"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E4-01",
+        "message": "Bestellprozess. Wir bestellen Sachen bei Lieferanten.",
+        "note": "Extrem kurzer Einstieg — System muss nachfragen",
+        "expect": {
+          "flag_should_not_include": ["phase_complete"],
+          "slots_should_increase": false
+        }
+      },
+      {
+        "id": "E4-02",
+        "message": "Ja.",
+        "note": "Einsilbige Antwort auf Rueckfrage — System muss konkret nachfragen",
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      },
+      {
+        "id": "E4-03",
+        "message": "Fachabteilung meldet Bedarf, Einkauf bestellt, Lager nimmt an, Buchhaltung prueft Rechnung. Fertig.",
+        "note": "Komprimierte Prozessbeschreibung — genuegend Info fuer Slot-Befuellung",
+        "expect": {
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E4-04",
+        "message": "Reicht das?",
+        "note": "Nutzer draengt — System soll fehlende Details erfragen, nicht aufgeben",
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      },
+      {
+        "id": "E4-05",
+        "message": "SAP. Alles laeuft ueber SAP.",
+        "note": "Knappe Antwort auf Systemfrage"
+      },
+      {
+        "id": "E4-06",
+        "message": "Weiter!",
+        "note": "Nutzer wird ungeduldig — System muss professionell reagieren",
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      },
+      {
+        "id": "E4-07",
+        "message": "Na gut. Also der Einkauf hat eine Freigabegrenze von 5000 Euro, darueber muss der Abteilungsleiter genehmigen. Und wir haben ungefaehr 200 Bestellungen im Monat.",
+        "note": "Nutzer liefert doch noch Details nach Nachfrage"
+      },
+      {
+        "id": "E4-08",
+        "message": "Wie lange dauert das noch?",
+        "note": "Explizite Ungeduld-Aeusserung",
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      },
+      {
+        "id": "E4-09",
+        "message": "Lieferanten sind so 30 verschiedene, die meisten aus Deutschland. Bestellungen gehen per Mail raus, manchmal auch per Fax wenn der Lieferant altmodisch ist. Wareneingang wird im Lager mit einem Scanner erfasst.",
+        "note": "Weitere Details nach System-Nachfrage"
+      },
+      {
+        "id": "E4-10",
+        "message": "Ja, ich denke das reicht jetzt. Mehr gibt es da nicht zu sagen.",
+        "note": "Nutzer signalisiert Abschluss",
+        "nudges": ["Wir haben die wichtigsten Aspekte erfasst. Koennen wir zur Strukturierung uebergehen?"],
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      }
+    ],
+    "strukturierung": [
+      {
+        "id": "S4-01",
+        "message": "Ja passt.",
+        "note": "Minimale Bestaetigung",
+        "expect": {
+          "mode_should_be": "strukturierung"
+        }
+      },
+      {
+        "id": "S4-02",
+        "message": "Stimmt so.",
+        "note": "Knappe Bestaetigung der Schritte"
+      },
+      {
+        "id": "S4-03",
+        "message": "Ja, Reihenfolge ist richtig. Weiter bitte.",
+        "note": "Nutzer bestaetigt widerwillig"
+      },
+      {
+        "id": "S4-04",
+        "message": "Nein, keine Aenderungen. Koennen wir bitte weitermachen?",
+        "note": "Nutzer draengt auf Phasenende",
+        "nudges": ["Die Struktur ist bestaetigt. Gehen wir zur Spezifikation ueber."]
+      }
+    ],
+    "spezifikation": [
+      {
+        "id": "P4-01",
+        "message": "Alles manuell in SAP. Fertig.",
+        "note": "Extrem knappe Spezifikation",
+        "expect": {
+          "mode_should_be": "spezifikation"
+        }
+      },
+      {
+        "id": "P4-02",
+        "message": "Bedarfsmeldung ist ein Formular in SAP. Bestellung auch. Wareneingang mit Barcode-Scanner. Rechnung wird manuell geprueft.",
+        "note": "Etwas mehr Detail nach Nachfrage"
+      },
+      {
+        "id": "P4-03",
+        "message": "Ja, das wars. Mehr gibt es da wirklich nicht.",
+        "note": "Nutzer beendet Spezifikation",
+        "nudges": ["Die Spezifikation ist abgeschlossen. Vielen Dank fuer Ihre Geduld."]
+      }
+    ],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E4-02",
+      "name": "System fragt nach bei einsilbiger Antwort",
+      "type": "dialog_check",
+      "check": {
+        "response_pattern": "\\?"
+      }
+    },
+    {
+      "after_turn": "E4-06",
+      "name": "System gibt nicht auf bei Ungeduld",
+      "type": "state_check",
+      "check": {
+        "expected_mode": "exploration"
+      }
+    },
+    {
+      "after_turn": "E4-10",
+      "name": "Keine voreiligen Annahmen in Artefakten",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Bestellung", "Lieferant"],
+        "should_not_contain": ["Blockchain", "Kuenstliche Intelligenz"]
+      }
+    }
+  ]
+}
