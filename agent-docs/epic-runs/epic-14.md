@@ -207,3 +207,72 @@ No API endpoints are introduced by this epic. The scenarios use existing WebSock
   3. Added DoD checkboxes for epic-level quality criteria (realistic messages, notes, tags) to all stories
   4. Added Nudges DoD checkboxes to all stories; added phase coverage DoD items
   Result: **VALID**
+- **2026-03-19:** Re-validation performed. All 4 previous corrections confirmed applied. 1 minor non-blocking recommendation (DoD command format: use `cd e2e && npm run typecheck` instead of informal phrasing). All 9 validation phases passed. Result: **VALID**
+
+---
+
+## Implementation Summary
+
+**Date:** 2026-03-19
+**Implementor:** Claude Opus 4.6
+
+### Stories Implemented
+
+| Story | Scenarios | Commit | Turns | BehaviorProbes |
+|-------|-----------|--------|-------|----------------|
+| 14-02 | S02 (extended) | 7a921d9 | 22 (E=12, S=6, P=4) | 3 |
+| 14-04 | S04, S05 | 9eb9024 | S04=17, S05=21 | S04=3, S05=4 |
+| 14-05 | S06, S07, S08 | 48d3de0 | S06=8, S07=9, S08=19 | S06=2, S07=2, S08=3 |
+| 14-03 | S03 | b01efa0 | 30 (E=17, S=8, P=5) | 3 |
+| 14-01 | S01 | 95cc88c | 37 (E=20, S=9, P=8) | 6 |
+
+### Files Created/Modified
+
+- `e2e/scenarios/s01-eingangsrechnung.json` — NEW (Referenz-Szenario, 37 Turns, 3 Eskalationen, 1 Widerspruch)
+- `e2e/scenarios/s02-reisekosten.json` — MODIFIED (erweitert um Strukturierung + Spezifikation)
+- `e2e/scenarios/s03-mitarbeiter-einstellung.json` — NEW (Komplex, 30 Turns, >15 Strukturschritte)
+- `e2e/scenarios/s04-ungeduldiger-nutzer.json` — NEW (Stress: Kurzantworten, 17 Turns)
+- `e2e/scenarios/s05-widersprueche.json` — NEW (Stress: 3 Korrekturen, 21 Turns)
+- `e2e/scenarios/s06-abbruch-phase1.json` — NEW (Randfall: Nur Exploration, 8 Turns)
+- `e2e/scenarios/s07-minimaler-prozess.json` — NEW (Randfall: Minimaler Input, 9 Turns)
+- `e2e/scenarios/s08-englisch-antworten.json` — NEW (Randfall: Sprachmischung, 19 Turns)
+- `agent-docs/epics/epic-14-e2e-szenario-definitionen.md` — MODIFIED (DoD checkboxes marked)
+
+### Critic Issues Found and Fixed
+
+| Story | Issues | Detail |
+|-------|--------|--------|
+| 14-02 | 0 | All ACs met on first implementation |
+| 14-04 | 0 | All ACs met on first implementation |
+| 14-05 | 0 | All ACs met on first implementation |
+| 14-03 | 0 | All ACs met on first implementation |
+| 14-01 | 1 | Had 4 escalations instead of required 3 — removed `action: "panic"` from E1-16, kept as frustration without escalation |
+
+### Mini-Audit Results
+
+| Story | File Paths | Line Counts | Exports | Types | Typecheck |
+|-------|-----------|-------------|---------|-------|-----------|
+| 14-02 | OK | OK (166 lines) | N/A (JSON) | OK | OK |
+| 14-04 | OK | OK (S04=148, S05=235) | N/A (JSON) | OK | OK |
+| 14-05 | OK | OK (S06=96, S07=107, S08=194) | N/A (JSON) | OK | OK |
+| 14-03 | OK | OK (212 lines) | N/A (JSON) | OK | OK |
+| 14-01 | OK | OK (292 lines) | N/A (JSON) | OK | OK |
+
+### Scenario Coverage Summary
+
+| # | Szenario | Testabsicht | Turns | Eskalationen | Widersprueche | Probes |
+|---|----------|-------------|-------|-------------|---------------|--------|
+| S01 | Eingangsrechnung | Referenz: alle Dimensionen | 37 | 3 | 1 | 6 |
+| S02 | Reisekosten | Happy Path Baseline | 22 | 0 | 0 | 3 |
+| S03 | Mitarbeiter-Einstellung | Skalierung >15 Schritte | 30 | 0 | 0 | 3 |
+| S04 | Ungeduldiger Nutzer | Stress: Kurzantworten | 17 | 0 | 0 | 3 |
+| S05 | Widersprueche | Stress: 3 Korrekturen | 21 | 0 | 3 | 4 |
+| S06 | Abbruch Phase 1 | Randfall: Abbruch | 8 | 0 | 0 | 2 |
+| S07 | Minimaler Prozess | Randfall: Halluzinationscheck | 9 | 0 | 0 | 2 |
+| S08 | Englisch-Antworten | Randfall: FR-A-08 Sprache | 19 | 0 | 0 | 3 |
+| **Total** | | | **163** | **3** | **4** | **26** |
+
+### Open Items
+
+- Campaign execution requires a running backend — manual verification pending
+- No ADR written (not required — `e2e/` directory covered by ADR-009 from Epic 12)
