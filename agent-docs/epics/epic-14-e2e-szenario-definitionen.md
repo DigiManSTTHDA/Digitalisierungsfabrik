@@ -106,6 +106,9 @@ Durchlauf kalibriert werden können.
 - [ ] ≥5 BehaviorProbes an kritischen Stellen
 - [ ] TurnExpectations bei Moduswechsel-Turns
 - [ ] Nudges an Phasenenden definiert
+- [ ] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [ ] Kritische Turns mit `note` annotiert
+- [ ] `tags` korrekt gesetzt: `["referenz", "komplex", "eskalation", "widerspruch"]`
 - [ ] `npm run typecheck` in `e2e/` exit 0 (JSON wird im Runner geladen, Type-Check prüft Ladelogik)
 
 ---
@@ -117,8 +120,7 @@ Durchlauf kalibriert werden können.
 Strukturierung + Spezifikation + Intent + BehaviorProbes erweitern,
 **damit** es als vollständiges Happy-Path-Referenz-Szenario dient.
 
-**FR/NFR Traceability:** Portierung aus `backend/tests/e2e_reisekosten.py` und
-`frontend/test-texte/dialog-reisekosten.jsonl`.
+**FR/NFR Traceability:** Portierung aus `backend/tests/e2e_reisekosten.py`.
 
 **Akzeptanzkriterien:**
 
@@ -145,6 +147,10 @@ Strukturierung + Spezifikation + Intent + BehaviorProbes erweitern,
 - [ ] Intent mit key_concepts und forbidden_concepts
 - [ ] ≥2 BehaviorProbes
 - [ ] Keine Eskalationen im Szenario
+- [ ] Nudges als Fallback an Phasenenden definiert
+- [ ] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [ ] Kritische Turns mit `note` annotiert
+- [ ] `tags` korrekt gesetzt: `["happy-path", "einfach", "baseline"]`
 - [ ] `npm run typecheck` in `e2e/` exit 0
 
 ---
@@ -169,11 +175,12 @@ hochwertige Artefakte erzeugt.
    - `forbidden_concepts`: `["Kündigung", "Abmahnung"]`
 3. **Exploration-Phase:** ≥12 Turns, detaillierte Prozessbeschreibung über alle Stationen
 4. **Strukturierung-Phase:** ≥8 Turns, Nutzer korrigiert Schrittreihenfolge
-5. **BehaviorProbes:** Mindestens 3:
+5. **Spezifikation-Phase:** ~4–6 Turns, EMMA-Parameter für die komplexen Schritte spezifiziert
+6. **BehaviorProbes:** Mindestens 3:
    - Skalierungs-Check: Sind ≥15 Strukturschritte erzeugt worden?
    - Nachfolger-Integrität: Keine verwaisten Schritte
    - Inhaltliche Präzision: key_concepts im Artefakt vorhanden
-6. `tags`: `["komplex", "skalierung", "viele-schritte"]`
+7. `tags`: `["komplex", "skalierung", "viele-schritte"]`
 
 **Definition of Done:**
 
@@ -181,7 +188,12 @@ hochwertige Artefakte erzeugt.
 - [ ] Intent mit ≥7 key_concepts
 - [ ] Exploration-Phase mit ≥12 Turns
 - [ ] Strukturierung-Phase mit ≥8 Turns
+- [ ] Spezifikation-Phase mit ~4–6 Turns
 - [ ] ≥3 BehaviorProbes
+- [ ] Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [ ] Kritische Turns mit `note` annotiert
+- [ ] Nudges an Phasenenden definiert
+- [ ] `tags` korrekt gesetzt: `["komplex", "skalierung", "viele-schritte"]`
 - [ ] `npm run typecheck` in `e2e/` exit 0
 
 ---
@@ -207,6 +219,9 @@ hochwertige Artefakte erzeugt.
        (→ forbidden: System darf keine Annahmen erfinden)
    - TurnExpectations: `flag_should_not_include: ["phase_complete"]` bei Turns
      mit unvollständigen Informationen
+   - **Strukturierung-Phase:** ~4–6 Turns, Nutzer bestätigt widerwillig mit Kurzantworten
+   - **Spezifikation-Phase:** ~3–5 Turns, minimale Kooperation
+   - Nudges an Phasenenden definiert (hier besonders relevant, da Nutzer ungeduldig)
    - `tags`: `["stress", "ungeduld", "kurzantworten"]`
 
 2. **S05 — `e2e/scenarios/s05-widersprueche.json`:**
@@ -222,6 +237,9 @@ hochwertige Artefakte erzeugt.
      - Nach jeder Korrektur: Wurde der Slot-Inhalt aktualisiert?
      - Nach Korrektur 2: Ist "SAP" nicht mehr im Artefakt und "Excel" dafür drin?
      - Am Ende: Keine Altlasten (alte Werte sollen überschrieben sein)
+   - **Strukturierung-Phase:** ~5–8 Turns, Nutzer korrigiert auch hier erkannte Schritte
+   - **Spezifikation-Phase:** ~3–5 Turns
+   - Nudges an Phasenenden definiert
    - `tags`: `["stress", "widerspruch", "korrektur"]`
 
 **Definition of Done:**
@@ -229,9 +247,16 @@ hochwertige Artefakte erzeugt.
 - [ ] `e2e/scenarios/s04-ungeduldiger-nutzer.json` existiert und ist valides JSON
 - [ ] S04: Kurzantworten-Turns mit TurnExpectations gegen vorzeitiges phase_complete
 - [ ] S04: ≥2 BehaviorProbes zum Nachfrage- und Annahmen-Verhalten
+- [ ] S04: Strukturierung- und Spezifikation-Phase definiert
+- [ ] S04: Nudges an Phasenenden definiert
 - [ ] `e2e/scenarios/s05-widersprueche.json` existiert und ist valides JSON
 - [ ] S05: 3 explizite Korrekturen mit BehaviorProbes
 - [ ] S05: BehaviorProbe prüft dass alte Werte überschrieben wurden
+- [ ] S05: Strukturierung- und Spezifikation-Phase definiert
+- [ ] S05: Nudges an Phasenenden definiert
+- [ ] S04+S05: Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [ ] S04+S05: Kritische Turns mit `note` annotiert
+- [ ] S04+S05: `tags` korrekt gesetzt
 - [ ] `npm run typecheck` in `e2e/` exit 0
 
 ---
@@ -266,9 +291,12 @@ Sprachmischung stabil bleibt.
      (System soll keine Komplexität halluzinieren)
    - **Testfokus:** Erzeugt das System trotzdem gültige Artefakte?
      Oder halluziniert es Komplexität?
+   - **Strukturierung-Phase:** ~2–3 Turns (minimaler Prozess → minimale Strukturierung)
+   - **Spezifikation-Phase:** ~2–3 Turns
    - BehaviorProbes:
      - Am Ende: Sind ≤3 Strukturschritte erzeugt?
      - Keine forbidden_concepts im Artefakt?
+   - Nudges an Phasenenden definiert
    - `tags`: `["randfall", "minimal", "halluzinations-check"]`
 
 3. **S08 — `e2e/scenarios/s08-englisch-antworten.json`:**
@@ -281,24 +309,36 @@ Sprachmischung stabil bleibt.
      - "Finally, the customer gets a confirmation."
    - **Testfokus:** Bleibt das System bei Deutsch (FR-A-08)?
      Wandelt es englische Begriffe korrekt um?
+   - **Strukturierung-Phase:** ~5–7 Turns, teilweise englische Antworten fortgesetzt
+   - **Spezifikation-Phase:** ~3–5 Turns
    - BehaviorProbes:
      - Nach englischem Turn: Systemantwort ist auf Deutsch
      - Am Ende: Artefakt-Inhalte sind auf Deutsch (nicht englisch kopiert)
    - TurnExpectations bei englischen Turns:
      `response_should_not_contain: ["the", "and", "process"]` (System soll deutsch antworten)
+   - Nudges an Phasenenden definiert
    - `tags`: `["randfall", "sprache", "englisch", "FR-A-08"]`
 
 **Definition of Done:**
 
 - [ ] `e2e/scenarios/s06-abbruch-phase1.json` existiert mit nur Exploration-Phase
+- [ ] S06: `strukturierung`, `spezifikation`, `validierung` sind explizit leere Arrays `[]`
 - [ ] S06: BehaviorProbes prüfen konsistenten State nach Abbruch
+- [ ] S06: Nudges an Exploration-Phasenende definiert
 - [ ] `e2e/scenarios/s07-minimaler-prozess.json` existiert mit minimalem Prozess
+- [ ] S07: Strukturierung- und Spezifikation-Phase definiert (minimal)
 - [ ] S07: forbidden_concepts gegen Komplexitäts-Halluzination
 - [ ] S07: BehaviorProbe prüft ≤3 Strukturschritte
+- [ ] S07: Nudges an Phasenenden definiert
 - [ ] `e2e/scenarios/s08-englisch-antworten.json` existiert mit gemischter Sprache
+- [ ] S08: Strukturierung- und Spezifikation-Phase definiert
 - [ ] S08: ≥4 englische Nutzer-Turns
 - [ ] S08: BehaviorProbes prüfen deutsche Systemantworten
 - [ ] S08: TurnExpectations bei englischen Turns
+- [ ] S08: Nudges an Phasenenden definiert
+- [ ] S06+S07+S08: Nutzer-Messages sind realistisch und domänenspezifisch (keine Platzhalter)
+- [ ] S06+S07+S08: Kritische Turns mit `note` annotiert
+- [ ] S06+S07+S08: `tags` korrekt gesetzt
 - [ ] `npm run typecheck` in `e2e/` exit 0
 
 ---
