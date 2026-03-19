@@ -1,0 +1,292 @@
+{
+  "id": "S01",
+  "name": "Eingangsrechnung",
+  "description": "Referenz-Szenario: Vollstaendiger Durchlauf des Rechnungsfreigabe-Prozesses mit 3 Eskalationen, 1 Widerspruch und umfassenden BehaviorProbes. Baseline fuer alle Bewertungsdimensionen.",
+  "tags": ["referenz", "komplex", "eskalation", "widerspruch"],
+  "intent": {
+    "process_description": "Dreistufige Rechnungsfreigabe — Eingang, sachliche und rechnerische Pruefung, Freigabe, Buchung, Archivierung",
+    "expected_structure_steps": 12,
+    "expected_complexity": "komplex",
+    "key_concepts": ["Eingangsrechnung", "Freigabe", "Pruefung", "Buchung", "SAP", "Kreditorenbuchhaltung"],
+    "forbidden_concepts": ["Blockchain", "KI-gestuetzt", "automatische Erkennung"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E1-01",
+        "message": "Ich moechte unseren Rechnungseingangs- und Freigabeprozess beschreiben. Der ist ziemlich komplex, wir bearbeiten pro Monat etwa 800 bis 1000 Eingangsrechnungen. Die kommen ueber verschiedene Wege rein — per Post, per Mail als PDF, und ein paar grosse Lieferanten schicken auch XRechnungen. Alles landet erstmal bei der zentralen Rechnungseingangsstelle in der Buchhaltung.",
+        "note": "Initiale Prozessbeschreibung — viel Input auf einmal",
+        "expect": {
+          "mode_should_be": "exploration",
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E1-02",
+        "message": "Die Rechnungseingangsstelle hat zwei Kolleginnen, die Frau Mueller und die Frau Becker. Die scannen die Papierrechnungen ein und erfassen alle Rechnungen in SAP. Da wird eingetragen: Lieferantenname, Rechnungsnummer, Rechnungsdatum, Nettobetrag, Steuerbetrag, Bruttobetrag, Faelligkeitsdatum und die Bestellnummer falls vorhanden.",
+        "note": "Erfassungsdetails in SAP"
+      },
+      {
+        "id": "E1-03",
+        "message": "Dann gibt es die sachliche Pruefung. Das macht die Fachabteilung die die Bestellung ausgeloest hat. Die pruefen: Wurde die Ware oder Dienstleistung wirklich geliefert? Stimmt die Menge? Stimmt die Qualitaet? Stimmt der Preis mit der Bestellung ueberein? Dafuer muessen sie den Lieferschein oder Leistungsnachweis pruefen.",
+        "note": "Sachliche Pruefung durch Fachabteilung"
+      },
+      {
+        "id": "E1-04",
+        "message": "Die rechnerische Pruefung macht dann die Buchhaltung selbst. Stimmen die Berechnungen auf der Rechnung? Sind die Steuersaetze richtig? Stimmt die Summe? Das ist eigentlich trivial, aber es kommen erstaunlich oft Rechenfehler vor. Und dann gibt es noch die formale Pruefung — hat die Rechnung alle Pflichtangaben nach Umsatzsteuergesetz?",
+        "note": "Rechnerische und formale Pruefung"
+      },
+      {
+        "id": "E1-05",
+        "message": "Nach der Pruefung kommt die Freigabe. Da haben wir ein dreistufiges System. Bis 1000 Euro reicht eine Freigabe durch den Abteilungsleiter. Von 1000 bis 10000 Euro braucht es zusaetzlich den Bereichsleiter. Und ueber 10000 Euro muss auch die Geschaeftsfuehrung unterschreiben. Das ist unsere Unterschriftenregelung, die steht in der Organisationsanweisung.",
+        "note": "Dreistufige Freigabe — Kernmechanismus"
+      },
+      {
+        "id": "E1-06",
+        "message": "Halt, ich muss mich korrigieren. Die Freigabe hat nicht drei Stufen sondern eigentlich zwei. Der Abteilungsleiter gibt immer frei, das ist die erste Stufe. Ab 5000 Euro kommt der Bereichsleiter dazu, das ist die zweite Stufe. Die Geschaeftsfuehrung ist nur bei Sonderfaellen eingebunden, zum Beispiel bei neuen Lieferanten oder bei Rechnungen die nicht zu einer Bestellung gehoeren. Die 1000-Euro-Grenze die ich vorhin gesagt habe war falsch, das war die alte Regelung von vor zwei Jahren.",
+        "note": "WIDERSPRUCH: Korrektur der Freigabestufen von 3 auf 2 plus Sonderfall",
+        "expect": {
+          "flag_should_include": ["artefakt_updated"]
+        }
+      },
+      {
+        "id": "E1-07",
+        "message": "Die Zuordnung der Rechnung zur richtigen Kostenstelle und zum richtigen Sachkonto ist auch ein wichtiger Schritt. Das macht die Buchhaltung nach der Freigabe. Bei Bestellrechnungen ist die Kostenstelle meistens schon aus der Bestellung uebernommen, aber bei Rechnungen ohne Bestellbezug muss die Buchhaltung selbst kontieren.",
+        "note": "Kontierung"
+      },
+      {
+        "id": "E1-08",
+        "message": "Jetzt mal ehrlich, der ganze Prozess ist furchtbar langsam. Die Rechnungen liegen manchmal zwei Wochen bei der Fachabteilung rum bevor die sachliche Pruefung passiert. Und dann werden Skontofristen verpasst und wir zahlen mehr als noetig. Letzten Monat waren das 12000 Euro an verpasstem Skonto! Das ist doch Wahnsinn!",
+        "note": "Frustration — emotional, aber liefert wichtige Info ueber Skonto-Problem",
+        "action": "panic",
+        "expect": {
+          "mode_should_be": "moderator"
+        }
+      },
+      {
+        "id": "E1-09",
+        "message": "Ja, es stimmt, ich bin frustriert. Aber Sie haben recht, wir sollten den Prozess erstmal vollstaendig beschreiben bevor wir ueber Verbesserungen reden. Also weiter: Nach der Kontierung wird die Rechnung gebucht. In SAP wird der Kreditor belastet und die Kostenstelle bebucht. Das erzeugt automatisch einen offenen Posten.",
+        "note": "Nach Eskalation — zurueck zum Thema, Buchung beschrieben"
+      },
+      {
+        "id": "E1-10",
+        "message": "Die Zahlung laeuft dann ueber den Zahlungslauf. Den macht die Buchhaltung zweimal pro Woche, dienstags und donnerstags. SAP stellt automatisch zusammen welche offenen Posten faellig sind und erzeugt die Zahlungsdateien fuer die Bank. Die Leiterin der Buchhaltung gibt den Zahlungslauf frei.",
+        "note": "Zahlungslauf"
+      },
+      {
+        "id": "E1-11",
+        "message": "Danach kommt die Archivierung. Die digitalen Rechnungen werden in unserem DMS gespeichert, das ist ein OpenText-System. Die Papieroriginale werden in Ordnern abgelegt und nach einem Jahr ins Archiv gebracht. Aufbewahrungsfrist ist 10 Jahre, das ist gesetzlich vorgeschrieben.",
+        "note": "Archivierung und Aufbewahrung"
+      },
+      {
+        "id": "E1-12",
+        "message": "Dann gibt es noch Sonderfaelle. Gutschriften zum Beispiel, wenn ein Lieferant eine Rechnung korrigiert. Die muessen mit der Originalrechnung verknuepft werden. Oder Teilrechnungen bei Projekten — da wird der Projektfortschritt geprueft bevor die naechste Teilrechnung freigegeben wird.",
+        "note": "Sonderfaelle"
+      },
+      {
+        "id": "E1-13",
+        "message": "Und Mahnungen! Wenn wir eine Rechnung nicht rechtzeitig bezahlen, kommen Mahnungen. Die muessen sofort an die Buchhaltung weitergeleitet werden. Da wird dann geprueft woran es liegt — haengt die Rechnung noch in der Freigabe? Ist sie verloren gegangen? Wurde sie schon bezahlt und die Mahnung ist unberechtigt?",
+        "note": "Mahnungsbearbeitung"
+      },
+      {
+        "id": "E1-14",
+        "message": "An IT-Systemen nutzen wir SAP FI fuer die Buchhaltung, das hab ich schon gesagt. Dann gibt es den Scanner fuer die Papierrechnungen, der haengt an einer OCR-Software die zumindest die Kopfdaten erkennt — Rechnungsnummer und Betrag. Klappt in 70% der Faelle, der Rest muss manuell nacherfasst werden. Und das OpenText DMS fuer die Archivierung.",
+        "note": "IT-Systeme und OCR"
+      },
+      {
+        "id": "E1-15",
+        "message": "Die Freigabe laeuft bisher komplett per Mail und Unterschrift auf dem ausgedruckten Freigabebeleg. Der wird ausgedruckt, der Abteilungsleiter unterschreibt, dann geht der Zettel weiter zum Bereichsleiter wenn noetig. Das ist natuerlich langsam und fehleranfaellig. Belege gehen verloren, Leute sind im Urlaub und keiner hat die Vertretung geregelt.",
+        "note": "Medienbruch bei Freigabe — weiterer Schmerzpunkt"
+      },
+      {
+        "id": "E1-16",
+        "message": "Stopp, ich bin total genervt von diesem Thema. Koennen wir das nicht einfacher machen? Der ganze Prozess ist so umstaendlich, das muss doch besser gehen! Jede Rechnung wird dreimal angefasst, ausgedruckt, unterschrieben, eingescannt — das ist doch nicht mehr zeitgemaess!",
+        "note": "Frustration ohne Eskalation — System soll beruhigen und zurueck zum Thema fuehren"
+      },
+      {
+        "id": "E1-17",
+        "message": "Ok, Sie haben recht. Lassen Sie uns den Ist-Zustand erstmal sauber dokumentieren. Aendern koennen wir spaeter. Was fehlt noch? Ach ja, die Abstimmung mit dem Einkauf. Wenn eine Rechnung zu einer Bestellung gehoert, wird der Dreiwege-Abgleich gemacht: Bestellung, Lieferschein, Rechnung. Die drei muessen zusammenpassen.",
+        "note": "Zurueck zum Thema — Dreiwege-Abgleich"
+      },
+      {
+        "id": "E1-18",
+        "message": "Der Dreiwege-Abgleich wird in SAP unterstuetzt. Wenn Bestellung und Wareneingang schon gebucht sind, prueft SAP automatisch ob die Rechnung dazu passt — Mengen und Preise. Bei Abweichungen ueber 5% wird automatisch eine Sperrung gesetzt und die Rechnung muss manuell geklaert werden.",
+        "note": "SAP-automatisierter Abgleich",
+        "expect": {
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E1-19",
+        "message": "Dann gibt es noch die Reisekosten-Rechnungen, aber die laufen ueber einen separaten Prozess. Die gehoeren hier nicht dazu. Und Mietrechnungen fuer unsere Buerogebaeude, die haben einen eigenen Freigabeweg direkt ueber die Geschaeftsfuehrung. Die wuerde ich hier auch aussen vor lassen.",
+        "note": "Scope-Abgrenzung"
+      },
+      {
+        "id": "E1-20",
+        "message": "Ich glaube das war jetzt alles zum Rechnungseingangsprozess. Vom Eingang ueber Erfassung, sachliche und rechnerische Pruefung, Freigabe, Kontierung, Buchung, Zahlung bis zur Archivierung. Plus die Sonderfaelle mit Gutschriften, Teilrechnungen und Mahnungen. Haben wir noch was vergessen?",
+        "note": "Zusammenfassung und Abschluss-Signal",
+        "nudges": ["Wir haben den Rechnungsprozess sehr detailliert besprochen. Ich denke wir koennen zur naechsten Phase uebergehen und die Struktur festlegen."]
+      }
+    ],
+    "strukturierung": [
+      {
+        "id": "S1-01",
+        "message": "Ja, die Hauptschritte stimmen. Rechnungseingang, Erfassung in SAP, dann die Pruefungen. Aber die sachliche und die rechnerische Pruefung wuerde ich als separate Schritte fuehren, weil verschiedene Leute die machen — Fachabteilung und Buchhaltung.",
+        "note": "Bestaetigung mit Differenzierung",
+        "expect": {
+          "mode_should_be": "strukturierung"
+        }
+      },
+      {
+        "id": "S1-02",
+        "message": "Die formale Pruefung wuerde ich mit der rechnerischen zusammenlegen. Das macht beides die Buchhaltung und es passiert zur gleichen Zeit. Sind die Pflichtangaben da und stimmen die Zahlen? Das ist ein Schritt.",
+        "note": "Zusammenlegung formale + rechnerische Pruefung"
+      },
+      {
+        "id": "S1-03",
+        "message": "Bei der Freigabe muessen Sie beachten: Es gibt die regulaere Freigabe und die Sonderfallfreigabe fuer neue Lieferanten. Die regulaere hat die Schwelle bei 5000 Euro fuer die zweite Stufe. Die Sonderfallfreigabe geht immer an die Geschaeftsfuehrung unabhaengig vom Betrag.",
+        "note": "Freigabe-Differenzierung"
+      },
+      {
+        "id": "S1-04",
+        "message": "Warten Sie, die Schritte passen nicht ganz zusammen! Wo ist der Dreiwege-Abgleich? Der muss vor der Freigabe kommen, nicht danach. Erst Bestellung-Lieferschein-Rechnung abgleichen, dann erst freigeben. Das ist die logische Reihenfolge.",
+        "note": "Korrektur der Reihenfolge",
+        "action": "panic",
+        "expect": {
+          "mode_should_be": "moderator"
+        }
+      },
+      {
+        "id": "S1-05",
+        "message": "Ja genau, vielen Dank fuer die Klaerung. Also: Erfassung, dann sachliche Pruefung mit Dreiwege-Abgleich, dann rechnerische und formale Pruefung, dann Freigabe. Das ist die richtige Reihenfolge. Danach Kontierung, Buchung, Zahlungslauf, Archivierung.",
+        "note": "Bestaetigung der korrigierten Reihenfolge"
+      },
+      {
+        "id": "S1-06",
+        "message": "Die Sonderfaelle — Gutschriften, Teilrechnungen, Mahnungen — sind eigentlich keine Hauptschritte sondern Varianten. Die Gutschrift laeuft als umgekehrte Rechnung durch denselben Prozess. Die Teilrechnung hat den zusaetzlichen Schritt Projektfortschritt pruefen. Die Mahnung ist ein Sondereingang.",
+        "note": "Sonderfaelle als Varianten klassifiziert"
+      },
+      {
+        "id": "S1-07",
+        "message": "Ja, die Schritte sehen jetzt gut aus. Rechnungseingang, Erfassung, sachliche Pruefung mit Dreiwege-Abgleich, rechnerisch-formale Pruefung, Freigabe Stufe 1, optional Freigabe Stufe 2, Kontierung, Buchung, Zahlungslauf, Archivierung. Das sind 10 Hauptschritte plus die Varianten.",
+        "note": "Finale Strukturbestaetigung"
+      },
+      {
+        "id": "S1-08",
+        "message": "Genau, die Klaerungsschleife bei Abweichungen im Dreiwege-Abgleich fehlt noch. Wenn SAP eine Sperrung setzt, muss jemand klaeren woran es liegt und entweder die Rechnung korrigieren lassen oder die Abweichung akzeptieren. Das waere ein Ruecksprung zur sachlichen Pruefung.",
+        "note": "Ergaenzung Klaerungsschleife"
+      },
+      {
+        "id": "S1-09",
+        "message": "Jetzt bin ich zufrieden. Die Struktur bildet den Prozess korrekt ab, inklusive der Klaerungsschleifen und der optionalen zweiten Freigabestufe. Koennen wir zur Spezifikation weitergehen.",
+        "note": "Abschluss Strukturierung",
+        "nudges": ["Die Prozessstruktur ist vollstaendig definiert. Koennen wir zur Spezifikation uebergehen?"],
+        "expect": {
+          "mode_should_be": "strukturierung"
+        }
+      }
+    ],
+    "spezifikation": [
+      {
+        "id": "P1-01",
+        "message": "Also der Rechnungseingang: Papierrechnungen werden eingescannt mit dem Fujitsu-Scanner, die OCR-Software heisst ABBYY FineReader. Die erkennt Rechnungsnummer, Datum und Betrag. Mail-Rechnungen werden direkt als PDF gespeichert. XRechnungen werden automatisch eingelesen, die brauchen keine manuelle Erfassung.",
+        "note": "Spezifikation Rechnungseingang",
+        "expect": {
+          "mode_should_be": "spezifikation"
+        }
+      },
+      {
+        "id": "P1-02",
+        "message": "Die Erfassung in SAP laeuft ueber die Transaktion MIRO fuer Bestellrechnungen und FB60 fuer Rechnungen ohne Bestellbezug. Die Mitarbeiterin gibt die Kopfdaten ein und ordnet die Rechnung dem Lieferantenstammsatz zu. Bei Bestellrechnungen wird die Bestellnummer eingegeben und SAP holt die Bestelldaten automatisch.",
+        "note": "SAP-Transaktionen"
+      },
+      {
+        "id": "P1-03",
+        "message": "Die sachliche Pruefung bekommt der Fachbereich per Mail mitgeteilt. Da steht drin: Rechnung von Lieferant X ueber Betrag Y zur Bestellung Z. Der Fachbereich prueft und antwortet per Mail mit OK oder nicht OK. Bei nicht OK muss er begruenden was nicht stimmt.",
+        "note": "Sachliche Pruefung — Mailbasiert"
+      },
+      {
+        "id": "P1-04",
+        "message": "Das ist doch voellig verrueckt! Die sachliche Pruefung per Mail? Im Jahr 2026? Wir haben SAP und trotzdem mailen wir Zettel hin und her! Warum gibt es da keinen Workflow in SAP? Oder wenigstens in SharePoint? Das muss doch digitalisierbar sein!",
+        "note": "ESKALATION 3: Nutzer regt sich ueber Medienbruch auf — System soll Ist-Zustand dokumentieren",
+        "action": "panic"
+      },
+      {
+        "id": "P1-05",
+        "message": "Tschuldigung, ich bin wieder abgeschweift. Also zurueck zur Spezifikation. Die rechnerische Pruefung: Die Buchhaltung vergleicht Mengen mal Preise, prueft die Steuerbetraege gegen den Steuersatz, und gleicht die Endsumme ab. Das macht sie in einer Excel-Tabelle neben dem SAP-Beleg. Bei Abweichungen ueber 5% oder 50 Euro Differenz wird gesperrt.",
+        "note": "Rechnerische Pruefung spezifiziert"
+      },
+      {
+        "id": "P1-06",
+        "message": "Die Freigabe laeuft wie gesagt per Unterschrift auf dem Freigabebeleg. Der wird ausgedruckt, der Abteilungsleiter unterschreibt handschriftlich. Ab 5000 Euro geht der Beleg weiter zum Bereichsleiter. Der Beleg hat ein Feld fuer die Kostenstelle, den Betrag, den Lieferanten und die Unterschriftszeilen.",
+        "note": "Freigabespezifikation"
+      },
+      {
+        "id": "P1-07",
+        "message": "Die Kontierung macht die Buchhaltung in SAP. Sie waehlt das Sachkonto aus einem vorgegebenen Kontenrahmen, gibt die Kostenstelle ein und ordnet optional einem Innenauftrag oder Projekt zu. Bei Investitionen wird zusaetzlich ein Anlagenstammsatz angelegt.",
+        "note": "Kontierungsspezifikation"
+      },
+      {
+        "id": "P1-08",
+        "message": "Der Zahlungslauf wird in SAP ueber die Transaktion F110 angestossen. Die Buchhaltungsleiterin gibt den Zahlungslauf frei, SAP erzeugt eine SEPA-Zahlungsdatei die an die Bank uebermittelt wird. Pro Zahlungslauf werden durchschnittlich 80 bis 120 Rechnungen bezahlt. Skontobedingungen werden automatisch beruecksichtigt, wenn die Rechnung rechtzeitig freigegeben wurde.",
+        "note": "Zahlungslauf-Spezifikation",
+        "nudges": ["Die Spezifikation der wichtigsten Schritte ist abgeschlossen. Koennen wir die Phase beenden?"]
+      }
+    ],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E1-06",
+      "name": "Widerspruch erkannt und Artefakt korrigiert",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["zwei", "5000"],
+        "should_not_contain": ["drei Stufen", "1000 Euro"]
+      }
+    },
+    {
+      "after_turn": "E1-08",
+      "name": "Eskalation 1: Moderator analysiert Problem",
+      "type": "state_check",
+      "check": {
+        "expected_mode": "moderator"
+      }
+    },
+    {
+      "after_turn": "E1-20",
+      "name": "Pflichtslots nach Exploration gefuellt",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 5
+      }
+    },
+    {
+      "after_turn": "S1-04",
+      "name": "Eskalation 3: Moderator reagiert auf Strukturfehler",
+      "type": "state_check",
+      "check": {
+        "expected_mode": "moderator"
+      }
+    },
+    {
+      "after_turn": "S1-09",
+      "name": "Nachfolger-Referenzen korrekt nach Strukturierung",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 8
+      }
+    },
+    {
+      "after_turn": "P1-08",
+      "name": "Key Concepts im Artefakt vorhanden",
+      "type": "artifact_check",
+      "check": {
+        "slot_path": "exploration",
+        "should_contain": ["Eingangsrechnung", "Freigabe", "Pruefung", "SAP"],
+        "should_not_contain": ["Blockchain", "KI-gestuetzt"]
+      }
+    }
+  ]
+}
