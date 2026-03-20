@@ -79,6 +79,8 @@ class ModeOutput(BaseModel):
     phasenstatus: Phasenstatus
     flags: list[Flag] = Field(default_factory=list)
     validierungsbericht: Validierungsbericht | None = None
+    debug_request: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]
+    usage: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]  # Token usage
 
 
 def translate_dialog_history(dialog_history: list[dict]) -> list[dict]:  # type: ignore[type-arg]

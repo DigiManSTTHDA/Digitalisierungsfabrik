@@ -34,8 +34,12 @@ class WorkingMemory(BaseModel):
     algorithmusartefakt_ref: str | None = None
     completeness_state: dict[str, CompletenessStatus] = Field(default_factory=dict)
     spannungsfelder: list[str] = Field(default_factory=list)  # Dokumentierte Spannungsfelder
+    aktiver_abschnitt: str | None = None  # Aktuell bearbeiteter Algorithmusabschnitt (z.B. "ab2")
     letzter_dialogturn: int = 0  # Index des letzten verarbeiteten Dialogturns
     projektstatus: Projektstatus = Projektstatus.aktiv
     flags: list[str] = Field(default_factory=list)  # Aktive Steuerungsflags (SDD 6.4.1)
     validierungsbericht: Validierungsbericht | None = None  # ADR-007: structured report
+    cumulative_prompt_tokens: int = 0  # Kumulative Prompt-Tokens seit Projektbeginn
+    cumulative_completion_tokens: int = 0  # Kumulative Completion-Tokens seit Projektbeginn
+    cumulative_total_tokens: int = 0  # Kumulative Gesamttokens seit Projektbeginn
     letzte_aenderung: datetime

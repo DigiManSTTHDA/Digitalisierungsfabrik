@@ -88,7 +88,28 @@ class AnthropicClient(LLMClient):
                 has_tool_use=True,
             )
 
+        # Extract token usage from API response
+        usage = None
+        if response.usage:
+            usage = {
+                "prompt_tokens": response.usage.input_tokens,
+                "completion_tokens": response.usage.output_tokens,
+                "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+            }
+
+        # Capture full request for debug logging when enabled
+        debug_request = None
+        if self._settings.llm_debug_log:
+            debug_request = {
+                "system_prompt": system,
+                "messages": messages,
+                "tool_choice": effective_tool_choice,
+                "model": self._settings.llm_model,
+            }
+
         return LLMResponse(
             nutzeraeusserung=nutzeraeusserung,
             tool_input=tool_input,
+            debug_request=debug_request,
+            usage=usage,
         )

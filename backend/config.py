@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
     llm_log_enabled: bool = True
+    llm_debug_log: bool = False  # Write full LLM request/response per turn to data/debug_turns/
     log_file: str | None = None  # Optional file path for structured log output (LOG_FILE env var)
 
 

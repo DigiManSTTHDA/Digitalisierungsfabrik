@@ -112,6 +112,10 @@ def prompt_context_summary(context: ModeContext) -> str:
     algo_zusammenfassung = context.algorithm_artifact.prozesszusammenfassung
     algo_zusammenfassung_status = "befüllt" if algo_zusammenfassung.strip() else "leer"
 
+    # Aktiver Abschnitt (Fokus-Tracking für Spezifikation)
+    aktiver_abschnitt = wm.aktiver_abschnitt
+    aktiver_abschnitt_text = aktiver_abschnitt if aktiver_abschnitt else "keiner (Beginn)"
+
     lines = [
         f"Aktive Phase: {wm.aktive_phase.value}",
         f"Aktiver Modus: {wm.aktiver_modus}",
@@ -120,6 +124,7 @@ def prompt_context_summary(context: ModeContext) -> str:
         f"Strukturschritte: {filled_schritte}/{total_schritte} befüllt",
         f"Algorithmusabschnitte: {filled_abschnitte}/{total_abschnitte} befüllt",
         f"Prozesszusammenfassung (Algorithmus): {algo_zusammenfassung_status}",
+        f"Aktiver Abschnitt: {aktiver_abschnitt_text}",
         f"Spannungsfelder: {spannungsfelder_text}",
     ]
 

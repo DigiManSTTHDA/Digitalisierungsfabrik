@@ -516,11 +516,11 @@ async def test_executor_error_returns_error_output_without_save() -> None:
     assert result.error is not None
     assert len(result.error) > 0
 
-    # Artifact version unchanged — project was NOT saved after the error
+    # Artifact version unchanged — patches were not applied
     reloaded = repo.load(project.projekt_id)
     assert reloaded.exploration_artifact.version == initial_version
-    # letzter_dialogturn also NOT incremented in the persisted state
-    assert reloaded.working_memory.letzter_dialogturn == 0
+    # letzter_dialogturn IS persisted on error to stay consistent with dialog_history
+    assert reloaded.working_memory.letzter_dialogturn == 1
 
 
 # ---------------------------------------------------------------------------
@@ -1033,11 +1033,12 @@ async def test_patch_retry_with_error_hint() -> None:
     assert result.error is not None
     assert "Ein interner Fehler" in result.error
 
-    # Erster Aufruf ohne Hint, dann Retries mit Hint
+    # Erster Aufruf ohne Hint, dann Retries mit phasenabhängigem Hint
     assert received_hints[0] is None
     for hint in received_hints[1:]:
         assert hint is not None
-        assert "ungültigen Pfaden" in hint or "Versuch" in hint
+        assert "ungültigen Pfaden" in hint
+        assert "Versuch" in hint
 
 
 @pytest.mark.asyncio
@@ -1104,3 +1105,90 @@ async def test_moderator_return_to_mode_without_previous_uses_phase_primary() ->
     # With no vorheriger_modus, return_to_mode defaults to phase primary mode
     assert reloaded.aktiver_modus == "exploration"
     assert reloaded.working_memory.vorheriger_modus is None
+
+
+# ---------------------------------------------------------------------------
+# P0-Fix: DB-Konsistenz — error_output persistiert WM-State
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_error_path_persists_wm_turn_counter() -> None:
+    """Nach einem Error-Path stimmt letzter_dialogturn mit dialog_history überein."""
+
+    class BadPatchMode(BaseMode):
+        async def call(self, context: ModeContext) -> ModeOutput:
+            return ModeOutput(
+                nutzeraeusserung="patch attempt",
+                patches=[{"op": "replace", "path": "/invalid_path", "value": "x"}],
+                phasenstatus=Phasenstatus.in_progress,
+                flags=[],
+            )
+
+    db = _make_db()
+    repo = _make_repo(db)
+    project = repo.create("Konsistenz-Test")
+    _set_exploration_mode(repo, project)
+
+    orchestrator = Orchestrator(
+        repository=repo,
+        modes={"exploration": BadPatchMode(), "moderator": Moderator()},
+    )
+
+    result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
+    assert result.error is not None
+
+    reloaded = repo.load(project.projekt_id)
+    history = repo.load_dialog_history(project.projekt_id, last_n=100)
+    user_turns = [h for h in history if h["role"] == "user"]
+    assert reloaded.working_memory.letzter_dialogturn == len(user_turns)
+
+
+# ---------------------------------------------------------------------------
+# P0-Fix: infer_artifact_type — prüft alle Patches
+# ---------------------------------------------------------------------------
+
+
+def test_infer_artifact_type_first_patch_ambiguous_second_clear() -> None:
+    """/prozesszusammenfassung first + /abschnitte/ second → algorithm."""
+    from core.artifact_router import infer_artifact_type
+
+    patches = [
+        {"op": "replace", "path": "/prozesszusammenfassung", "value": "text"},
+        {"op": "add", "path": "/abschnitte/ab1", "value": {}},
+    ]
+    assert infer_artifact_type(patches) == "algorithm"
+
+
+def test_infer_artifact_type_first_patch_ambiguous_second_structure() -> None:
+    """/prozesszusammenfassung first + /schritte/ second → structure."""
+    from core.artifact_router import infer_artifact_type
+
+    patches = [
+        {"op": "replace", "path": "/prozesszusammenfassung", "value": "text"},
+        {"op": "replace", "path": "/schritte/s1/titel", "value": "Neuer Titel"},
+    ]
+    assert infer_artifact_type(patches) == "structure"
+
+
+def test_infer_artifact_type_only_prozesszusammenfassung_returns_none() -> None:
+    """Einzelner /prozesszusammenfassung-Patch bleibt mehrdeutig → None."""
+    from core.artifact_router import infer_artifact_type
+
+    patches = [{"op": "replace", "path": "/prozesszusammenfassung", "value": "x"}]
+    assert infer_artifact_type(patches) is None
+
+
+def test_infer_artifact_type_single_valid_patch() -> None:
+    """Einzelner /abschnitte/-Patch → algorithm (bestehende Funktion)."""
+    from core.artifact_router import infer_artifact_type
+
+    patches = [{"op": "add", "path": "/abschnitte/ab1/aktionen/a1", "value": {}}]
+    assert infer_artifact_type(patches) == "algorithm"
+
+
+def test_infer_artifact_type_empty_list() -> None:
+    """Leere Patch-Liste → None."""
+    from core.artifact_router import infer_artifact_type
+
+    assert infer_artifact_type([]) is None

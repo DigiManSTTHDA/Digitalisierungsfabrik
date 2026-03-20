@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from artifacts.completeness import CompletenessCalculator
 from artifacts.models import Phasenstatus
 from config import Settings
+from core.turn_debug_log import write_turn_debug
 from core.artifact_router import (
     apply_invalidations,
     get_artifact,
@@ -37,6 +38,26 @@ logger = structlog.get_logger(__name__)
 
 # Modes that trigger a switch to the Moderator (SDD 6.3 Moduswechsel-Logik)
 _MODERATOR_TRIGGER_FLAGS = {Flag.phase_complete, Flag.escalate, Flag.blocked}
+
+
+def _patch_retry_hint(aktive_phase: str) -> str:
+    """Phasenabhängiger Retry-Hint für ungültige Patch-Pfade."""
+    base = (
+        "ACHTUNG: Der letzte Aufruf produzierte Patches mit ungültigen Pfaden. "
+        "Verwende AUSSCHLIESSLICH Pfade mit diesen Präfixen: "
+    )
+    if aktive_phase == "spezifikation":
+        return base + (
+            "/abschnitte/{aid}/..., /abschnitte/{aid}/aktionen/{aktion_id}/... "
+            "Ergänze /prozesszusammenfassung NUR zusammen mit mindestens einem /abschnitte/-Patch. "
+            "Numerische Indizes wie /abschnitte/0/ sind ungültig."
+        )
+    return base + (
+        "/schritte/{sid}/..., /slots/{slot_id}/..., /abschnitte/{aid}/... "
+        "Ergänze /prozesszusammenfassung NUR zusammen mit mindestens einem "
+        "/schritte/- oder /abschnitte/-Patch. "
+        "Numerische Indizes wie /schritte/0/ sind ungültig."
+    )
 
 
 class TurnInput(BaseModel):
@@ -128,16 +149,12 @@ class Orchestrator:
                 wm,
                 "Die Systemantwort war fehlerhaft. Bitte erneut versuchen.",
                 internal="Output-Kontrakt-Verletzung: ModeOutput ungültig",
+                repo=repo,
+                project=project,
             )
 
         # Schritt 7: Patches anwenden (wenn vorhanden) — mit Retry-Logik (S1-T1)
         _MAX_PATCH_RETRIES = 2
-        _PATCH_RETRY_HINT = (
-            "ACHTUNG: Der letzte Aufruf produzierte Patches mit ungültigen Pfaden. "
-            "Verwende AUSSCHLIESSLICH Pfade mit diesen Präfixen: "
-            "/schritte/{sid}/..., /slots/{slot_id}/..., /abschnitte/{aid}/... "
-            "Numerische Indizes wie /schritte/0/ sind ungültig."
-        )
 
         if mode_output.patches:
             artifact_type = infer_artifact_type(mode_output.patches)
@@ -146,7 +163,7 @@ class Orchestrator:
                 for attempt in range(_MAX_PATCH_RETRIES):
                     log.warning("orchestrator.patch_retry", attempt=attempt + 1)
                     retry_context = context.with_error_hint(
-                        f"Versuch {attempt + 1}: {_PATCH_RETRY_HINT}"
+                        f"Versuch {attempt + 1}: {_patch_retry_hint(wm.aktive_phase.value)}"
                     )
                     mode_output = await mode.call(retry_context)
                     if not validate(mode_output, context.artifact_template):
@@ -164,6 +181,8 @@ class Orchestrator:
                     wm,
                     "Ein interner Fehler ist aufgetreten. Bitte erneut versuchen.",
                     internal="Patch-Pfade konnten keinem Artefakttyp zugeordnet werden (nach Retries)",
+                    repo=repo,
+                    project=project,
                 )
 
             # Skip patch application if LLM corrected to empty patches on retry
@@ -180,6 +199,8 @@ class Orchestrator:
                     wm,
                     "Ein interner Fehler ist aufgetreten. Bitte erneut versuchen.",
                     internal=result.error,
+                    repo=repo,
+                    project=project,
                 )
 
             assert result.artifact is not None
@@ -188,6 +209,14 @@ class Orchestrator:
             # Schritt 8: Invalidierungen auslösen (SDD 6.3 Schritt 8, FR-B-04)
             if result.invalidated_abschnitt_ids:
                 apply_invalidations(project, result.invalidated_abschnitt_ids, self._executor)
+
+            # Track aktiver_abschnitt from patches targeting /abschnitte/{aid}/...
+            if artifact_type == "algorithm":
+                for patch in mode_output.patches:
+                    path = patch.get("path", "")
+                    parts = path.strip("/").split("/")
+                    if len(parts) >= 2 and parts[0] == "abschnitte":
+                        wm.aktiver_abschnitt = parts[1]
 
         # Store validation report in WorkingMemory (SDD 6.6.4, Story 10-04)
         if mode_output.validierungsbericht is not None:
@@ -246,6 +275,39 @@ class Orchestrator:
         project.aktiver_modus = wm.aktiver_modus
         project.aktive_phase = wm.aktive_phase
 
+        # Update cumulative token counters in Working Memory
+        turn_usage = mode_output.usage
+        if turn_usage:
+            wm.cumulative_prompt_tokens += turn_usage.get("prompt_tokens", 0)
+            wm.cumulative_completion_tokens += turn_usage.get("completion_tokens", 0)
+            wm.cumulative_total_tokens += turn_usage.get("total_tokens", 0)
+
+        # Turn Debug Log: write full LLM I/O to JSON file
+        if self._settings and self._settings.llm_debug_log and mode_output.debug_request:
+            write_turn_debug(
+                base_dir=self._settings.database_path.rsplit("/", 1)[0] or "./data",
+                project_id=project_id,
+                turn_number=wm.letzter_dialogturn,
+                mode=mode_key,
+                system_prompt=mode_output.debug_request.get("system_prompt", ""),
+                messages=mode_output.debug_request.get("messages", []),
+                tool_choice=mode_output.debug_request.get("tool_choice"),
+                response_nutzeraeusserung=mode_output.nutzeraeusserung,
+                response_tool_input=mode_output.debug_request
+                if not mode_output.patches
+                else {
+                    "nutzeraeusserung": mode_output.nutzeraeusserung,
+                    "patches": mode_output.patches,
+                    "phasenstatus": wm.phasenstatus.value,
+                },
+                token_usage=turn_usage,
+                cumulative_tokens={
+                    "prompt_tokens": wm.cumulative_prompt_tokens,
+                    "completion_tokens": wm.cumulative_completion_tokens,
+                    "total_tokens": wm.cumulative_total_tokens,
+                },
+            )
+
         # Schritt 11: Zustand persistieren
         repo.save(project)
 
@@ -264,14 +326,27 @@ class Orchestrator:
         )
 
     def _error_output(
-        self, wm: WorkingMemory, user_msg: str, *, internal: str | None = None
+        self,
+        wm: WorkingMemory,
+        user_msg: str,
+        *,
+        internal: str | None = None,
+        repo: ProjectRepository | None = None,
+        project: Project | None = None,
     ) -> TurnOutput:
-        """Fehler-TurnOutput ohne Zustandsänderung zurückgeben.
+        """Fehler-TurnOutput zurückgeben.
+
+        Falls repo und project übergeben werden, wird der aktuelle WM-Zustand
+        persistiert (inkl. letzter_dialogturn), damit kein Drift zwischen
+        dialog_history und working_memory entsteht.
 
         user_msg wird dem Nutzer angezeigt (generische Formulierung).
         internal wird nur ins Log geschrieben (technisches Detail).
         """
         logger.warning("orchestrator.error", detail=internal or user_msg)
+        if repo is not None and project is not None:
+            project.working_memory = wm
+            repo.save(project)
         return TurnOutput(
             nutzeraeusserung="",
             phasenstatus=wm.phasenstatus,

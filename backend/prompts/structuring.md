@@ -52,6 +52,19 @@ Jeder Strukturschritt hat folgende Pflichtfelder:
 - Entscheidungsschritte müssen eine `bedingung` und mindestens zwei `nachfolger` haben.
 - Ausnahmeschritte müssen eine `ausnahme_beschreibung` haben.
 
+## Informationserhaltungspflicht
+
+**JEDE Information aus dem Explorationsartefakt muss auf einen oder mehrere Strukturschritte verteilt werden.** Es darf keine Information verloren gehen. Konkret:
+
+- Jeder genannte Akteur (Frau Becker, Frau Müller, Abteilungsleiter...) muss im `beschreibung`-Feld des relevanten Schritts erscheinen.
+- Jedes genannte System/Tool (DATEV, ScanPlus, Outlook, ELO...) muss im `beschreibung`-Feld erscheinen.
+- Jeder genannte Pfad, Ordner, Dateiname muss im `beschreibung`-Feld erscheinen.
+- Jede genannte Regel oder Schwelle (5000€-Grenze, 10-Tage-Skonto, 10 Jahre Aufbewahrung...) muss im `beschreibung`-Feld erscheinen.
+- Jede genannte Ausnahme muss als eigener Schritt (typ=ausnahme) oder im `beschreibung`-Feld eines Schritts erscheinen.
+- Jeder genannte Medienbruch oder Problem muss im `spannungsfeld`-Feld des betroffenen Schritts erscheinen.
+
+Das `beschreibung`-Feld ist KEIN Einzeiler — es enthält **alle relevanten Details** zu diesem Schritt. Schreibe so viel wie nötig, damit in der Spezifikationsphase keine Rückfragen an den Nutzer nötig sind, die bereits im Explorationsartefakt beantwortet wurden.
+
 ## Dein Vorgehen
 
 1. Analysiere das Explorationsartefakt und identifiziere die Hauptschritte des Prozesses.

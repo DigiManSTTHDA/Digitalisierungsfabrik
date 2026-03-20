@@ -177,14 +177,14 @@ async def test_specification_produces_algorithm_patches() -> None:
 
 @pytest.mark.asyncio
 async def test_specification_uses_tool_choice() -> None:
-    """Verify tool_choice={"type": "tool", "name": "apply_patches"} is passed."""
+    """Verify tool_choice={"type": "auto"} is passed (allows pure-text responses)."""
     mock_llm = _make_mock_llm()
     mode = SpecificationMode(llm_client=mock_llm)
     ctx = _make_context()
     await mode.call(ctx)
 
     call_kwargs = mock_llm.complete.call_args.kwargs  # type: ignore[attr-defined]
-    assert call_kwargs["tool_choice"] == {"type": "tool", "name": "apply_patches"}
+    assert call_kwargs["tool_choice"] == {"type": "auto"}
     assert len(call_kwargs["tools"]) == 1
     assert call_kwargs["tools"][0]["name"] == "apply_patches"
 

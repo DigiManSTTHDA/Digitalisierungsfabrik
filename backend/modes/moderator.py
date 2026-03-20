@@ -144,6 +144,8 @@ class Moderator(BaseMode):
             patches=[],
             phasenstatus=context.working_memory.phasenstatus,
             flags=flags,
+            debug_request=response.debug_request,
+            usage=response.usage,
         )
 
     def _stub_response(self, context: ModeContext) -> ModeOutput:

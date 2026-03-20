@@ -275,4 +275,6 @@ class ExplorationMode(BaseMode):
             patches=all_patches,
             phasenstatus=phasenstatus,
             flags=flags,
+            debug_request=response.debug_request,
+            usage=response.usage,
         )

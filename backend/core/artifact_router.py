@@ -30,16 +30,23 @@ _PATH_PREFIX_TO_ARTIFACT_TYPE: dict[str, ArtifactType] = {
 
 
 def infer_artifact_type(patches: list[dict]) -> ArtifactType | None:  # type: ignore[type-arg]
-    """Artefakttyp anhand des ersten Patch-Pfad-Präfixes bestimmen."""
+    """Artefakttyp anhand der Patch-Pfad-Präfixe bestimmen.
+
+    Prüft ALLE Patches (nicht nur den ersten). Verwendet den ersten
+    eindeutigen Treffer. /prozesszusammenfassung allein ist mehrdeutig
+    (existiert auf Structure- und Algorithm-Artefakt) und wird ignoriert.
+    """
     if not patches:
         return None
-    first_patch = patches[0]
-    if not isinstance(first_patch, dict):
-        return None
-    path: str = first_patch.get("path", "") if isinstance(first_patch.get("path"), str) else ""
-    for prefix, artifact_type in _PATH_PREFIX_TO_ARTIFACT_TYPE.items():
-        if path.startswith(prefix):
-            return artifact_type
+
+    for patch in patches:
+        if not isinstance(patch, dict):
+            continue
+        path: str = patch.get("path", "") if isinstance(patch.get("path"), str) else ""
+        for prefix, artifact_type in _PATH_PREFIX_TO_ARTIFACT_TYPE.items():
+            if path.startswith(prefix):
+                return artifact_type
+
     return None
 
 

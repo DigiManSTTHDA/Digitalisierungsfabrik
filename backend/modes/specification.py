@@ -50,7 +50,11 @@ def _build_structure_content(context: ModeContext) -> str:
 
 
 def _build_algorithm_status(context: ModeContext) -> str:
-    """Build current Algorithm Artifact status for the system prompt."""
+    """Build current Algorithm Artifact status for the system prompt.
+
+    Shows full action details (type, parameters) so the LLM can see what
+    already exists and build on it incrementally instead of overwriting.
+    """
     abschnitte = context.algorithm_artifact.abschnitte
     if not abschnitte:
         return "(Noch keine Algorithmusabschnitte vorhanden)"
@@ -68,6 +72,21 @@ def _build_algorithm_status(context: ModeContext) -> str:
             f"- {abschnitt.titel} ({aid}) [ref: {abschnitt.struktur_ref}] "
             f"[{status}] [{algo_status}] — {n_aktionen} Aktionen"
         )
+        # Show kontext (accumulated user info) if present
+        if abschnitt.kontext:
+            lines.append(f"    Kontext: {abschnitt.kontext}")
+        # Show full action details so the LLM knows what already exists
+        for ak_id, aktion in abschnitt.aktionen.items():
+            param_parts = [f"{k}={v}" for k, v in aktion.parameter.items()]
+            param_str = ", ".join(param_parts) if param_parts else "keine"
+            nachf = ", ".join(aktion.nachfolger) if aktion.nachfolger else "—"
+            compat = "✓" if aktion.emma_kompatibel else "✗"
+            lines.append(
+                f"    {ak_id}: {aktion.aktionstyp.value} [{compat}] → {nachf}"
+            )
+            lines.append(f"      Parameter: {param_str}")
+            if aktion.kompatibilitaets_hinweis:
+                lines.append(f"      Hinweis: {aktion.kompatibilitaets_hinweis}")
 
     return "\n".join(lines)
 
@@ -175,13 +194,15 @@ class SpecificationMode(BaseMode):
             system=system_prompt,
             messages=messages,
             tools=[APPLY_PATCHES_TOOL],
-            tool_choice={"type": "tool", "name": "apply_patches"},
+            tool_choice={"type": "auto"},
         )
 
-        patches = [p for p in (response.tool_input.get("patches") or []) if isinstance(p, dict)]
+        # Handle both tool-call and pure-text responses (tool_choice=auto)
+        tool_input = response.tool_input or {}
+        patches = [p for p in (tool_input.get("patches") or []) if isinstance(p, dict)]
 
         # LLM decides phasenstatus, guardrails enforce hard constraints
-        raw_status = response.tool_input.get("phasenstatus", "in_progress")
+        raw_status = tool_input.get("phasenstatus", "in_progress")
         try:
             llm_phasenstatus = Phasenstatus(raw_status)
         except ValueError:
@@ -198,4 +219,6 @@ class SpecificationMode(BaseMode):
             patches=patches,
             phasenstatus=phasenstatus,
             flags=flags,
+            debug_request=response.debug_request,
+            usage=response.usage,
         )

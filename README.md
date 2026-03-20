@@ -193,6 +193,41 @@ Alle Parameter werden aus `backend/.env` gelesen (Vorlage: `backend/.env.example
 | `AUTOMATION_WARN_THRESHOLD` | `1` | Automatisierungs-Warnschwelle (SDD 8.1.2) |
 | `LOG_LEVEL` | `INFO` | Log-Level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 | `LLM_LOG_ENABLED` | `true` | LLM-Requests loggen |
+| `LLM_DEBUG_LOG` | `false` | Vollständige LLM-Payloads pro Turn als JSON-Dateien schreiben |
+
+### Turn Debug Log
+
+Für Debugging und Qualitätsanalyse kann das vollständige LLM-I/O pro Turn aufgezeichnet werden.
+
+**Aktivieren:** In `backend/.env` setzen:
+```
+LLM_DEBUG_LOG=true
+```
+
+**Output:** Nach jedem Turn erscheint eine JSON-Datei in `backend/data/debug_turns/<project-id>/`:
+```
+turn_001_moderator.json
+turn_002_specification.json
+turn_003_specification.json
+...
+```
+
+**Jede Datei enthält:**
+- `request.system_prompt` — der komplette System-Prompt, der an das LLM gesendet wird
+- `request.messages` — die Dialog-History (letzte N Turns) mit den tatsächlichen Inhalten
+- `request.message_count` — Anzahl der Messages
+- `request.tool_choice` — ob `auto` oder `required`
+- `response.nutzeraeusserung` — was das LLM dem Nutzer antwortet
+- `response.patches` — die RFC 6902 JSON-Patches
+- `response.phasenstatus` — die Statuseinschätzung des LLM
+- `token_usage.prompt_tokens` — gesendete Tokens in diesem Turn
+- `token_usage.completion_tokens` — empfangene Tokens in diesem Turn
+- `token_usage.total_tokens` — Gesamttokens dieses Turns
+- `cumulative_tokens.prompt_tokens` — kumulative gesendete Tokens seit Projektbeginn
+- `cumulative_tokens.completion_tokens` — kumulative empfangene Tokens seit Projektbeginn
+- `cumulative_tokens.total_tokens` — kumulative Gesamttokens seit Projektbeginn
+
+**Hinweis:** Debug-Logs können große Dateien erzeugen (System-Prompt + Dialog pro Turn). Nur für Analyse-Sessions aktivieren.
 
 ---
 

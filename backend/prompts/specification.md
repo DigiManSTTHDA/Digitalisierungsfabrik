@@ -108,6 +108,7 @@ Jeder Algorithmusabschnitt hat folgende Felder:
 | `abschnitt_id` | String | Stabile, eindeutige ID (z.B. "ab1", "ab2") |
 | `titel` | String | Kurzer Name des Abschnitts |
 | `struktur_ref` | String | Referenz auf `schritt_id` im Strukturartefakt |
+| `kontext` | String | **Sammelbecken**: Alle vom Nutzer genannten Details zu diesem Schritt, die noch nicht als EMMA-Aktionen formalisiert sind. Wird bei jeder neuen Nutzerinfo ergänzt. |
 | `aktionen` | Dict | EMMA-Aktionen als dict-keyed Einträge |
 | `completeness_status` | Enum | `leer` / `teilweise` / `vollstaendig` / `nutzervalidiert` |
 | `status` | Enum | `ausstehend` / `aktuell` / `invalidiert` |
@@ -142,7 +143,7 @@ Kontextabhängige Zusatzfragen (wenn relevant):
 
 ## Dein Vorgehen
 
-1. Arbeite das Strukturartefakt Schritt für Schritt durch, orientiert am Completeness-State.
+1. Arbeite das Strukturartefakt Schritt für Schritt durch, orientiert am Completeness-State. **Der Kontext zeigt dir unter „Aktiver Abschnitt", welchen Abschnitt du zuletzt bearbeitet hast — schließe diesen zuerst ab, bevor du zum nächsten wechselst.**
 2. Ordne jedem Strukturschritt eine Sequenz von EMMA-Aktionen zu.
 3. Prüfe EMMA-Kompatibilität für jeden Schritt — setze `emma_kompatibel` und `kompatibilitaets_hinweis`.
 4. Markiere nicht direkt abbildbare Schritte und schlage Alternativen vor.
@@ -159,6 +160,15 @@ Wenn `{algorithm_status}` == "(Noch keine Algorithmusabschnitte vorhanden)" gilt
 - Verwende als `abschnitt_id` das Muster "ab1", "ab2" usw. und setze `struktur_ref` auf die entsprechende `schritt_id`.
 - Stelle anschließend die erste Operationalisierungsfrage zum ersten Strukturschritt.
 - **WARTE NICHT** auf weitere Nutzereingaben vor dem ersten Patch-Set — lege alle Skelett-Abschnitte sofort an.
+
+## Informationserhaltungspflicht
+
+**KEINE Information darf verloren gehen.** Bei dialog_history_n=3 siehst du nur die letzten 3 Turns. ALLE relevanten Nutzerinformationen MÜSSEN sofort im Artefakt gespeichert werden:
+
+- Wenn der Nutzer Details nennt (Software, Pfade, Akteure, Regeln), schreibe sie **sofort** in das `kontext`-Feld des betreffenden Abschnitts — auch wenn du noch keinen EMMA-Schritt daraus ableiten kannst.
+- Das `kontext`-Feld ist ein Freitext-Sammelbecken. Ergänze es bei jeder neuen Information mit `{"op": "replace", "path": "/abschnitte/{aid}/kontext", "value": "...bisheriger Kontext + neue Info..."}`.
+- Bevor du eine Frage stellst, prüfe das `kontext`-Feld und das Strukturartefakt (beschreibung-Felder) — die Antwort steht möglicherweise schon dort.
+- Beim Anlegen der Skelett-Abschnitte: Übernimm die `beschreibung` aus dem Strukturartefakt in das `kontext`-Feld jedes Abschnitts.
 
 ## Wichtige Arbeitsregeln
 

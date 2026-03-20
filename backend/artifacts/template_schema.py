@@ -174,6 +174,11 @@ ALGORITHM_TEMPLATE = ArtifactTemplate(
             description="Status eines Algorithmusabschnitts setzen (ausstehend/aktuell/invalidiert)",
         ),
         TemplatePathPattern(
+            pattern=r"/abschnitte/[^/]+/kontext",
+            allowed_ops=["replace"],
+            description="Kontextinformationen eines Abschnitts aktualisieren (Sammelbecken für Nutzerinfos)",
+        ),
+        TemplatePathPattern(
             pattern=r"/abschnitte/[^/]+/aktionen/[^/]+",
             allowed_ops=["add", "remove"],
             description="Einzelne EMMA-Aktion hinzufügen oder entfernen",

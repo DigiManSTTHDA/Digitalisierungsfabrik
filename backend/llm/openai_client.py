@@ -80,11 +80,13 @@ class OpenAIClient(LLMClient):
         }
         if openai_tools:
             kwargs["tools"] = openai_tools
-            # "required" forces a tool call while allowing message.content alongside it.
-            # Specific function forcing {"type":"function","name":...} suppresses message.content
-            # in gpt-4o, resulting in empty nutzeraeusserung. "required" + single tool
-            # is functionally equivalent but preserves the conversational text.
-            kwargs["tool_choice"] = "required"
+            # Translate Anthropic tool_choice format to OpenAI format.
+            # "auto" allows the LLM to respond without a tool call (e.g. pure questions),
+            # "required" forces a tool call every turn.
+            if tool_choice and tool_choice.get("type") == "auto":
+                kwargs["tool_choice"] = "auto"
+            else:
+                kwargs["tool_choice"] = "required"
 
         response = await self._client.chat.completions.create(**kwargs)
 
@@ -117,7 +119,28 @@ class OpenAIClient(LLMClient):
                 has_tool_use=bool(message.tool_calls),
             )
 
+        # Extract token usage from API response
+        usage = None
+        if response.usage:
+            usage = {
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens,
+            }
+
+        # Capture full request for debug logging when enabled
+        debug_request = None
+        if self._settings.llm_debug_log:
+            debug_request = {
+                "system_prompt": system,
+                "messages": messages,
+                "tool_choice": kwargs.get("tool_choice"),
+                "model": self._settings.llm_model,
+            }
+
         return LLMResponse(
             nutzeraeusserung=nutzeraeusserung,
             tool_input=tool_input,
+            debug_request=debug_request,
+            usage=usage,
         )

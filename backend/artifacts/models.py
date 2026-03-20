@@ -108,7 +108,7 @@ class EmmaAktionstyp(StrEnum):
 # ---------------------------------------------------------------------------
 
 
-from pydantic import BaseModel, Field  # noqa: E402
+from pydantic import BaseModel, Field, field_validator  # noqa: E402
 
 
 class ExplorationSlot(BaseModel):
@@ -181,6 +181,14 @@ class EmmaAktion(BaseModel):
     aktion_id: str
     aktionstyp: EmmaAktionstyp  # Wert aus EMMA-Aktionskatalog (SDD 8.3, ADR-006)
     parameter: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("parameter", mode="before")
+    @classmethod
+    def _coerce_parameter_values_to_str(cls, v: dict) -> dict:
+        """LLMs liefern Parameter-Werte oft als int/bool statt str — hier coercen."""
+        if isinstance(v, dict):
+            return {k: str(val) for k, val in v.items()}
+        return v
     nachfolger: list[str] = Field(default_factory=list)  # ADR-006: list for branching
     emma_kompatibel: bool = False  # Ergebnis der EMMA-Kompatibilitätsprüfung
     kompatibilitaets_hinweis: str | None = None  # Begründung bei emma_kompatibel=False
@@ -192,6 +200,7 @@ class Algorithmusabschnitt(BaseModel):
     abschnitt_id: str
     titel: str
     struktur_ref: str  # Referenz auf Strukturschritt.schritt_id
+    kontext: str = ""  # Gesammelte Nutzerinformationen, die noch nicht als EMMA-Aktionen formalisiert sind
     aktionen: dict[str, EmmaAktion] = Field(default_factory=dict)
     completeness_status: CompletenessStatus
     status: AlgorithmusStatus

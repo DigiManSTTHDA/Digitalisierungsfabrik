@@ -195,4 +195,6 @@ class StructuringMode(BaseMode):
             patches=patches,
             phasenstatus=phasenstatus,
             flags=flags,
+            debug_request=response.debug_request,
+            usage=response.usage,
         )

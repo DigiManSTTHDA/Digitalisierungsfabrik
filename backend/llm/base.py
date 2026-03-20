@@ -20,10 +20,13 @@ class LLMResponse(BaseModel):
     Fields:
         nutzeraeusserung: The text portion of the LLM response (chat message for the user).
         tool_input: The parsed input dict from the tool_use block (contains 'patches' list).
+        debug_request: Full request payload (only set when llm_debug_log=True).
     """
 
     nutzeraeusserung: str
     tool_input: dict  # type: ignore[type-arg]
+    debug_request: dict | None = None  # type: ignore[type-arg]
+    usage: dict | None = None  # type: ignore[type-arg]  # Token usage from API response
 
 
 class LLMClient(ABC):
