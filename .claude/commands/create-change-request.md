@@ -36,14 +36,20 @@ VORBEREITUNG
 
 3. Ermittle die nächste freie CR-Nummer. Lies den Inhalt von `agent-docs/change-requests/` und vergib die nächste Nummer (CR-001, CR-002, ...).
 
-4. **Impact-Check auf bestehende CRs**: Prüfe alle CRs mit Status "Freigegeben" oder "In Umsetzung" auf Konflikte:
+4. **Impact-Check auf bestehende CRs**: Prüfe ALLE CRs in `agent-docs/change-requests/` — insbesondere die mit Status "Freigegeben", "In Umsetzung", "Implementiert" oder "Verifiziert":
    - Berührt dieser CR dieselben Dateien oder Felder?
    - Widerspricht er Annahmen eines bestehenden CRs?
    - Dokumentiere Konflikte in Abschnitt "Abhängigkeiten & Konflikte" (siehe unten).
 
-5. **SDD-Konsistenzprüfung**: Prüfe, ob die geplante Änderung mit der SDD konsistent ist.
-   - **Konsistent**: Notiere kurz warum (z.B. "Erweitert bestehendes Konzept X aus SDD Abschnitt Y").
-   - **Gewünschte Abweichung**: Erstelle einen ADR (Architecture Decision Record) als Unterabschnitt im CR. Der ADR dokumentiert: Kontext, Entscheidung, Begründung, Konsequenzen. Die SDD wird NICHT automatisch angepasst — das ist ein bewusster Schritt nach erfolgreicher Implementierung.
+5. **ADR-Inventar prüfen**: Lies alle bestehenden CRs und extrahiere vorhandene ADRs (Architecture Decision Records). ADRs aus implementierten/verifizierten CRs sind **bindende Architektur-Entscheidungen** — sie haben denselben Stellenwert wie die SDD. Prüfe:
+   - Berührt der neue CR einen Bereich, für den bereits ein ADR existiert?
+   - Widerspricht der neue CR einem bestehenden ADR?
+   - Falls ja: Der neue CR muss den bestehenden ADR explizit referenzieren und begründen, warum er abweicht (neuer ADR, der den alten ablöst).
+
+6. **SDD-Konsistenzprüfung**: Prüfe, ob die geplante Änderung mit der SDD **und** allen bestehenden ADRs konsistent ist.
+   - **Konsistent mit SDD und ADRs**: Notiere kurz warum (z.B. "Erweitert bestehendes Konzept X aus SDD Abschnitt Y, konform mit ADR aus CR-001").
+   - **Gewünschte Abweichung von SDD**: Erstelle einen ADR als Unterabschnitt im CR. Der ADR dokumentiert: Kontext, Entscheidung, Begründung, Konsequenzen. Die SDD wird NICHT automatisch angepasst — das ist ein bewusster Schritt nach erfolgreicher Implementierung.
+   - **Gewünschte Abweichung von bestehendem ADR**: Erstelle einen neuen ADR, der den alten explizit ablöst. Referenziere den alten ADR (CR-Nummer) und begründe die Änderung.
 
 ------------------------------------------------
 CR-DOKUMENT ERSTELLEN
@@ -71,12 +77,14 @@ Das Dokument MUSS folgende Abschnitte enthalten:
 - **Prompt-Änderungen**: Was wird wo ergänzt (Terminologie, Beispiele, Best Practices)
 - **Abwärtskompatibilität**: Wie werden bestehende Daten behandelt?
 - **SDD-Konsistenz**: Ist die Lösung konsistent mit der SDD? Falls nein: ADR (siehe unten).
+- **ADR-Konsistenz**: Ist die Lösung konsistent mit bestehenden ADRs aus früheren CRs? Liste die relevanten ADRs mit CR-Referenz auf.
 
-### ADR (nur bei gewünschter SDD-Abweichung)
-Wenn die Lösung bewusst von der SDD abweicht, dokumentiere einen Architecture Decision Record:
-- **Kontext**: Welche SDD-Vorgabe ist betroffen? Warum reicht sie nicht?
+### ADR (bei gewünschter SDD-Abweichung oder ADR-Ablösung)
+Wenn die Lösung bewusst von der SDD oder einem bestehenden ADR abweicht, dokumentiere einen Architecture Decision Record:
+- **Kontext**: Welche SDD-Vorgabe oder welcher bestehende ADR (CR-Referenz) ist betroffen? Warum reicht sie/er nicht?
 - **Entscheidung**: Was machen wir stattdessen?
 - **Begründung**: Warum ist die Abweichung die bessere Wahl?
+- **Ablösung** (falls zutreffend): "Löst ADR aus CR-{XXX} ab."
 - **Konsequenzen**: Was folgt daraus? (SDD-Update nach Implementierung, betroffene Komponenten, etc.)
 
 ## 3a. Abhängigkeiten & Konflikte

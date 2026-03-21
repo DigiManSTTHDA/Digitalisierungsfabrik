@@ -141,13 +141,16 @@ Führe KEINE Tests aus — nur statische Analyse.
 Liefere: Liste aller betroffenen Tests mit Datei:Zeile, erwarteten Brüchen und Gaps.
 ```
 
-### Subagent 5: SDD- und Architektur-Konformitäts-Experte
-Aufgabe: Prüfe ob der CR mit der Systemdefinition und der High-Level-Architektur vereinbar ist.
+### Subagent 5: SDD-, ADR- und Architektur-Konformitäts-Experte
+Aufgabe: Prüfe ob der CR mit der Systemdefinition, bestehenden ADRs und der High-Level-Architektur vereinbar ist.
 
 ```
 Lies selektiv aus `docs/digitalisierungsfabrik_systemdefinition.md`:
 - Inhaltsverzeichnis (erste ~80 Zeilen)
 - Abschnitte, die für den CR relevant sind (anhand der betroffenen Artefakte und Phasen identifizieren)
+
+Lies ALLE bestehenden CRs in `agent-docs/change-requests/` und extrahiere vorhandene ADRs.
+ADRs aus CRs mit Status "Implementiert" oder "Verifiziert" sind BINDENDE Architektur-Entscheidungen.
 
 Der CR beschreibt seine SDD-Konsistenz wie folgt:
 {cr_sdd_konsistenz — aus Abschnitt 3 des CRs einfügen}
@@ -155,29 +158,40 @@ Der CR beschreibt seine SDD-Konsistenz wie folgt:
 Falls der CR einen ADR enthält:
 {cr_adr — aus Abschnitt 3 des CRs einfügen, oder "Kein ADR vorhanden"}
 
-Prüfe:
+Prüfe SDD-Konformität:
 1. Widerspricht der CR dem SDD? Gibt es Stellen im SDD, die die vorgeschlagene Lösung explizit anders definieren?
 2. Sind die betroffenen Felder/Modelle konsistent mit den SDD-Definitionen der Artefakte?
 3. Erfordert der CR ein SDD-Update? Wenn ja: welche Abschnitte?
 4. Verletzt der CR architektonische Prinzipien (z.B. "LLM als Operator mit eingeschränkten Schreibrechten", "deterministische Orchestrierung")?
 5. Falls ein ADR vorhanden: Ist die Begründung für die SDD-Abweichung stichhaltig? Sind die Konsequenzen vollständig?
 
-Liefere: Liste aller Konformitäts-Findings mit SDD-Abschnitt-Referenzen.
+Prüfe ADR-Konformität:
+6. Gibt es bestehende ADRs aus früheren CRs, die den vom CR betroffenen Bereich betreffen?
+7. Widerspricht der CR einem bestehenden ADR? Falls ja: Enthält der CR einen neuen ADR, der den alten explizit ablöst?
+8. Falls der CR einen bestehenden ADR ablöst: Ist die Begründung für die Ablösung stichhaltig?
+9. Hat der CR-Autor alle relevanten bestehenden ADRs identifiziert und referenziert?
+
+Liefere: Liste aller Konformitäts-Findings mit SDD-Abschnitt- und CR/ADR-Referenzen.
 ```
 
 ### Subagent 6: Abhängigkeits- und Konflikt-Experte
 Aufgabe: Prüfe die CR-Abhängigkeiten und den Impact auf bestehende CRs.
 
 ```
-Lies alle CRs in `agent-docs/change-requests/` mit Status "Freigegeben" oder "In Umsetzung".
+Lies ALLE CRs in `agent-docs/change-requests/` — insbesondere die mit Status "Freigegeben", "In Umsetzung", "Implementiert" oder "Verifiziert".
 Lies den Abschnitt "3a. Abhängigkeiten & Konflikte" des zu reviewenden CRs.
 
-Prüfe:
+Prüfe Konflikte mit aktiven CRs (Status "Freigegeben" oder "In Umsetzung"):
 1. Hat der CR-Autor alle relevanten Konflikte identifiziert?
 2. Gibt es CRs, die dieselben Dateien oder Felder betreffen, aber nicht als Konflikt genannt wurden?
 3. Sind die Abhängigkeiten (Setzt voraus / Blockiert / Ersetzt) korrekt und vollständig?
 4. Ist die vorgeschlagene Konflikt-Auflösung realistisch?
 5. Falls "Keine Konflikte" dokumentiert: Ist das korrekt?
+
+Prüfe Konsistenz mit bereits umgesetzten CRs (Status "Implementiert" oder "Verifiziert"):
+6. Berührt der neue CR Bereiche, die durch frühere CRs verändert wurden?
+7. Baut der neue CR auf Annahmen auf, die ein früherer CR verändert hat?
+8. Widerspricht der neue CR Entscheidungen (insbesondere ADRs) aus bereits umgesetzten CRs?
 
 Liefere: Liste aller Findings mit CR-Referenzen.
 ```
@@ -275,10 +289,10 @@ Der Bericht hat folgende Struktur:
 [Findings]
 ### Tests & Regression
 [Findings]
-### SDD & Architektur-Konformität
-[Findings]
+### SDD, ADRs & Architektur-Konformität
+[SDD-Findings, ADR-Konflikte mit früheren CRs, ADR-Ablösungen]
 ### Abhängigkeiten & Konflikte
-[Findings]
+[Findings — inkl. Konsistenz mit implementierten/verifizierten CRs]
 ```
 
 Zusätzlich: Zeige dem Nutzer eine kompakte Zusammenfassung (Empfehlung, Anzahl Blocker/Verbesserungen, wichtigste Findings).
