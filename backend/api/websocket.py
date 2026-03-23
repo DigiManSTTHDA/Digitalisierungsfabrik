@@ -24,6 +24,9 @@ from core.events import (
 from core.orchestrator import Orchestrator, TurnInput, TurnOutput
 from modes.base import Flag
 from modes.exploration import ExplorationMode
+from modes.init_coverage_validator import InitCoverageValidatorMode
+from modes.init_specification import InitSpecificationMode
+from modes.init_structuring import InitStructuringMode
 from modes.specification import SpecificationMode
 from modes.structuring import StructuringMode
 from modes.validation import ValidationMode
@@ -50,6 +53,9 @@ def _build_orchestrator(repo: ProjectRepository, settings: Settings) -> Orchestr
         "specification": SpecificationMode(llm_client=llm),
         "validation": ValidationMode(llm_client=llm),
         "moderator": Moderator(llm_client=llm),
+        "init_structuring": InitStructuringMode(llm_client=llm),
+        "init_specification": InitSpecificationMode(llm_client=llm),
+        "init_coverage_validator": InitCoverageValidatorMode(llm_client=llm),
     }
     return Orchestrator(repository=repo, modes=modes, settings=settings)
 

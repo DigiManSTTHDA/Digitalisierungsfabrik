@@ -192,6 +192,17 @@ class StructuringMode(BaseMode):
         system_prompt = system_prompt.replace("{context_summary}", context_summary)
         system_prompt = system_prompt.replace("{exploration_content}", exploration_content)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
+
+        # CR-006 C-2: init_hinweise aus WorkingMemory injizieren
+        if context.working_memory.init_hinweise:
+            hinweise_text = (
+                "\n\n**Hinweise aus der System-Initialisierung** (bitte im Dialog ansprechen):\n"
+                + "\n".join(f"- {h}" for h in context.working_memory.init_hinweise)
+            )
+        else:
+            hinweise_text = ""
+        system_prompt = system_prompt.replace("{init_hinweise}", hinweise_text)
+
         system_prompt += _build_first_turn_directive(context)
 
         # Retry-Hint bei ungültigen Patch-Pfaden (S1-T1)

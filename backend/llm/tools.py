@@ -8,6 +8,8 @@ The LLM also reports its assessment of the phase status (SDD 6.4.1, 6.6.x):
 - nearing_completion: almost done, wrapping up
 - phase_complete: phase goal reached, ready for Moderator handoff
 
+INIT_APPLY_PATCHES_TOOL (CR-006): Variant for Init-Modi — includes init_status field.
+
 SDD references: FR-B-09 (Schreibkontrolle via RFC 6902), SDD 6.5.2 (Output-Kontrakt).
 """
 
@@ -67,5 +69,59 @@ APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
             },
         },
         "required": ["nutzeraeusserung", "patches", "phasenstatus"],
+    },
+}
+
+# CR-006: Tool-Schema für Init-Modi — erweitert um init_status
+INIT_APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
+    "name": "apply_patches",
+    "description": (
+        "Wendet RFC 6902 JSON Patch Operationen auf das aktive Artefakt an "
+        "und meldet den Initialisierungsstatus."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "nutzeraeusserung": {
+                "type": "string",
+                "description": "Immer leer lassen: ''",
+            },
+            "patches": {
+                "type": "array",
+                "description": "Liste von RFC 6902 JSON Patch Operationen auf das aktive Artefakt",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "op": {
+                            "type": "string",
+                            "enum": ["add", "replace", "remove"],
+                            "description": "RFC 6902 Operation",
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "RFC 6902 JSON Pointer Pfad",
+                        },
+                        "value": {
+                            "description": "Neuer Wert (erforderlich bei add/replace)",
+                        },
+                    },
+                    "required": ["op", "path"],
+                },
+            },
+            "phasenstatus": {
+                "type": "string",
+                "enum": ["in_progress"],
+                "description": "Immer 'in_progress' — Init-Modi setzen keinen phase_complete.",
+            },
+            "init_status": {
+                "type": "string",
+                "enum": ["init_in_progress", "init_complete"],
+                "description": (
+                    "'init_in_progress' = es gibt noch Elemente ohne vollständige Initialisierung. "
+                    "'init_complete' = alle Elemente haben mindestens completeness_status 'teilweise'."
+                ),
+            },
+        },
+        "required": ["nutzeraeusserung", "patches", "phasenstatus", "init_status"],
     },
 }

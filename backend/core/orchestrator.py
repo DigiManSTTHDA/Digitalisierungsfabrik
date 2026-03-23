@@ -15,7 +15,12 @@ import structlog
 from pydantic import BaseModel, Field
 
 from artifacts.completeness import CompletenessCalculator
-from artifacts.models import Phasenstatus
+from artifacts.init_validator import (
+    StructuralViolation,
+    validate_algorithm_artifact,
+    validate_structure_artifact,
+)
+from artifacts.models import InitStatus, Phasenstatus
 from config import Settings
 from core.turn_debug_log import write_turn_debug
 from core.artifact_router import (
@@ -260,14 +265,22 @@ class Orchestrator:
         # Also handles system start: if no vorheriger_modus, switch to
         # the current phase's primary mode (FR-D-11).
         if Flag.return_to_mode in active_flags:
+            from core.phase_transition import PHASE_TO_MODE
+
             if wm.vorheriger_modus:
-                wm.aktiver_modus = wm.vorheriger_modus
+                target_mode = wm.vorheriger_modus
                 wm.vorheriger_modus = None
             else:
                 # System start or no previous mode: switch to phase primary mode
-                from core.phase_transition import PHASE_TO_MODE
+                target_mode = PHASE_TO_MODE.get(wm.aktive_phase, "exploration")
 
-                wm.aktiver_modus = PHASE_TO_MODE.get(wm.aktive_phase, "exploration")
+            # CR-006 Schritt 10b: Background-Init für Structurer/Specifier wenn Artefakt leer
+            if self._init_required(target_mode, project):
+                log.info("orchestrator.background_init.start", target_mode=target_mode)
+                await self._run_background_init(project, wm, target_mode)
+                log.info("orchestrator.background_init.complete", target_mode=target_mode)
+
+            wm.aktiver_modus = target_mode
             project.aktiver_modus = wm.aktiver_modus
             log.info("orchestrator.return_to_mode", mode=wm.aktiver_modus)
 
@@ -324,6 +337,152 @@ class Orchestrator:
             flags=flag_strings,
             working_memory=wm,
         )
+
+    # ---------------------------------------------------------------------------
+    # CR-006: Background-Initialisierung
+    # ---------------------------------------------------------------------------
+
+    _MAX_INIT_TURNS = 8
+    _MAX_CORRECTION_TURNS = 2
+
+    def _init_required(self, target_mode: str, project: "Project") -> bool:  # noqa: F821
+        """Prüfen ob Background-Init erforderlich ist (Artefakt leer?)."""
+        if target_mode == "structuring":
+            return len(project.structure_artifact.schritte) == 0
+        if target_mode == "specification":
+            return len(project.algorithm_artifact.abschnitte) == 0
+        return False
+
+    async def _run_background_init(
+        self,
+        project: "Project",  # noqa: F821
+        wm: WorkingMemory,
+        target_mode: str,
+    ) -> None:
+        """Background-Init-Loop: Init-Modus aufrufen, Patches anwenden, validieren."""
+        init_mode_key = f"init_{target_mode}"
+        init_mode = self._modes.get(init_mode_key)
+        if init_mode is None:
+            logger.warning("orchestrator.background_init.no_init_mode", key=init_mode_key)
+            return
+
+        source_type = "structure" if target_mode == "structuring" else "algorithm"
+
+        # Phase 1: Init-Loop
+        for _turn in range(self._MAX_INIT_TURNS):
+            context = build_context(project, {}, repository=self._repository, settings=self._settings)
+            output = await init_mode.call(context)
+
+            if output.patches:
+                artifact = get_artifact(project, source_type)
+                result = self._executor.apply_patches(source_type, artifact, output.patches)
+                if result.success and result.artifact is not None:
+                    set_artifact(project, source_type, result.artifact)
+                    if result.invalidated_abschnitt_ids:
+                        apply_invalidations(project, result.invalidated_abschnitt_ids, self._executor)
+
+            if output.init_status == InitStatus.init_complete:
+                break
+
+        # Phase 2: Python-Validator (deterministisch)
+        violations = self._run_structural_validator(project, target_mode)
+
+        # Phase 3: LLM-Coverage-Validator (einmalig)
+        coverage_violations = await self._run_coverage_validator(project, wm)
+        all_violations = violations + coverage_violations
+
+        # Phase 4: Korrektur-Turns bei kritischen Befunden
+        kritische = [v for v in all_violations if v.severity == "kritisch"]
+        if kritische:
+            await self._run_correction_turns(project, wm, init_mode, source_type, kritische)
+
+        # Phase 5: Warnungen als init_hinweise im WorkingMemory speichern
+        warnungen = [v for v in all_violations if v.severity == "warnung"]
+        if warnungen:
+            wm.init_hinweise = [v.message for v in warnungen]
+
+    def _run_structural_validator(
+        self,
+        project: "Project",  # noqa: F821
+        target_mode: str,
+    ) -> list[StructuralViolation]:
+        """Deterministischen Python-Validator nach Init-Loop ausführen (§3.3)."""
+        if target_mode == "structuring":
+            return validate_structure_artifact(
+                project.exploration_artifact,
+                project.structure_artifact,
+            )
+        if target_mode == "specification":
+            return validate_algorithm_artifact(
+                project.structure_artifact,
+                project.algorithm_artifact,
+            )
+        return []
+
+    async def _run_coverage_validator(
+        self,
+        project: "Project",  # noqa: F821
+        wm: WorkingMemory,
+    ) -> list[StructuralViolation]:
+        """Coverage-Validator als registrierten Modus aufrufen (ADR-008 Option B)."""
+        import json
+
+        coverage_mode = self._modes.get("init_coverage_validator")
+        if coverage_mode is None:
+            logger.warning("orchestrator.background_init.no_coverage_mode")
+            return []
+        context = build_context(project, {}, repository=self._repository, settings=self._settings)
+        output = await coverage_mode.call(context)
+        try:
+            data = json.loads(output.nutzeraeusserung)
+            return [
+                StructuralViolation(
+                    severity=e.get("schweregrad", "warnung"),
+                    message=f"{e['typ']}: {e['bezeichnung']} (aus {e['quelle_slot']})",
+                )
+                for e in data.get("fehlende_entitaeten", [])
+            ]
+        except (json.JSONDecodeError, KeyError):
+            logger.warning("orchestrator.coverage_validator.parse_error")
+            return []
+
+    async def _run_correction_turns(
+        self,
+        project: "Project",  # noqa: F821
+        wm: WorkingMemory,
+        init_mode: "BaseMode",  # noqa: F821
+        source_type: str,
+        kritische: list[StructuralViolation],
+    ) -> None:
+        """Korrektur-Turns für kritische Befunde (max. _MAX_CORRECTION_TURNS=2)."""
+        violation_summary = "; ".join(
+            f"[{v.element_id or '?'}] {v.message}" for v in kritische
+        )
+        error_hint = (
+            f"ACHTUNG: Der Python-Validator hat {len(kritische)} kritische Befunde gefunden: "
+            f"{violation_summary}. Korrigiere diese in diesem Turn."
+        )
+
+        for _attempt in range(self._MAX_CORRECTION_TURNS):
+            context = build_context(
+                project, {}, repository=self._repository, settings=self._settings
+            )
+            context = context.with_error_hint(error_hint)
+            output = await init_mode.call(context)
+
+            if output.patches:
+                artifact = get_artifact(project, source_type)
+                result = self._executor.apply_patches(source_type, artifact, output.patches)
+                if result.success and result.artifact is not None:
+                    set_artifact(project, source_type, result.artifact)
+
+            # Re-validate after correction
+            remaining = self._run_structural_validator(project, "structuring" if source_type == "structure" else "specification")
+            kritische = [v for v in remaining if v.severity == "kritisch"]
+            if not kritische:
+                break
+
+    # ---------------------------------------------------------------------------
 
     def _error_output(
         self,

@@ -42,4 +42,5 @@ class WorkingMemory(BaseModel):
     cumulative_prompt_tokens: int = 0  # Kumulative Prompt-Tokens seit Projektbeginn
     cumulative_completion_tokens: int = 0  # Kumulative Completion-Tokens seit Projektbeginn
     cumulative_total_tokens: int = 0  # Kumulative Gesamttokens seit Projektbeginn
+    init_hinweise: list[str] = Field(default_factory=list)  # CR-006: Warnungen aus Init-Validierung
     letzte_aenderung: datetime

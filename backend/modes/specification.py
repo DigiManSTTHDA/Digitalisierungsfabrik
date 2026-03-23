@@ -202,6 +202,17 @@ class SpecificationMode(BaseMode):
         system_prompt = system_prompt.replace("{algorithm_status}", algorithm_status)
         system_prompt = system_prompt.replace("{emma_catalog}", emma_catalog)
         system_prompt = system_prompt.replace("{validierungsbericht}", "")
+
+        # CR-006 C-2: init_hinweise aus WorkingMemory injizieren
+        if context.working_memory.init_hinweise:
+            hinweise_text = (
+                "\n\n**Hinweise aus der System-Initialisierung** (bitte im Dialog ansprechen):\n"
+                + "\n".join(f"- {h}" for h in context.working_memory.init_hinweise)
+            )
+        else:
+            hinweise_text = ""
+        system_prompt = system_prompt.replace("{init_hinweise}", hinweise_text)
+
         system_prompt += _build_first_turn_directive(context)
 
         messages = translate_dialog_history(context.dialog_history)

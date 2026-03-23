@@ -28,6 +28,9 @@ from core.orchestrator import Orchestrator, TurnInput, TurnOutput
 from core.working_memory import WorkingMemory
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput
 from modes.exploration import ExplorationMode
+from modes.init_coverage_validator import InitCoverageValidatorMode
+from modes.init_specification import InitSpecificationMode
+from modes.init_structuring import InitStructuringMode
 from modes.moderator import Moderator
 from modes.specification import SpecificationMode
 from modes.structuring import StructuringMode
@@ -51,10 +54,13 @@ def _make_repo(db: Database) -> ProjectRepository:
 def _make_default_modes() -> dict[str, BaseMode]:
     return {
         "exploration": ExplorationMode(),
-        "strukturierung": StructuringMode(),
-        "spezifikation": SpecificationMode(),
-        "validierung": ValidationMode(),
+        "structuring": StructuringMode(),
+        "specification": SpecificationMode(),
+        "validation": ValidationMode(),
         "moderator": Moderator(),
+        "init_structuring": InitStructuringMode(),
+        "init_specification": InitSpecificationMode(),
+        "init_coverage_validator": InitCoverageValidatorMode(),
     }
 
 

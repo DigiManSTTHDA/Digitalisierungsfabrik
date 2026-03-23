@@ -18,6 +18,7 @@ from artifacts.models import (
     AlgorithmArtifact,
     CompletenessStatus,
     ExplorationArtifact,
+    InitStatus,
     Phasenstatus,
     Projektphase,
     StructureArtifact,
@@ -79,6 +80,7 @@ class ModeOutput(BaseModel):
     phasenstatus: Phasenstatus
     flags: list[Flag] = Field(default_factory=list)
     validierungsbericht: Validierungsbericht | None = None
+    init_status: InitStatus | None = None  # CR-006: nur Init-Modi setzen dieses Feld
     debug_request: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]
     usage: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]  # Token usage
 
