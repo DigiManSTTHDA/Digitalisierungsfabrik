@@ -1,8 +1,9 @@
 # HIGH-LEVEL ARCHITECTURE — Digitalisierungsfabrik
-**Version:** 0.2
+**Version:** 0.3
 **Status:** Entwurf
 **Bezug:** SDD `digitalisierungsfabrik_systemdefinition.md`
 **Changelog:**
+- v0.3: Background-Initialisierungsphase (CR-006) — 3 neue Init-Modi, deterministischer Validator, Projektstruktur aktualisiert
 - v0.2: Chainlit ersetzt durch FastAPI + React; SQLite statt JSON-Files; Dict-Keyed Artefakt-Slots; Structured-Output-Strategie (Option A) definiert
 
 ---
@@ -263,15 +264,25 @@ class ModeOutput:
     flags: list[Flag]            # s. SDD 6.4.1
 ```
 
-| Modus | Klasse | Artefakt (Patches auf) |
-|---|---|---|
-| Exploration | `ExplorationMode` | Explorationsartefakt |
-| Strukturierung | `StructuringMode` | Strukturartefakt |
-| Spezifikation | `SpecificationMode` | Algorithmusartefakt |
-| Validierung | `ValidationMode` | keines (gibt Validierungsbericht aus) |
-| Moderator | `Moderator` | keines |
+**Dialog-Modi** (sichtbar für den Nutzer):
 
-Kein Modus schreibt direkt in Artefakte oder Working Memory.
+| Modus | Klasse | Artefakt (Patches auf) | Wann aktiv |
+|---|---|---|---|
+| Exploration | `ExplorationMode` | Explorationsartefakt | Explorationsphase |
+| Strukturierung | `StructuringMode` | Strukturartefakt | Strukturierungsphase (nach Background-Init) |
+| Spezifikation | `SpecificationMode` | Algorithmusartefakt | Spezifikationsphase (nach Background-Init) |
+| Validierung | `ValidationMode` | — (Validierungsbericht) | Validierungsphase |
+| Moderator | `Moderator` | — | Bei `phase_complete` / `escalate` / `blocked` |
+
+**Background-Init-Modi** (CR-006, unsichtbar — kein Nutzer-Dialog):
+
+| Modus | Klasse | Zweck |
+|---|---|---|
+| Init-Structuring | `InitStructuringMode` | Exploration → Strukturartefakt (Init-Loop, max. 8 Turns) |
+| Init-Specification | `InitSpecificationMode` | Struktur → Algorithmusartefakt (Init-Loop, max. 8 Turns) |
+| Init-Coverage-Validator | `InitCoverageValidatorMode` | Prüft ob Entitäten aus Exploration in Artefakten abgebildet sind (einmalig, nur Warnungen) |
+
+Kein Modus schreibt direkt in Artefakte oder Working Memory. Background-Init-Modi werden ausschließlich vom Orchestrator in `_run_background_init()` aufgerufen und senden keine Antwort an den Client.
 
 ### 3.6 Artefakt-Store
 
@@ -519,6 +530,17 @@ WebSocketHandler.handle_turn(project_id, input)
 [10] ProgressTracker.update(phasenstatus, slot_counts)
      → WorkingMemory.phasenstatus, befuellte_slots, bekannte_slots
      └── WebSocket Event 'progress_update' an Frontend
+     │
+     ▼
+[10b] Moduswechsel-Prüfung (Schritt 10 des Zyklus, Fortsetzung)
+     ├── return_to_mode → Primärmodus der aktuellen Phase aktivieren
+     │   └── Artefakt leer (erstes Betreten von Structuring/Specification)?
+     │       └── _run_background_init() [CR-006 — kein Client-Event]
+     │           ├── Phase 1: Init-Loop (InitStructuringMode / InitSpecificationMode, max. 8 Turns)
+     │           ├── Phase 2: Python-Validator (deterministisch, R-1 bis R-6)
+     │           ├── Phase 3: LLM Coverage-Validator (InitCoverageValidatorMode, einmalig)
+     │           ├── Phase 4: Korrektur-Turns (max. 2, nur bei kritischen Befunden)
+     │           └── Phase 5: Warnungen → wm.init_hinweise (für nächsten Dialog-Turn)
     │
     ▼
 [11] ProjectRepository.save(projekt)  [SQLite-Transaktion, atomar]
@@ -558,11 +580,14 @@ digitalisierungsfabrik/
 │   │   ├── structuring.py              # Strukturierungsmodus (SDD 6.6.2)
 │   │   ├── specification.py            # Spezifikationsmodus (SDD 6.6.3)
 │   │   ├── validation.py               # Validierungsmodus (SDD 6.6.4)
-│   │   └── moderator.py                # Moderator (SDD 6.6.5)
+│   │   ├── moderator.py                # Moderator (SDD 6.6.5)
+│   │   ├── init_structuring.py         # Background-Init: Exploration → Struktur (CR-006)
+│   │   ├── init_specification.py       # Background-Init: Struktur → Algorithmus (CR-006)
+│   │   └── init_coverage_validator.py  # Background-Init: Coverage-Prüfung (CR-006)
 │   │
 │   ├── artifacts/
 │   │   ├── models.py                   # Pydantic-Modelle (dict-keyed Collections)
-│   │   ├── store.py                    # Artefakt-Store + Versionierung
+│   │   ├── init_validator.py           # Deterministischer Validator R-1 bis R-6 (CR-006)
 │   │   ├── template_schema.py          # Template-Schema (aus models.py abgeleitet)
 │   │   ├── completeness.py             # Completeness-State-Berechnung (SDD 5.6)
 │   │   └── renderer.py                 # JSON → Markdown (für Download, OP-19)
@@ -582,7 +607,10 @@ digitalisierungsfabrik/
 │   │   ├── structuring.md
 │   │   ├── specification.md
 │   │   ├── validation.md
-│   │   └── moderator.md
+│   │   ├── moderator.md
+│   │   ├── init_structuring.md         # Prompt für Background-Init Structurer (CR-006)
+│   │   ├── init_specification.md       # Prompt für Background-Init Specifier (CR-006)
+│   │   └── init_coverage_validator.md  # Prompt für Coverage-Validator (CR-006)
 │   │
 │   ├── static/
 │   │   └── emma_catalog.json           # EMMA-Aktionskatalog (SDD 8.3)
