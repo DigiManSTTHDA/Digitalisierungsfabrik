@@ -163,6 +163,100 @@ class TestStructureArtifact:
         )
         assert schritt.algorithmus_ref == []
 
+    # --- CR-002: Kontrollfluss-Felder ---
+
+    def test_entscheidungsregel_model(self) -> None:
+        """Entscheidungsregel model stores bedingung, nachfolger, bezeichnung."""
+        from artifacts.models import Entscheidungsregel
+
+        regel = Entscheidungsregel(bedingung="Betrag > 500€", nachfolger="s3")
+        assert regel.bedingung == "Betrag > 500€"
+        assert regel.nachfolger == "s3"
+        assert regel.bezeichnung == ""
+
+    def test_entscheidungsregel_with_bezeichnung(self) -> None:
+        from artifacts.models import Entscheidungsregel
+
+        regel = Entscheidungsregel(bedingung="Intern", nachfolger="s4", bezeichnung="Interne Reise")
+        assert regel.bezeichnung == "Interne Reise"
+
+    def test_new_fields_default_empty(self) -> None:
+        """CR-002 fields default to empty — backward compatible."""
+        from artifacts.models import (
+            AlgorithmusStatus,
+            CompletenessStatus,
+            Strukturschritt,
+            Strukturschritttyp,
+        )
+
+        schritt = Strukturschritt(
+            schritt_id="s1",
+            titel="Test",
+            typ=Strukturschritttyp.aktion,
+            reihenfolge=1,
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        assert schritt.regeln == []
+        assert schritt.schleifenkoerper == []
+        assert schritt.abbruchbedingung is None
+        assert schritt.konvergenz is None
+
+    def test_roundtrip_with_regeln(self) -> None:
+        """Strukturschritt with regeln survives model_dump → model_validate."""
+        from artifacts.models import (
+            AlgorithmusStatus,
+            CompletenessStatus,
+            Entscheidungsregel,
+            StructureArtifact,
+            Strukturschritt,
+            Strukturschritttyp,
+        )
+
+        schritt = Strukturschritt(
+            schritt_id="s5",
+            titel="Entscheidung",
+            typ=Strukturschritttyp.entscheidung,
+            reihenfolge=5,
+            regeln=[
+                Entscheidungsregel(bedingung="Betrag > 500€", nachfolger="s6"),
+                Entscheidungsregel(bedingung="Betrag <= 500€", nachfolger="s7"),
+            ],
+            konvergenz="s8",
+            completeness_status=CompletenessStatus.teilweise,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        art = StructureArtifact(schritte={"s5": schritt})
+        art2 = StructureArtifact.model_validate(art.model_dump())
+        assert len(art2.schritte["s5"].regeln) == 2
+        assert art2.schritte["s5"].regeln[0].nachfolger == "s6"
+        assert art2.schritte["s5"].konvergenz == "s8"
+
+    def test_roundtrip_with_schleifenkoerper(self) -> None:
+        """Strukturschritt with schleifenkoerper survives roundtrip."""
+        from artifacts.models import (
+            AlgorithmusStatus,
+            CompletenessStatus,
+            StructureArtifact,
+            Strukturschritt,
+            Strukturschritttyp,
+        )
+
+        schritt = Strukturschritt(
+            schritt_id="s3",
+            titel="Wiederholung",
+            typ=Strukturschritttyp.schleife,
+            reihenfolge=3,
+            schleifenkoerper=["s4", "s5"],
+            abbruchbedingung="Alle Belege geprüft",
+            completeness_status=CompletenessStatus.teilweise,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        art = StructureArtifact(schritte={"s3": schritt})
+        art2 = StructureArtifact.model_validate(art.model_dump())
+        assert art2.schritte["s3"].schleifenkoerper == ["s4", "s5"]
+        assert art2.schritte["s3"].abbruchbedingung == "Alle Belege geprüft"
+
 
 class TestAlgorithmArtifact:
     def test_default_instantiation(self) -> None:

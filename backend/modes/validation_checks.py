@@ -124,6 +124,43 @@ def deterministic_checks(ctx: ModeContext) -> list[Validierungsbefund]:
                 empfehlung="Algorithmusabschnitt für die Ausnahmebehandlung erstellen.",
             )
         )
+    # 6. CR-002: regeln↔nachfolger consistency
+    for sid, schritt in structure.schritte.items():
+        if not schritt.regeln:
+            continue
+        expected_nachfolger = [r.nachfolger for r in schritt.regeln]
+        if set(schritt.nachfolger) != set(expected_nachfolger):
+            bid += 1
+            befunde.append(
+                Validierungsbefund(
+                    befund_id=f"det-{bid}",
+                    schweregrad=Schweregrad.kritisch,
+                    beschreibung=f"Strukturschritt '{schritt.titel}': nachfolger {schritt.nachfolger} "
+                    f"stimmt nicht mit regeln-Nachfolgern {expected_nachfolger} überein.",
+                    betroffene_slots=[sid],
+                    artefakttyp="struktur",
+                    empfehlung="regeln ist die Quelle der Wahrheit — nachfolger muss daraus abgeleitet werden.",
+                )
+            )
+
+    # 7. CR-002: schleifenkoerper references valid Strukturschritte
+    all_schritt_ids = set(structure.schritte.keys())
+    for sid, schritt in structure.schritte.items():
+        for ref in schritt.schleifenkoerper:
+            if ref not in all_schritt_ids:
+                bid += 1
+                befunde.append(
+                    Validierungsbefund(
+                        befund_id=f"det-{bid}",
+                        schweregrad=Schweregrad.kritisch,
+                        beschreibung=f"Strukturschritt '{schritt.titel}': schleifenkoerper "
+                        f"referenziert '{ref}', der nicht existiert.",
+                        betroffene_slots=[sid],
+                        artefakttyp="struktur",
+                        empfehlung="Referenz auf existierenden Strukturschritt korrigieren.",
+                    )
+                )
+
     return befunde
 
 

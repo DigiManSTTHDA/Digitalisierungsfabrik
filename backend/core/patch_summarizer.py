@@ -57,6 +57,15 @@ def summarize_patches(
                     parts.append(f"Entscheidungsfrage bei '{titel}' aktualisiert")
                 elif field == "typ":
                     parts.append(f"Typ von '{titel}' geändert")
+                elif field == "regeln":
+                    n = len(value) if isinstance(value, list) else 0
+                    parts.append(f"Entscheidungsregeln bei '{titel}' gesetzt ({n} Regeln)")
+                elif field == "schleifenkoerper":
+                    parts.append(f"Schleifenkörper von '{titel}' definiert")
+                elif field == "abbruchbedingung":
+                    parts.append(f"Abbruchbedingung bei '{titel}' gesetzt")
+                elif field == "konvergenz":
+                    parts.append(f"Konvergenzpunkt bei '{titel}' gesetzt")
             elif op == "add" and field == "spannungsfeld":
                 titel = _get_titel(sid, structure_artifact)
                 parts.append(f"Problem bei '{titel}' dokumentiert")

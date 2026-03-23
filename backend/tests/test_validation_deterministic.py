@@ -351,3 +351,66 @@ async def test_clean_summary_reports_no_findings() -> None:
     mode = ValidationMode()
     output = await mode.call(_ctx())
     assert "Keine Befunde" in output.nutzeraeusserung
+
+
+# ── CR-002: regeln↔nachfolger consistency ─────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_regeln_nachfolger_inconsistency_produces_kritisch() -> None:
+    """CR-002: regeln nachfolger must match schritt.nachfolger — mismatch → kritisch."""
+    from artifacts.models import Entscheidungsregel
+
+    schritt = _complete_schritt(titel="Reiseart prüfen", typ=Strukturschritttyp.entscheidung)
+    schritt.regeln = [
+        Entscheidungsregel(bedingung="Inland", nachfolger="s2"),
+        Entscheidungsregel(bedingung="Ausland", nachfolger="s3"),
+    ]
+    schritt.nachfolger = ["s2", "s99"]  # s99 is wrong — should be s3
+    structure = StructureArtifact(schritte={"s1": schritt})
+    mode = ValidationMode()
+    output = await mode.call(_ctx(structure=structure))
+
+    bericht = output.validierungsbericht
+    assert bericht is not None
+    kritisch = [b for b in bericht.befunde if b.schweregrad == Schweregrad.kritisch]
+    assert any("nachfolger" in b.beschreibung and "regeln" in b.beschreibung for b in kritisch)
+
+
+@pytest.mark.asyncio
+async def test_regeln_nachfolger_consistent_no_finding() -> None:
+    """CR-002: When regeln nachfolger matches schritt.nachfolger, no finding."""
+    from artifacts.models import Entscheidungsregel
+
+    schritt = _complete_schritt(titel="Reiseart prüfen", typ=Strukturschritttyp.entscheidung)
+    schritt.regeln = [
+        Entscheidungsregel(bedingung="Inland", nachfolger="s2"),
+        Entscheidungsregel(bedingung="Ausland", nachfolger="s3"),
+    ]
+    schritt.nachfolger = ["s2", "s3"]
+    structure = StructureArtifact(schritte={"s1": schritt})
+    algorithm = AlgorithmArtifact(abschnitte={"alg1": _complete_abschnitt(struktur_ref="s1")})
+    schritt.algorithmus_ref = ["alg1"]
+    mode = ValidationMode()
+    output = await mode.call(_ctx(structure=structure, algorithm=algorithm))
+
+    bericht = output.validierungsbericht
+    assert bericht is not None
+    # No regeln/nachfolger inconsistency finding
+    regeln_findings = [b for b in bericht.befunde if "regeln" in b.beschreibung]
+    assert len(regeln_findings) == 0
+
+
+@pytest.mark.asyncio
+async def test_schleifenkoerper_invalid_ref_produces_kritisch() -> None:
+    """CR-002: schleifenkoerper referencing non-existent schritt → kritisch."""
+    schritt = _complete_schritt(titel="Wiederholung", typ=Strukturschritttyp.schleife)
+    schritt.schleifenkoerper = ["s_nonexistent"]
+    structure = StructureArtifact(schritte={"s1": schritt})
+    mode = ValidationMode()
+    output = await mode.call(_ctx(structure=structure))
+
+    bericht = output.validierungsbericht
+    assert bericht is not None
+    kritisch = [b for b in bericht.befunde if b.schweregrad == Schweregrad.kritisch]
+    assert any("schleifenkoerper" in b.beschreibung for b in kritisch)

@@ -111,6 +111,14 @@ class EmmaAktionstyp(StrEnum):
 from pydantic import BaseModel, Field, field_validator  # noqa: E402
 
 
+class Entscheidungsregel(BaseModel):
+    """Eine Regel innerhalb einer Entscheidung — Bedingung → Nachfolger (SDD OP-16 Teilumsetzung)."""
+
+    bedingung: str  # Textuelle Bedingung, z.B. "Betrag > 5.000 €"
+    nachfolger: str  # Schritt-ID des Ziel-Schritts
+    bezeichnung: str = ""  # Optionaler Kurzname, z.B. "Freigabe nötig"
+
+
 class ExplorationSlot(BaseModel):
     """Ein einzelner Informationsslot im Explorationsartefakt."""
 
@@ -143,6 +151,14 @@ class Strukturschritt(BaseModel):
     nachfolger: list[str] = Field(default_factory=list)
     bedingung: str | None = None  # Nur bei typ=entscheidung (SDD 5.4)
     ausnahme_beschreibung: str | None = None  # Nur bei typ=ausnahme (SDD 5.4)
+    regeln: list[Entscheidungsregel] = Field(
+        default_factory=list
+    )  # Nur bei typ=entscheidung: Bedingung→Nachfolger-Mapping (CR-002, OP-16)
+    schleifenkoerper: list[str] = Field(
+        default_factory=list
+    )  # Nur bei typ=schleife: Schritt-IDs innerhalb der Schleife (CR-002)
+    abbruchbedingung: str | None = None  # Nur bei typ=schleife: textuelle Abbruchbedingung (CR-002)
+    konvergenz: str | None = None  # Nur bei typ=entscheidung: Merge-Point nach Verzweigung (CR-002)
     algorithmus_ref: list[str] = Field(
         default_factory=list
     )  # → Algorithmusabschnitt.abschnitt_id (FR-B-03)

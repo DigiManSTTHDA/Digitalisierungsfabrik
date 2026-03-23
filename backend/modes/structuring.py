@@ -49,9 +49,15 @@ def _build_slot_status(context: ModeContext) -> str:
         status = schritt.completeness_status.value
         typ = schritt.typ.value
         nachf = ", ".join(schritt.nachfolger) if schritt.nachfolger else "—"
-        lines.append(
-            f"- [{schritt.reihenfolge}] {schritt.titel} ({sid}) [{typ}] [{status}] → {nachf}"
-        )
+        line = f"- [{schritt.reihenfolge}] {schritt.titel} ({sid}) [{typ}] [{status}] → {nachf}"
+        # CR-002: Show control flow details for entscheidung and schleife
+        if schritt.regeln:
+            line += f" ({len(schritt.regeln)} Regeln)"
+        if schritt.schleifenkoerper:
+            line += f" [Schleife: {', '.join(schritt.schleifenkoerper)}]"
+        if schritt.konvergenz:
+            line += f" [Konvergenz: {schritt.konvergenz}]"
+        lines.append(line)
 
     zusammenfassung = context.structure_artifact.prozesszusammenfassung
     if zusammenfassung:
@@ -125,6 +131,40 @@ def _apply_guardrails(
     return llm_phasenstatus
 
 
+def _derive_nachfolger_from_regeln(
+    patches: list[dict],  # type: ignore[type-arg]
+    context: ModeContext,
+) -> list[dict]:  # type: ignore[type-arg]
+    """Auto-derive nachfolger from regeln when regeln is set (CR-002 guardrail).
+
+    If a patch sets regeln on a Strukturschritt, inject an additional replace patch
+    for nachfolger derived from the regeln entries. regeln is the source of truth.
+    """
+    extra_patches: list[dict] = []  # type: ignore[type-arg]
+    for patch in patches:
+        if patch.get("op") != "replace":
+            continue
+        path = patch.get("path", "")
+        if not path.endswith("/regeln"):
+            continue
+        regeln_value = patch.get("value")
+        if not isinstance(regeln_value, list) or not regeln_value:
+            continue
+        # Extract schritt path prefix: /schritte/s5/regeln → /schritte/s5
+        schritt_path = path.rsplit("/", 1)[0]
+        derived_nachfolger = [
+            r["nachfolger"] for r in regeln_value
+            if isinstance(r, dict) and "nachfolger" in r
+        ]
+        if derived_nachfolger:
+            extra_patches.append({
+                "op": "replace",
+                "path": f"{schritt_path}/nachfolger",
+                "value": derived_nachfolger,
+            })
+    return extra_patches
+
+
 class StructuringMode(BaseMode):
     """Strukturierungsmodus (SDD 6.6.2) — real LLM implementation.
 
@@ -168,6 +208,11 @@ class StructuringMode(BaseMode):
         )
 
         patches = [p for p in (response.tool_input.get("patches") or []) if isinstance(p, dict)]
+
+        # CR-002 guardrail: auto-derive nachfolger from regeln
+        extra = _derive_nachfolger_from_regeln(patches, context)
+        if extra:
+            patches.extend(extra)
 
         # LLM decides phasenstatus, guardrails enforce hard constraints
         raw_status = response.tool_input.get("phasenstatus", "in_progress")

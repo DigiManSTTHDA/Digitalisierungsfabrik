@@ -112,13 +112,22 @@ class TestStructureTemplateKeyFormat:
     def test_schema_accepts_string_key_s10_titel(self) -> None:
         assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s10/titel") is True
 
-    def test_schema_rejects_bare_text_key(self) -> None:
-        """Pure text key without 's' prefix must be rejected."""
-        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/schritt_1") is False
+    def test_schema_accepts_bare_text_key_with_s_prefix(self) -> None:
+        """CR-002 bugfix: 'schritt_1' starts with 's' and is valid under s[^/]+ regex."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/schritt_1") is True
 
     def test_schema_rejects_key_starting_with_digit(self) -> None:
         """Key starting with a digit (no 's' prefix) must be rejected."""
         assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/1s") is False
+
+    # CR-002: Extended string ID format tests (s[^/]+ regex)
+    def test_schema_accepts_key_s2a(self) -> None:
+        """CR-002 bugfix: s2a is valid — regex must be s[^/]+, not s\\d+."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/s2a") is True
+
+    def test_schema_accepts_key_s_gutschrift(self) -> None:
+        """CR-002 bugfix: s_gutschrift is valid — regex must be s[^/]+, not s\\d+."""
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/s_gutschrift") is True
 
 
 # ===========================================================================
@@ -483,6 +492,73 @@ class TestInvalidationNotTriggered:
         result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
         assert result.success is True
         assert result.invalidated_abschnitt_ids == []
+
+    def test_replace_konvergenz_no_invalidation(
+        self, executor: Executor, structure_artifact_with_refs: StructureArtifact
+    ) -> None:
+        """CR-002: konvergenz is NOT in _INVALIDATING_FIELDS."""
+        patches = [{"op": "replace", "path": "/schritte/s01/konvergenz", "value": "s99"}]
+        result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
+        assert result.success is True
+        assert result.invalidated_abschnitt_ids == []
+
+    def test_replace_abbruchbedingung_no_invalidation(
+        self, executor: Executor, structure_artifact_with_refs: StructureArtifact
+    ) -> None:
+        """CR-002: abbruchbedingung is NOT in _INVALIDATING_FIELDS."""
+        patches = [
+            {"op": "replace", "path": "/schritte/s01/abbruchbedingung", "value": "Alle geprüft"}
+        ]
+        result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
+        assert result.success is True
+        assert result.invalidated_abschnitt_ids == []
+
+
+class TestInvalidationCR002:
+    """CR-002: regeln and schleifenkoerper trigger invalidation."""
+
+    def test_replace_regeln_triggers_invalidation(
+        self, executor: Executor, structure_artifact_with_refs: StructureArtifact
+    ) -> None:
+        regeln_value = [
+            {"bedingung": "Betrag > 500€", "nachfolger": "s01", "bezeichnung": ""},
+        ]
+        patches = [{"op": "replace", "path": "/schritte/s02/regeln", "value": regeln_value}]
+        result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
+        assert result.success is True
+        assert set(result.invalidated_abschnitt_ids) == {"a03"}
+
+    def test_replace_schleifenkoerper_triggers_invalidation(
+        self, executor: Executor, structure_artifact_with_refs: StructureArtifact
+    ) -> None:
+        patches = [
+            {"op": "replace", "path": "/schritte/s01/schleifenkoerper", "value": ["s02"]}
+        ]
+        result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
+        assert result.success is True
+        assert set(result.invalidated_abschnitt_ids) == {"a01", "a02"}
+
+
+class TestCR002PatchPaths:
+    """CR-002: Template accepts new patch paths for control flow fields."""
+
+    def test_replace_regeln_accepted(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s1/regeln") is True
+
+    def test_replace_schleifenkoerper_accepted(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s1/schleifenkoerper") is True
+
+    def test_add_abbruchbedingung_accepted(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/s1/abbruchbedingung") is True
+
+    def test_replace_abbruchbedingung_accepted(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s1/abbruchbedingung") is True
+
+    def test_add_konvergenz_accepted(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/s1/konvergenz") is True
+
+    def test_replace_konvergenz_accepted(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s1/konvergenz") is True
 
 
 class TestInvalidationEdgeCases:

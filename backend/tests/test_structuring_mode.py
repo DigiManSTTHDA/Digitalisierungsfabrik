@@ -384,3 +384,91 @@ def test_guardrail_passes_through_in_progress() -> None:
     }
     ctx = _make_context(schritte=schritte)
     assert _apply_guardrails(Phasenstatus.in_progress, ctx, []) == Phasenstatus.in_progress
+
+
+# ---------------------------------------------------------------------------
+# CR-002: Entscheidungsregeln in slot status + nachfolger auto-derive
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_structuring_entscheidung_with_regeln_in_slot_status() -> None:
+    """CR-002: Entscheidung with regeln shows regel count in slot status."""
+    from artifacts.models import Entscheidungsregel
+    from modes.structuring import _build_slot_status
+
+    schritt = Strukturschritt(
+        schritt_id="s5",
+        titel="Reiseart prüfen",
+        typ=Strukturschritttyp.entscheidung,
+        reihenfolge=5,
+        regeln=[
+            Entscheidungsregel(bedingung="Inland", nachfolger="s6"),
+            Entscheidungsregel(bedingung="Ausland", nachfolger="s7"),
+            Entscheidungsregel(bedingung="Storno", nachfolger="s8"),
+        ],
+        completeness_status=CompletenessStatus.teilweise,
+        algorithmus_status=AlgorithmusStatus.ausstehend,
+    )
+    ctx = _make_context(schritte={"s5": schritt})
+    status_text = _build_slot_status(ctx)
+
+    assert "(3 Regeln)" in status_text
+    assert "Reiseart prüfen" in status_text
+
+
+@pytest.mark.asyncio
+async def test_structuring_derive_nachfolger_from_regeln() -> None:
+    """CR-002: _derive_nachfolger_from_regeln injects nachfolger patch from regeln."""
+    from modes.structuring import _derive_nachfolger_from_regeln
+
+    patches = [
+        {
+            "op": "replace",
+            "path": "/schritte/s5/regeln",
+            "value": [
+                {"bedingung": "Inland", "nachfolger": "s6", "bezeichnung": ""},
+                {"bedingung": "Ausland", "nachfolger": "s7", "bezeichnung": ""},
+            ],
+        },
+    ]
+    ctx = _make_context()
+    extra = _derive_nachfolger_from_regeln(patches, ctx)
+
+    assert len(extra) == 1
+    assert extra[0]["op"] == "replace"
+    assert extra[0]["path"] == "/schritte/s5/nachfolger"
+    assert extra[0]["value"] == ["s6", "s7"]
+
+
+@pytest.mark.asyncio
+async def test_structuring_derive_nachfolger_skips_non_regeln() -> None:
+    """CR-002: _derive_nachfolger_from_regeln ignores non-regeln patches."""
+    from modes.structuring import _derive_nachfolger_from_regeln
+
+    patches = [
+        {"op": "replace", "path": "/schritte/s1/titel", "value": "Neuer Titel"},
+    ]
+    ctx = _make_context()
+    extra = _derive_nachfolger_from_regeln(patches, ctx)
+    assert extra == []
+
+
+@pytest.mark.asyncio
+async def test_structuring_schleife_in_slot_status() -> None:
+    """CR-002: Schleife with schleifenkoerper shown in slot status."""
+    from modes.structuring import _build_slot_status
+
+    schritt = Strukturschritt(
+        schritt_id="s3",
+        titel="Belege prüfen",
+        typ=Strukturschritttyp.schleife,
+        reihenfolge=3,
+        schleifenkoerper=["s4", "s5"],
+        completeness_status=CompletenessStatus.teilweise,
+        algorithmus_status=AlgorithmusStatus.ausstehend,
+    )
+    ctx = _make_context(schritte={"s3": schritt})
+    status_text = _build_slot_status(ctx)
+
+    assert "[Schleife: s4, s5]" in status_text

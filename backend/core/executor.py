@@ -35,7 +35,7 @@ ArtifactType = Literal["exploration", "structure", "algorithm"]
 AnyArtifact = ExplorationArtifact | StructureArtifact | AlgorithmArtifact
 
 # Fields on a Strukturschritt that trigger algorithm invalidation when changed
-_INVALIDATING_FIELDS = {"beschreibung", "typ", "bedingung", "ausnahme_beschreibung"}
+_INVALIDATING_FIELDS = {"beschreibung", "typ", "bedingung", "ausnahme_beschreibung", "regeln", "schleifenkoerper"}
 
 # Regex to extract schritt_id and optional field from a /schritte/... path
 _SCHRITTE_PATH_RE = re.compile(r"^/schritte/([^/]+)(?:/([^/]+))?$")

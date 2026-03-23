@@ -4,7 +4,7 @@
 |---|---|
 | **ID** | CR-002 |
 | **Titel** | Kontrollfluss-Modellierung und kognitive Lastrebalancierung im Strukturartefakt |
-| **Status** | Entwurf |
+| **Status** | Implementiert |
 | **Erstellt** | 2026-03-20 |
 | **Priorität** | Hoch |
 | **Auslöser** | Analyse der kognitiven Lastverteilung zwischen Strukturierung und Spezifikation |

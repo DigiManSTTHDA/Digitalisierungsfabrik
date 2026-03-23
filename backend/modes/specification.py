@@ -45,6 +45,18 @@ def _build_structure_content(context: ModeContext) -> str:
         lines.append(f"- [{schritt.reihenfolge}] {schritt.titel} ({sid}) [{typ}] → {nachf}")
         if schritt.beschreibung:
             lines.append(f"  Beschreibung: {schritt.beschreibung}")
+        # CR-002: Show control flow details for specifier context
+        if schritt.regeln:
+            regeln_str = "; ".join(
+                f"{r.bedingung} → {r.nachfolger}" for r in schritt.regeln
+            )
+            lines.append(f"  Regeln: {regeln_str}")
+        if schritt.schleifenkoerper:
+            lines.append(f"  Schleifenkörper: {', '.join(schritt.schleifenkoerper)}")
+        if schritt.abbruchbedingung:
+            lines.append(f"  Abbruchbedingung: {schritt.abbruchbedingung}")
+        if schritt.konvergenz:
+            lines.append(f"  Konvergenz: {schritt.konvergenz}")
 
     return "\n".join(lines)
 
@@ -123,7 +135,11 @@ def _build_first_turn_directive(context: ModeContext) -> str:
         "1. Lege für JEDEN Strukturschritt einen Skelett-Abschnitt an "
         "(completeness_status='leer', status='ausstehend', aktionen={}).\n"
         "2. Beginne dann mit dem ersten Schritt: stelle die erste Operationalisierungsfrage.\n"
-        "3. Warte NICHT — lege alle Skelett-Abschnitte JETZT an."
+        "3. Warte NICHT — lege alle Skelett-Abschnitte JETZT an.\n\n"
+        "HINWEIS: Strukturschritte mit `regeln` enthalten bereits modellierte "
+        "Entscheidungsregeln (Bedingung → Nachfolger). Nutze diese direkt als "
+        "Grundlage für die EMMA-Operationalisierung — sie müssen nicht erneut "
+        "erfragt werden. Gleiches gilt für `schleifenkoerper` bei Schleifen."
     )
 
 
