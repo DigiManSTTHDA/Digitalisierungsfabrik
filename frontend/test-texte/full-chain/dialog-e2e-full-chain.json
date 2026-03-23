@@ -48,7 +48,7 @@
       "description": "Systeme — anekdotisch mit Frustration, Medienbruch erwähnt",
       "message": "Systeme? Also DATEV haben wir, das ist für die Buchung. Und dann ELO, da werden die Rechnungen digital freigegeben. Wobei — manche Abteilungsleiter machen das immer noch mit Stempel auf Papier, der Herr Krause zum Beispiel. Dann muss die Frau Becker das wieder einscannen. Das ist ja Wahnsinn. Und natürlich Outlook für das Sammelpostfach.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["beteiligte_systeme", "prozessbeschreibung", "ausnahmen"]
+      "contains_info_for_slots": ["beteiligte_systeme", "prozessbeschreibung"]
     },
 
     {
@@ -57,7 +57,7 @@
       "description": "WIDERSPRUCH SETUP — User beschreibt zunächst Freigabe als IMMER dreistufig",
       "message": "Der Freigabeprozess ist dreistufig. Erst prüft die Sachbearbeiterin ob die Rechnung zu einer Bestellung passt. Dann gibt der Kostenstellenverantwortliche frei. Und dann muss noch die Geschäftsführung drüber. Das dauert ewig weil alle das tagelang liegen lassen.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["prozessbeschreibung", "randbedingungen"],
+      "contains_info_for_slots": ["prozessbeschreibung", "entscheidungen_und_schleifen"],
       "note": "FALSCHE INFO — wird in U7 korrigiert. Das dreistufige gilt nur ab 5000 EUR."
     },
 
@@ -67,7 +67,7 @@
       "description": "NEGATIVPFAD — User KORRIGIERT sich selbst. Dreistufig gilt nicht immer.",
       "message": "Ach nein Moment, das hab ich ungenau gesagt. Die Geschäftsführung muss NICHT immer drüber. Das ist nur wenn die Rechnung über 5.000 Euro ist. Für normale Rechnungen reicht Sachbearbeiterin plus Abteilungsleiter, also eigentlich nur zwei Stufen. Die Grenze ist wirklich 5000 Euro, das ist intern so festgelegt.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["prozessbeschreibung", "randbedingungen"],
+      "contains_info_for_slots": ["prozessbeschreibung", "entscheidungen_und_schleifen"],
       "note": "KORREKTUR: Normalfall = 2-stufige Freigabe. GF-Freigabe nur ab 5000 EUR. System muss Artefakt aktualisieren.",
       "contradiction": {
         "wrong_info_from": "U6",
@@ -85,7 +85,7 @@
       "description": "Scope + Ungeduld → danach Panik-Button",
       "message": "Scope? Von Rechnungseingang bis Zahlung. Was soll ich da noch groß erklären? Ich hab jetzt schon eine ganze Weile erzählt und ich weiß nicht ob wir auf dem richtigen Weg sind. Können Sie mir sagen ob das so passt was ich bisher gesagt hab?",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["scope"],
+      "contains_info_for_slots": ["prozessbeschreibung"],
       "triggers_after": "escalate_button",
       "note": "Nach U8 drückt der User den Panik-Button."
     },
@@ -118,7 +118,7 @@
       "description": "Umgebung + Randbedingungen — kompakt (Vereinbarung eingehalten)",
       "message": "Umgebung: Maschinenbau, 200 Mitarbeiter, Standort Nürnberg. Buchhaltung hat 4 Leute, eine macht fast nur Eingangsrechnungen. Randbedingungen: Wir wollen immer Skonto ziehen, 2% bei 10 Tagen. Das schaffen wir meist nicht wegen der langen Freigabe. Letztes Jahr haben wir 30.000 Euro Skonto verschenkt.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["umgebung", "randbedingungen"]
+      "contains_info_for_slots": ["variablen_und_daten", "entscheidungen_und_schleifen"]
     },
 
     {
@@ -127,7 +127,7 @@
       "description": "Ausnahmen + letzte Details",
       "message": "Ausnahmen gibt es ein paar: Gutschriften, die laufen anders rum. Teilrechnungen bei großen Projekten, die muss man gegenrechnen. Und manchmal kommen Rechnungen ohne Bestellnummer, dann ist es Detektivarbeit wer das bestellt hat. Ach und Mahnungen kommen auch manchmal wenn wir zu langsam sind.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["ausnahmen", "prozessbeschreibung"]
+      "contains_info_for_slots": ["entscheidungen_und_schleifen", "prozessbeschreibung"]
     },
 
     {
@@ -396,7 +396,7 @@
       "description": "Explorer meldet phase_complete. Moderator übernimmt, schlägt Phasenwechsel vor.",
       "assertions": [
         "aktiver_modus == 'moderator'",
-        "Alle 8 Pflicht-Slots des Explorationsartefakts befüllt",
+        "Alle 6 Pflicht-Slots des Explorationsartefakts befüllt",
         "Moderator fragt ob Nutzer zur Strukturierung wechseln will"
       ]
     },
@@ -478,7 +478,7 @@
     },
     "CP9_phase_complete_exploration": {
       "after": "U13 (nudge)",
-      "check": "aktiver_modus == 'moderator'. Alle 8 Pflicht-Slots befüllt. prozesszusammenfassung nicht leer.",
+      "check": "aktiver_modus == 'moderator'. Alle 6 Pflicht-Slots befüllt. prozesszusammenfassung nicht leer.",
       "verifies": "SDD 6.6.1 — phase_complete mit vollständigem Artefakt"
     },
     "CP10_phase_transition_to_strukturierung": {
@@ -579,11 +579,9 @@
       "prozessausloeser": { "keywords": ["Rechnung", "Post", "E-Mail"] },
       "prozessziel": { "keywords": ["Zahlung", "Prüfung", "freigeb"] },
       "prozessbeschreibung": { "keywords": ["Freigabe", "DATEV", "5000", "5.000"] },
-      "scope": { "keywords": ["Eingang", "Zahlung"] },
       "beteiligte_systeme": { "keywords": ["DATEV", "ELO", "Outlook"] },
-      "umgebung": { "keywords": ["Nürnberg", "Buchhaltung", "200"] },
-      "randbedingungen": { "keywords": ["Skonto", "10 Tage", "5000", "5.000"] },
-      "ausnahmen": { "keywords": ["Gutschrift", "Bestellnummer"] },
+      "entscheidungen_und_schleifen": { "keywords": ["5000", "5.000", "Bestellnummer", "Gutschrift", "Schleife", "Entscheidung"] },
+      "variablen_und_daten": { "keywords": ["Rechnungsbetrag", "Kostenstelle", "Skonto"] },
       "prozesszusammenfassung": { "keywords": ["Rechnung", "Freigabe"] }
     },
     "negative_keywords": {

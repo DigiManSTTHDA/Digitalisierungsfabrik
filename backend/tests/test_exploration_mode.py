@@ -82,12 +82,12 @@ def _set_exploration_mode(repo: ProjectRepository, project: Project) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Test: first turn initializes 9 Pflicht-Slots
+# Test: first turn initializes 7 Pflicht-Slots
 # ---------------------------------------------------------------------------
 
 
 async def test_first_turn_initializes_pflicht_slots() -> None:
-    """After the first turn, all 9 Pflicht-Slot IDs must be present."""
+    """After the first turn, all 7 Pflicht-Slot IDs must be present."""
     db = Database(":memory:")
     repo = ProjectRepository(db)
     project = repo.create("Test")
@@ -105,11 +105,9 @@ async def test_first_turn_initializes_pflicht_slots() -> None:
         "prozessausloeser",
         "prozessziel",
         "prozessbeschreibung",
-        "scope",
+        "entscheidungen_und_schleifen",
         "beteiligte_systeme",
-        "umgebung",
-        "randbedingungen",
-        "ausnahmen",
+        "variablen_und_daten",
         "prozesszusammenfassung",
     }
     assert slot_ids == expected_ids
@@ -187,12 +185,12 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
     llm = _make_mock_llm()
     orchestrator = _make_orchestrator(repo, llm)
 
-    # First turn: initializes 9 slots
+    # First turn: initializes 7 slots
     result1 = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Erster Turn"))
     assert result1.error is None
 
     reloaded_after_first = repo.load(project.projekt_id)
-    assert len(reloaded_after_first.exploration_artifact.slots) == 9
+    assert len(reloaded_after_first.exploration_artifact.slots) == 7
 
     # Second turn: LLM returns an empty patches list (no new slot writes)
     llm2 = _make_mock_llm(patches=[])
@@ -202,19 +200,17 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
     assert result2.error is None
 
     reloaded_after_second = repo.load(project.projekt_id)
-    # Still exactly 9 slots — no duplicate add patches
-    assert len(reloaded_after_second.exploration_artifact.slots) == 9
+    # Still exactly 7 slots — no duplicate add patches
+    assert len(reloaded_after_second.exploration_artifact.slots) == 7
 
-    # The 9 slot IDs must be unchanged (no new slots added, none removed)
+    # The 7 slot IDs must be unchanged (no new slots added, none removed)
     expected_ids = {
         "prozessausloeser",
         "prozessziel",
         "prozessbeschreibung",
-        "scope",
+        "entscheidungen_und_schleifen",
         "beteiligte_systeme",
-        "umgebung",
-        "randbedingungen",
-        "ausnahmen",
+        "variablen_und_daten",
         "prozesszusammenfassung",
     }
     assert set(reloaded_after_second.exploration_artifact.slots.keys()) == expected_ids
@@ -222,13 +218,13 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Test: phasenstatus=nearing_completion when all 9 Pflicht-Slots are non-leer
+# Test: phasenstatus=nearing_completion when all 7 Pflicht-Slots are non-leer
 # (AC #8, Story 04-06)
 # ---------------------------------------------------------------------------
 
 
 async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
-    """phasenstatus is nearing_completion when all 9 Pflicht-Slots are non-leer."""
+    """phasenstatus is nearing_completion when all 7 Pflicht-Slots are non-leer."""
     from datetime import UTC, datetime
 
     from artifacts.models import (
@@ -245,7 +241,7 @@ async def test_nearing_completion_phasenstatus_when_all_slots_filled() -> None:
     from modes.base import ModeContext
     from modes.exploration import PFLICHT_SLOTS, ExplorationMode
 
-    # Build a context where all 9 Pflicht-Slots exist and are non-leer
+    # Build a context where all 7 Pflicht-Slots exist and are non-leer
     slots = {
         slot_id: ExplorationSlot(
             slot_id=slot_id,
@@ -371,22 +367,20 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
     assert "LEER" in status or "leer" in status, (
         "Uninitialized Pflicht-Slots must appear as 'leer'/'LEER' in the slot status string"
     )
-    # All 9 Pflicht-Slots must be listed by their German title
+    # All 7 Pflicht-Slots must be listed by their German title
     for titel in (
         "Prozessauslöser",
         "Prozessziel",
         "Prozessbeschreibung",
-        "Scope",
+        "Entscheidungen und Schleifen",
         "Beteiligte Systeme",
-        "Umgebung",
-        "Randbedingungen",
-        "Ausnahmen",
+        "Variablen und Daten",
         "Prozesszusammenfassung",
     ):
         assert titel in status, f"Pflicht-Slot '{titel}' missing from slot status"
-    # Verify count: 9 lines expected
+    # Verify count: 7 lines expected
     lines = [line for line in status.splitlines() if line.strip()]
-    assert len(lines) == 9, f"Expected 9 slot lines, got {len(lines)}"
+    assert len(lines) == 7, f"Expected 7 slot lines, got {len(lines)}"
 
 
 async def test_output_validator_rejects_invalid_path() -> None:
@@ -400,7 +394,7 @@ async def test_output_validator_rejects_invalid_path() -> None:
 
     result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
 
-    # The init patches (9 Pflicht-Slots) are combined with the invalid LLM patch.
+    # The init patches (7 Pflicht-Slots) are combined with the invalid LLM patch.
     # The validator should reject the combined patches because of the invalid path.
     assert result.error is not None
     # F2 fix: user-visible error is a generic German message (no internal technical details)
@@ -429,7 +423,7 @@ async def test_nearing_completion_escalates_to_phase_complete() -> None:
     project = repo.create("Test")
     _set_exploration_mode(repo, project)
 
-    # Pre-fill all 9 slots with nutzervalidiert status (FR-C-07: user confirmed).
+    # Pre-fill all 7 slots with nutzervalidiert status (FR-C-07: user confirmed).
     # Bump version so save() actually writes the new state.
     for slot_id, titel in PFLICHT_SLOTS.items():
         project.exploration_artifact.slots[slot_id] = ExplorationSlot(

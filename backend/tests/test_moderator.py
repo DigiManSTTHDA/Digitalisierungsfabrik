@@ -38,7 +38,7 @@ def _make_context(
         vorheriger_modus=vorheriger_modus,
         phasenstatus=Phasenstatus.in_progress,
         befuellte_slots=5,
-        bekannte_slots=9,
+        bekannte_slots=7,
         letzte_aenderung=datetime.now(tz=UTC),
     )
     return ModeContext(
@@ -62,7 +62,7 @@ async def test_moderator_without_llm_returns_summary() -> None:
     ctx = _make_context()
     output = await mod.call(ctx)
     assert len(output.nutzeraeusserung) > 0
-    assert "5/9" in output.nutzeraeusserung
+    assert "5/7" in output.nutzeraeusserung
     assert "exploration" in output.nutzeraeusserung
 
 
@@ -108,7 +108,7 @@ async def test_moderator_receives_full_context() -> None:
     assert isinstance(ctx.algorithm_artifact, AlgorithmArtifact)
     assert ctx.working_memory.projekt_id == "test-id"
     assert ctx.working_memory.befuellte_slots == 5
-    assert ctx.working_memory.bekannte_slots == 9
+    assert ctx.working_memory.bekannte_slots == 7
     assert len(ctx.dialog_history) == 1
     assert ctx.dialog_history[0]["role"] == "user"
     assert ctx.dialog_history[0]["inhalt"] == "Hallo"

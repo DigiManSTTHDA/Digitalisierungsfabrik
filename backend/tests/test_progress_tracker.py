@@ -105,7 +105,7 @@ def test_update_working_memory_skips_blank_spannungsfeld() -> None:
 def test_update_working_memory_updates_slot_counters() -> None:
     """Befuellte und bekannte Slots werden korrekt gesetzt."""
     wm = _make_wm()
-    result = update_working_memory(wm, Phasenstatus.nearing_completion, 7, 9)
+    result = update_working_memory(wm, Phasenstatus.nearing_completion, 7, 7)
     assert result.befuellte_slots == 7
-    assert result.bekannte_slots == 9
+    assert result.bekannte_slots == 7
     assert result.phasenstatus == Phasenstatus.nearing_completion

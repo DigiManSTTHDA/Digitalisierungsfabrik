@@ -364,11 +364,9 @@ async def test_e2e_moderator_explorer_flow() -> None:
         "prozessausloeser": ["Rechnung", "Post", "E-Mail"],
         "prozessziel": ["Rechnung", "Zahlung"],
         "prozessbeschreibung": ["Freigabe", "DATEV", "Rechnung"],
-        "scope": ["Rechnungseingang", "Zahlung"],
+        "entscheidungen_und_schleifen": ["Entscheidung", "Prüfung"],
         "beteiligte_systeme": ["DATEV", "ELO"],
-        "umgebung": ["Mitarbeiter", "Buchhaltung"],
-        "randbedingungen": ["Skonto", "Frist"],
-        "ausnahmen": ["Gutschrift"],
+        "variablen_und_daten": ["Rechnungsnummer", "Betrag"],
         "prozesszusammenfassung": ["Rechnung"],
     }
 

@@ -43,7 +43,7 @@
       "description": "Systeme und Medienbrüche — anekdotisch, mit Frustration",
       "message": "Systeme? Also wir haben DATEV, das ist klar, da wird alles gebucht. Und dann gibt es so ein Freigabetool, das heißt ELO, damit werden die Rechnungen digital freigegeben. Wobei, manche Abteilungsleiter verweigern ELO und machen das immer noch mit einem Stempel auf dem Ausdruck. Der Herr Krause zum Beispiel, der druckt sich alles aus. Dann muss die Frau Becker das wieder einscannen, das ist doch Wahnsinn.\n\nAch und Outlook natürlich für das Sammelpostfach.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["beteiligte_systeme", "prozessbeschreibung", "ausnahmen"]
+      "contains_info_for_slots": ["beteiligte_systeme", "prozessbeschreibung"]
     },
     {
       "id": "U6",
@@ -51,7 +51,7 @@
       "description": "Freigabeprozess und Ungeduld",
       "message": "Der Freigabeprozess ist dreistufig, aber das ist eigentlich übertrieben für die meisten Rechnungen. Erst prüft die Sachbearbeiterin ob die Rechnung zu einer Bestellung passt, dann gibt der Kostenstellenverantwortliche frei, und bei über 5000 Euro muss noch die Geschäftsführung drüber. Das dauert ewig weil die Leute das tagelang liegen lassen. Können wir zum nächsten Thema?",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["prozessbeschreibung", "randbedingungen"]
+      "contains_info_for_slots": ["prozessbeschreibung", "entscheidungen_und_schleifen"]
     },
     {
       "id": "U7",
@@ -59,7 +59,7 @@
       "description": "Scope + Frustration → User drückt danach Panik-Button",
       "message": "Scope? Na von Rechnungseingang bis Zahlung halt. Was soll ich denn da noch groß sagen? Hören Sie, ich glaub wir drehen uns im Kreis, der fragt immer das Gleiche nur anders formuliert. Ich will mit jemandem reden der mir sagt ob wir auf dem richtigen Weg sind.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["scope"],
+      "contains_info_for_slots": ["prozessbeschreibung"],
       "triggers_after": "escalate_button",
       "note": "Nach dieser Nachricht drückt der User den Panik-Button. Der Testrunner sendet das escalate-Signal an den Orchestrator."
     },
@@ -97,7 +97,7 @@
       "description": "Umgebung — User gibt die fehlenden Infos",
       "message": "Also zur Umgebung: Wir sind ein mittelständisches Maschinenbauunternehmen, 200 Mitarbeiter, ein Standort in Nürnberg. Die Buchhaltung hat 4 Leute, eine davon macht fast nur Eingangsrechnungen.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["umgebung"],
+      "contains_info_for_slots": ["variablen_und_daten"],
       "verify_agreement": "Explorer-Frage muss KURZ sein (Vereinbarung aus Moderator-Gespräch)"
     },
     {
@@ -106,7 +106,7 @@
       "description": "Randbedingungen und Schmerzpunkte",
       "message": "Zahlungsfristen? Wir versuchen immer Skonto zu ziehen, 2% bei Zahlung innerhalb von 10 Tagen. Das schaffen wir aber selten wegen der langen Freigabe. Ist ein echtes Problem, der Chef hat sich letztens aufgeregt dass wir letztes Jahr 30.000 Euro Skonto verschenkt haben. Und Mahnungen kommen natürlich auch, wenn wir zu langsam sind. Peinlich aber passiert.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["randbedingungen", "prozessbeschreibung", "ausnahmen"]
+      "contains_info_for_slots": ["entscheidungen_und_schleifen", "prozessbeschreibung", "variablen_und_daten"]
     },
     {
       "id": "U13",
@@ -114,7 +114,7 @@
       "description": "Letzte Ausnahmen",
       "message": "Was fehlt noch? Ach so, Ausnahmen: Gutschriften sind auch ein Thema, da dreht sich alles um. Und Teilrechnungen bei großen Projekten, die müssen gegen den Auftrag gegengerechnet werden. Und manchmal kommen Rechnungen ohne Bestellnummer, dann weiß keiner wer die bestellt hat, das ist Detektivarbeit.",
       "expect_mode": "exploration",
-      "contains_info_for_slots": ["ausnahmen", "prozessbeschreibung"]
+      "contains_info_for_slots": ["entscheidungen_und_schleifen", "prozessbeschreibung"]
     },
     {
       "id": "U14",
@@ -227,7 +227,7 @@
     },
     "CP10_phase_transition_complete": {
       "after": "U15",
-      "check": "aktive_phase == 'strukturierung' AND aktiver_modus == 'structuring'. Explorationsartefakt vollständig erhalten (alle 9 Slots, Versionshistorie).",
+      "check": "aktive_phase == 'strukturierung' AND aktiver_modus == 'structuring'. Explorationsartefakt vollständig erhalten (alle 7 Slots, Versionshistorie).",
       "verifies": "Sauberer Phasenwechsel ohne Datenverlust"
     }
   },
@@ -256,13 +256,6 @@
         "completeness_status": "vollstaendig",
         "info_from_inputs": ["U2", "U4", "U5", "U6", "U12", "U13"]
       },
-      "scope": {
-        "slot_id": "scope",
-        "titel": "Scope",
-        "inhalt": "Beginn: Eingang der Rechnung (Post oder E-Mail). Ende: Zahlung an den Lieferanten. Nicht im Scope: Bestellprozess (vorgelagert), Lieferantenmanagement, Ausgangsrechnungen.",
-        "completeness_status": "vollstaendig",
-        "info_from_inputs": ["U7"]
-      },
       "beteiligte_systeme": {
         "slot_id": "beteiligte_systeme",
         "titel": "Beteiligte Systeme",
@@ -270,27 +263,19 @@
         "completeness_status": "vollstaendig",
         "info_from_inputs": ["U5"]
       },
-      "umgebung": {
-        "slot_id": "umgebung",
-        "titel": "Umgebung",
-        "inhalt": "Mittelständisches Maschinenbauunternehmen, ca. 200 Mitarbeiter, ein Standort in Nürnberg. Buchhaltung besteht aus 4 Personen, davon eine fast ausschließlich für Eingangsrechnungen zuständig. Sekretariat (Frau Becker) übernimmt Scannen und Posteingang.",
+      "entscheidungen_und_schleifen": {
+        "slot_id": "entscheidungen_und_schleifen",
+        "titel": "Entscheidungen und Schleifen",
+        "inhalt": "ENTSCHEIDUNG: Bestellnummer vorhanden? — Wenn ja: automatischer Abgleich mit Bestellung in DATEV. Wenn nein: manuelle Zuordnung per Telefonrecherche (Detektivarbeit, kann Tage dauern). ENTSCHEIDUNG: Rechnungsbetrag über 5.000 EUR? — Wenn ja: zusätzliche Geschäftsführungsfreigabe erforderlich. Wenn nein: Freigabe nur durch Kostenstellenverantwortlichen. ENTSCHEIDUNG: Ist es eine Rechnung oder eine Gutschrift? — Gutschriften werden nicht bezahlt sondern in DATEV gegengebucht. SCHLEIFE: Reklamation bei fehlerhafter Rechnung — Rückfrage an Lieferant, Warten auf korrigierte Rechnung, erneute Prüfung. Kann 2-3 Iterationen durchlaufen. SCHLEIFE: Teilrechnungen bei Großprojekten — Jede Teilrechnung wird gegen den Gesamtauftrag gegengerechnet bis alle Teilbeträge eingegangen sind.",
         "completeness_status": "vollstaendig",
-        "info_from_inputs": ["U11"]
+        "info_from_inputs": ["U5", "U6", "U12", "U13"]
       },
-      "randbedingungen": {
-        "slot_id": "randbedingungen",
-        "titel": "Randbedingungen",
-        "inhalt": "Skonto-Frist: 2% bei Zahlung innerhalb von 10 Tagen (wird meist verpasst). Freigabeschwelle: Rechnungen über 5.000 EUR erfordern zusätzliche Geschäftsführungsfreigabe. Gesetzliche Aufbewahrungspflicht für Rechnungen. Ordnungsgemäße Buchführung nach HGB/Steuerrecht.",
-        "completeness_status": "teilweise",
-        "info_from_inputs": ["U6", "U12"],
-        "why_teilweise": "User hat steuerliche Details nicht vertieft, Aufbewahrungsfrist nicht spezifiziert"
-      },
-      "ausnahmen": {
-        "slot_id": "ausnahmen",
-        "titel": "Ausnahmen",
-        "inhalt": "Gutschriften: Umgekehrter Rechnungsprozess, muss korrekt gegengebucht werden. Teilrechnungen: Bei Großprojekten, müssen gegen Gesamtauftrag gegengerechnet werden. Rechnungen ohne Bestellnummer: Zuordnung unklar, manuelle Recherche. ELO-Verweigerung: Manche Abteilungsleiter nutzen Stempel-Freigabe statt digitalem Workflow. Direktzustellung an Besteller: Rechnung umgeht zentralen Posteingang. Mahnungen: Folge zu langer Bearbeitungszeit.",
+      "variablen_und_daten": {
+        "slot_id": "variablen_und_daten",
+        "titel": "Variablen und Daten",
+        "inhalt": "Rechnungsbetrag — Bruttobetrag der Eingangsrechnung, Quelle: Rechnungsdokument. Bestellnummer — Referenz zur zugehörigen Bestellung, Quelle: Rechnungsdokument (nicht immer vorhanden). Lieferantenname — Name des Rechnungsstellers, Quelle: Rechnungsdokument. Kostenstelle — Zuordnung zur internen Kostenstelle, Quelle: Bestellung bzw. manuelle Zuordnung. Skonto-Frist — Zahlungsfrist für Skontoabzug (10 Tage), Quelle: Zahlungsbedingungen auf der Rechnung. Skonto-Satz — Prozentsatz des Skontoabzugs (2%), Quelle: Zahlungsbedingungen. Freigabeschwelle — Betragsschwelle für GF-Freigabe (5.000 EUR), Quelle: interne Richtlinie. Rechnungsdatum — Datum der Rechnungsstellung, Quelle: Rechnungsdokument. Freigabestatus — Aktueller Stand der Freigabe (offen/freigegeben/abgelehnt), Quelle: ELO-Workflow.",
         "completeness_status": "vollstaendig",
-        "info_from_inputs": ["U5", "U7", "U12", "U13"]
+        "info_from_inputs": ["U4", "U5", "U6", "U11", "U12"]
       },
       "prozesszusammenfassung": {
         "slot_id": "prozesszusammenfassung",

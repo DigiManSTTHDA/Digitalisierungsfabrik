@@ -80,7 +80,7 @@ def _build_first_turn_directive(context: ModeContext) -> str:
         "Du befindest dich am Beginn der Strukturierungsphase.\n\n"
         "Deine PFLICHT in DIESEM Turn (nicht auf den nächsten Turn warten):\n"
         "1. Analysiere das Explorationsartefakt vollständig "
-        "(prozessbeschreibung, prozessausloeser, ausnahmen, randbedingungen).\n"
+        "(prozessbeschreibung, prozessausloeser, entscheidungen_und_schleifen, variablen_und_daten).\n"
         "2. Erstelle Patches für ALLE erkennbaren Strukturschritte — "
         "mindestens die Hauptschritte des Prozessablaufs. "
         "Nutze completeness_status='teilweise', da Details noch folgen.\n"

@@ -76,19 +76,17 @@ def validate_exploration(project, result: ValidationResult) -> None:
 
     result.check(
         "EXP_SLOTS_EXIST",
-        len(slots) >= 8,
-        f"Nur {len(slots)} Slots (erwartet >= 8)",
+        len(slots) >= 6,
+        f"Nur {len(slots)} Slots (erwartet >= 6)",
     )
 
     expected_slots = [
         "prozessausloeser",
         "prozessziel",
         "prozessbeschreibung",
-        "scope",
+        "entscheidungen_und_schleifen",
         "beteiligte_systeme",
-        "umgebung",
-        "randbedingungen",
-        "ausnahmen",
+        "variablen_und_daten",
         "prozesszusammenfassung",
     ]
     for sid in expected_slots:
@@ -104,9 +102,8 @@ def validate_exploration(project, result: ValidationResult) -> None:
     keyword_map = {
         "prozessausloeser": ["Rechnung"],
         "beteiligte_systeme": ["DATEV", "ELO"],
-        "umgebung": ["Nürnberg", "200", "Buchhaltung"],
-        "randbedingungen": ["Skonto"],
-        "ausnahmen": ["Gutschrift"],
+        "entscheidungen_und_schleifen": ["Entscheidung", "Schleife", "Prüfung"],
+        "variablen_und_daten": ["Rechnungsnummer", "Betrag"],
     }
     print("\n  Keyword-Stichproben (informativ):")
     for sid, keywords in keyword_map.items():

@@ -199,7 +199,7 @@ async def test_e2e_specifier_flow() -> None:
 
     # ── Verify seeds were loaded correctly ──────────────────────────────────
     p_seed_check = get_project()
-    assert len(p_seed_check.exploration_artifact.slots) == 9, (
+    assert len(p_seed_check.exploration_artifact.slots) == 7, (
         f"Exploration seed not loaded correctly: {len(p_seed_check.exploration_artifact.slots)} slots"
     )
     assert len(p_seed_check.structure_artifact.schritte) == 11, (
@@ -225,7 +225,7 @@ async def test_e2e_specifier_flow() -> None:
 
     # Verify both artifacts still intact after S0
     p_s0 = get_project()
-    assert len(p_s0.exploration_artifact.slots) == 9, "Exploration artifact lost during S0"
+    assert len(p_s0.exploration_artifact.slots) == 7, "Exploration artifact lost during S0"
     assert len(p_s0.structure_artifact.schritte) == 11, "Structure artifact lost during S0"
 
     # ── U1: Rückfrage im Moderator ────────────────────────────────────────────
@@ -401,8 +401,8 @@ async def test_e2e_specifier_flow() -> None:
     p_u8 = get_project()
     check(
         "CP6_exp_intact",
-        len(p_u8.exploration_artifact.slots) == 9,
-        f"CP6_exp_intact: Exploration slots={len(p_u8.exploration_artifact.slots)}, expected 9",
+        len(p_u8.exploration_artifact.slots) == 7,
+        f"CP6_exp_intact: Exploration slots={len(p_u8.exploration_artifact.slots)}, expected 7",
     )
     check(
         "CP6_struct_intact",
@@ -557,9 +557,9 @@ async def test_e2e_specifier_flow() -> None:
     struct_art = p_final.structure_artifact
     algo_art = p_final.algorithm_artifact
 
-    exp_intact = len(exp_art.slots) == 9
+    exp_intact = len(exp_art.slots) == 7
     exp_filled = all(slot.inhalt.strip() != "" for slot in exp_art.slots.values())
-    print(f"  Exploration Slots: {len(exp_art.slots)}/9, alle gefüllt: {exp_filled}")
+    print(f"  Exploration Slots: {len(exp_art.slots)}/7, alle gefüllt: {exp_filled}")
     check(
         "EXP_INTACT",
         exp_intact and exp_filled,
@@ -734,7 +734,7 @@ async def test_e2e_specifier_flow() -> None:
     print(f"  Checkpoints passed: {passed}/{total}")
     print(f"  Final mode: {p_final.aktiver_modus}")
     print(f"  Final phase: {p_final.aktive_phase.value}")
-    print(f"  Exploration slots: {len(exp_art.slots)}/9")
+    print(f"  Exploration slots: {len(exp_art.slots)}/7")
     print(f"  Structure schritte: {len(struct_art.schritte)}/11")
     print(f"  Algorithm Abschnitte: {len(abschnitte)}")
     print(f"  EMMA-Typen: {sorted(all_emma_types)}")

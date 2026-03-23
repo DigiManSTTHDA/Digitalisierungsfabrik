@@ -22,34 +22,22 @@
         "inhalt": "1. Rechnungseingang: Papierrechnungen werden im Sekretariat entgegengenommen und von Frau Becker morgens eingescannt. E-Mail-Rechnungen gehen an Sammelpostfach rechnungen@firma.de. 2. Erfassung und Prüfung: Sachbearbeiterin prüft ob Rechnung zu einer Bestellung passt. 3. Freigabe (dreistufig): Sachliche Prüfung, Freigabe durch Kostenstellenverantwortlichen, bei über 5.000 EUR zusätzlich GF-Freigabe. Freigabe digital über ELO. 4. Buchung in DATEV. 5. Zahlung, Skonto-Nutzung angestrebt.",
         "completeness_status": "vollstaendig"
       },
-      "scope": {
-        "slot_id": "scope",
-        "titel": "Scope",
-        "inhalt": "Beginn: Eingang der Rechnung (Post oder E-Mail). Ende: Zahlung an den Lieferanten. Nicht im Scope: Bestellprozess (vorgelagert), Lieferantenmanagement, Ausgangsrechnungen.",
-        "completeness_status": "vollstaendig"
-      },
       "beteiligte_systeme": {
         "slot_id": "beteiligte_systeme",
         "titel": "Beteiligte Systeme",
         "inhalt": "DATEV: Buchung und Zahlungsverkehr. ELO: Digitale Rechnungsfreigabe (Workflow). Microsoft Outlook: Sammelpostfach rechnungen@firma.de für E-Mail-Rechnungen. Scanner (Sekretariat): Digitalisierung von Papierrechnungen.",
         "completeness_status": "vollstaendig"
       },
-      "umgebung": {
-        "slot_id": "umgebung",
-        "titel": "Umgebung",
-        "inhalt": "Mittelständisches Maschinenbauunternehmen, ca. 200 Mitarbeiter, ein Standort in Nürnberg. Buchhaltung besteht aus 4 Personen, davon eine fast ausschließlich für Eingangsrechnungen zuständig. Sekretariat (Frau Becker) übernimmt Scannen und Posteingang.",
+      "entscheidungen_und_schleifen": {
+        "slot_id": "entscheidungen_und_schleifen",
+        "titel": "Entscheidungen und Schleifen",
+        "inhalt": "ENTSCHEIDUNG: Bestellnummer vorhanden? — Wenn ja: automatischer Abgleich. Wenn nein: manuelle Zuordnung. ENTSCHEIDUNG: Rechnungsbetrag über 5.000 EUR? — Wenn ja: GF-Freigabe. Wenn nein: nur Kostenstellenverantwortlicher. ENTSCHEIDUNG: Rechnung oder Gutschrift? — Gutschriften werden gegengebucht. SCHLEIFE: Fehlerhafte Rechnung — Rückfrage an Lieferant, korrigierte Version, erneute Prüfung.",
         "completeness_status": "vollstaendig"
       },
-      "randbedingungen": {
-        "slot_id": "randbedingungen",
-        "titel": "Randbedingungen",
-        "inhalt": "Skonto-Frist: 2% bei Zahlung innerhalb von 10 Tagen. Freigabeschwelle: Rechnungen über 5.000 EUR erfordern zusätzliche Geschäftsführungsfreigabe. Gesetzliche Aufbewahrungspflicht für Rechnungen.",
-        "completeness_status": "vollstaendig"
-      },
-      "ausnahmen": {
-        "slot_id": "ausnahmen",
-        "titel": "Ausnahmen",
-        "inhalt": "Gutschriften: Umgekehrter Rechnungsprozess, muss korrekt gegengebucht werden. Teilrechnungen: Bei Großprojekten. Rechnungen ohne Bestellnummer: Zuordnung unklar, manuelle Recherche. ELO-Verweigerung: Manche Abteilungsleiter nutzen Stempel-Freigabe.",
+      "variablen_und_daten": {
+        "slot_id": "variablen_und_daten",
+        "titel": "Variablen und Daten",
+        "inhalt": "Rechnungsbetrag — Bruttobetrag der Eingangsrechnung, Quelle: Rechnungsdokument. Bestellnummer — Referenz zur Bestellung, Quelle: Rechnungsdokument. Kostenstelle — Zuordnung zur internen Kostenstelle, Quelle: Bestellung. Skonto-Frist — 10 Tage, Quelle: Zahlungsbedingungen. Freigabeschwelle — 5.000 EUR, Quelle: interne Richtlinie. Freigabestatus — offen/freigegeben/abgelehnt, Quelle: ELO-Workflow.",
         "completeness_status": "vollstaendig"
       },
       "prozesszusammenfassung": {
@@ -366,7 +354,7 @@
         "aktiver_modus == 'moderator'",
         "aktive_phase == 'spezifikation'",
         "vorheriger_modus == null",
-        "Explorationsartefakt vollständig erhalten (9 Slots)",
+        "Explorationsartefakt vollständig erhalten (7 Slots)",
         "Strukturartefakt vollständig erhalten (11 Schritte)"
       ]
     },

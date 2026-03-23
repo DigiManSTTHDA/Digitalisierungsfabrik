@@ -9,8 +9,8 @@
   {
     "turn": 2,
     "role": "explorer",
-    "expected_question_about": "scope",
-    "description": "Explorer fragt nach Prozessgrenzen",
+    "expected_question_about": "entscheidungen_und_schleifen",
+    "description": "Explorer fragt nach Entscheidungen und Wiederholungen im Prozess",
     "message": "[Wird vom System generiert — erwartet: Frage nach Scope/Abgrenzung des Prozesses]"
   },
   {
@@ -23,8 +23,8 @@
   {
     "turn": 4,
     "role": "explorer",
-    "expected_question_about": "umgebung",
-    "description": "Explorer fragt nach organisatorischer Umgebung",
+    "expected_question_about": "variablen_und_daten",
+    "description": "Explorer fragt nach relevanten Daten und Variablen im Prozess",
     "message": "[Wird vom System generiert — erwartet: Frage nach Abteilung, Standort, organisatorische Einbettung]"
   },
   {
@@ -51,7 +51,7 @@
   {
     "turn": 8,
     "role": "explorer",
-    "expected_question_about": "randbedingungen",
+    "expected_question_about": "entscheidungen_und_schleifen",
     "description": "Explorer fragt nach weiteren Regeln/Einschränkungen",
     "message": "[Wird vom System generiert — erwartet: Frage nach Compliance, Fristen, gesetzlichen Vorgaben]"
   },
@@ -65,7 +65,7 @@
   {
     "turn": 10,
     "role": "explorer",
-    "expected_question_about": "ausnahmen",
+    "expected_question_about": "variablen_und_daten",
     "description": "Explorer fragt nach weiteren Sonderfällen/Fehlerpfaden",
     "message": "[Wird vom System generiert — erwartet: Frage nach Ausnahmen, Eskalationen, Workarounds]"
   },
@@ -121,7 +121,7 @@
   {
     "turn": 18,
     "role": "explorer",
-    "expected_question_about": "scope_vertiefung",
+    "expected_question_about": "entscheidungen_und_schleifen_vertiefung",
     "description": "Explorer fragt ob Reiseplanung/Buchung auch zum Scope gehört",
     "message": "[Wird vom System generiert — erwartet: Klärungsfrage zur Abgrenzung, z.B. gehört die Reisebuchung dazu?]"
   },
@@ -135,7 +135,7 @@
   {
     "turn": 20,
     "role": "explorer",
-    "expected_question_about": "umgebung_vertiefung",
+    "expected_question_about": "variablen_und_daten_vertiefung",
     "description": "Explorer fragt nach technischer Infrastruktur",
     "message": "[Wird vom System generiert — erwartet: Frage nach technischer Umgebung, Infrastruktur]"
   },

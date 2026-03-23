@@ -1,7 +1,7 @@
 """Explorationsmodus — erfasst implizites Prozesswissen des Nutzers (SDD 6.6.1).
 
 Calls the LLM via LLMClient to conduct a structured interview, filling the
-9 Pflicht-Slots of the ExplorationArtifact through dialog with the user.
+7 Pflicht-Slots of the ExplorationArtifact through dialog with the user.
 
 The LLM decides the phasenstatus (in_progress / nearing_completion / phase_complete).
 Deterministic guardrails prevent premature phase_complete when slots are still empty.
@@ -20,16 +20,14 @@ from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput, translate_dialog_history
 
-# 9 Pflicht-Slots per SDD 5.3 and FR-B-00
+# 7 Pflicht-Slots per SDD 5.3 and FR-B-00 (ADR CR-003: consolidated from 9)
 PFLICHT_SLOTS: dict[str, str] = {
     "prozessausloeser": "Prozessauslöser",
     "prozessziel": "Prozessziel",
     "prozessbeschreibung": "Prozessbeschreibung",
-    "scope": "Scope",
+    "entscheidungen_und_schleifen": "Entscheidungen und Schleifen",
     "beteiligte_systeme": "Beteiligte Systeme",
-    "umgebung": "Umgebung",
-    "randbedingungen": "Randbedingungen",
-    "ausnahmen": "Ausnahmen",
+    "variablen_und_daten": "Variablen und Daten",
     "prozesszusammenfassung": "Prozesszusammenfassung",
 }
 
@@ -75,10 +73,13 @@ def _build_slot_status(context: ModeContext) -> str:
     return "\n".join(lines)
 
 
+_SKIP_SLOTS = {"prozesszusammenfassung", "entscheidungen_und_schleifen", "variablen_und_daten"}
+
+
 def _next_empty_slot(context: ModeContext) -> tuple[str, str] | None:
     """Return (slot_id, titel) of the first empty/partial Pflicht-Slot, or None."""
     for slot_id, titel in PFLICHT_SLOTS.items():
-        if slot_id == "prozesszusammenfassung":
+        if slot_id in _SKIP_SLOTS:
             continue
         slot = context.exploration_artifact.slots.get(slot_id)
         if slot is None or not slot.inhalt or slot.completeness_status == CompletenessStatus.leer:

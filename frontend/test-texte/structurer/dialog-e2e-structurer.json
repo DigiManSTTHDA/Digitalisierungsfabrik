@@ -22,34 +22,22 @@
         "inhalt": "1. Rechnungseingang: Papierrechnungen werden im Sekretariat entgegengenommen und von Frau Becker morgens eingescannt. E-Mail-Rechnungen gehen an Sammelpostfach rechnungen@firma.de. Problem: Manche Lieferanten schicken Rechnungen direkt an den Besteller, diese werden nicht zentral erfasst.\n\n2. Erfassung und Prüfung: Sachbearbeiterin in der Buchhaltung prüft ob die Rechnung zu einer Bestellung passt (Bestellabgleich). Bei Rechnungen ohne Bestellnummer aufwändige manuelle Zuordnung ('Detektivarbeit').\n\n3. Freigabe (dreistufig): (a) Sachliche Prüfung durch Sachbearbeiterin, (b) Freigabe durch Kostenstellenverantwortlichen, (c) bei Rechnungen über 5.000 EUR zusätzlich Freigabe durch Geschäftsführung. Freigabe digital über ELO, aber manche Abteilungsleiter (z.B. Herr Krause) verweigern ELO, drucken aus und stempeln. Frau Becker muss gestempelte Ausdrucke erneut einscannen (Medienbruch, Doppelarbeit). Hauptproblem: Rechnungen bleiben in der Freigabe tagelang liegen.\n\n4. Buchung: Nach Freigabe Buchung in DATEV.\n\n5. Zahlung: Zahlungsanweisung, Ziel ist Skonto-Nutzung (2% bei 10 Tagen). Wird wegen langer Freigabezeiten meist verpasst — geschätzter Skontoverlust ca. 30.000 EUR/Jahr.\n\nMengen: 400-500 Rechnungen pro Monat.\n\nSchmerzpunkte: Lange Durchlaufzeiten durch Freigabe-Stau, verpasste Skonto-Fristen, Medienbruch durch ELO-Verweigerung, Rechnungen ohne Bestellnummer schwer zuzuordnen, Mahnungen.",
         "completeness_status": "vollstaendig"
       },
-      "scope": {
-        "slot_id": "scope",
-        "titel": "Scope",
-        "inhalt": "Beginn: Eingang der Rechnung (Post oder E-Mail). Ende: Zahlung an den Lieferanten. Nicht im Scope: Bestellprozess (vorgelagert), Lieferantenmanagement, Ausgangsrechnungen.",
-        "completeness_status": "vollstaendig"
-      },
       "beteiligte_systeme": {
         "slot_id": "beteiligte_systeme",
         "titel": "Beteiligte Systeme",
         "inhalt": "DATEV: Buchung und Zahlungsverkehr. ELO: Digitale Rechnungsfreigabe (Workflow), wird nicht von allen Abteilungsleitern genutzt. Microsoft Outlook: Sammelpostfach rechnungen@firma.de für E-Mail-Rechnungen. Scanner (Sekretariat): Digitalisierung von Papierrechnungen und gestempelten Ausdrucken.",
         "completeness_status": "vollstaendig"
       },
-      "umgebung": {
-        "slot_id": "umgebung",
-        "titel": "Umgebung",
-        "inhalt": "Mittelständisches Maschinenbauunternehmen, ca. 200 Mitarbeiter, ein Standort in Nürnberg. Buchhaltung besteht aus 4 Personen, davon eine fast ausschließlich für Eingangsrechnungen zuständig. Sekretariat (Frau Becker) übernimmt Scannen und Posteingang.",
+      "entscheidungen_und_schleifen": {
+        "slot_id": "entscheidungen_und_schleifen",
+        "titel": "Entscheidungen und Schleifen",
+        "inhalt": "ENTSCHEIDUNG: Bestellnummer vorhanden? — Wenn ja: automatischer Abgleich mit Bestellung in DATEV. Wenn nein: manuelle Zuordnung per Telefonrecherche (Detektivarbeit, kann Tage dauern). ENTSCHEIDUNG: Rechnungsbetrag über 5.000 EUR? — Wenn ja: zusätzliche Geschäftsführungsfreigabe erforderlich. Wenn nein: Freigabe nur durch Kostenstellenverantwortlichen. ENTSCHEIDUNG: Ist es eine Rechnung oder eine Gutschrift? — Gutschriften werden nicht bezahlt sondern in DATEV gegengebucht. SCHLEIFE: Reklamation bei fehlerhafter Rechnung — Rückfrage an Lieferant, Warten auf korrigierte Rechnung, erneute Prüfung. Kann 2-3 Iterationen durchlaufen. SCHLEIFE: Teilrechnungen bei Großprojekten — Jede Teilrechnung wird gegen den Gesamtauftrag gegengerechnet bis alle Teilbeträge eingegangen sind.",
         "completeness_status": "vollstaendig"
       },
-      "randbedingungen": {
-        "slot_id": "randbedingungen",
-        "titel": "Randbedingungen",
-        "inhalt": "Skonto-Frist: 2% bei Zahlung innerhalb von 10 Tagen (wird meist verpasst). Freigabeschwelle: Rechnungen über 5.000 EUR erfordern zusätzliche Geschäftsführungsfreigabe. Gesetzliche Aufbewahrungspflicht für Rechnungen. Ordnungsgemäße Buchführung nach HGB/Steuerrecht.",
-        "completeness_status": "vollstaendig"
-      },
-      "ausnahmen": {
-        "slot_id": "ausnahmen",
-        "titel": "Ausnahmen",
-        "inhalt": "Gutschriften: Umgekehrter Rechnungsprozess, muss korrekt gegengebucht werden. Teilrechnungen: Bei Großprojekten, müssen gegen Gesamtauftrag gegengerechnet werden. Rechnungen ohne Bestellnummer: Zuordnung unklar, manuelle Recherche. ELO-Verweigerung: Manche Abteilungsleiter nutzen Stempel-Freigabe statt digitalem Workflow. Direktzustellung an Besteller: Rechnung umgeht zentralen Posteingang. Mahnungen: Folge zu langer Bearbeitungszeit.",
+      "variablen_und_daten": {
+        "slot_id": "variablen_und_daten",
+        "titel": "Variablen und Daten",
+        "inhalt": "Rechnungsbetrag — Bruttobetrag der Eingangsrechnung, Quelle: Rechnungsdokument. Bestellnummer — Referenz zur zugehörigen Bestellung, Quelle: Rechnungsdokument (nicht immer vorhanden). Lieferantenname — Name des Rechnungsstellers, Quelle: Rechnungsdokument. Kostenstelle — Zuordnung zur internen Kostenstelle, Quelle: Bestellung bzw. manuelle Zuordnung. Skonto-Frist — Zahlungsfrist für Skontoabzug (10 Tage), Quelle: Zahlungsbedingungen auf der Rechnung. Skonto-Satz — Prozentsatz des Skontoabzugs (2%), Quelle: Zahlungsbedingungen. Freigabeschwelle — Betragsschwelle für GF-Freigabe (5.000 EUR), Quelle: interne Richtlinie. Rechnungsdatum — Datum der Rechnungsstellung, Quelle: Rechnungsdokument. Freigabestatus — Aktueller Stand der Freigabe (offen/freigegeben/abgelehnt), Quelle: ELO-Workflow.",
         "completeness_status": "vollstaendig"
       },
       "prozesszusammenfassung": {

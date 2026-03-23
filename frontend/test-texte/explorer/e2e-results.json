@@ -99,19 +99,31 @@
     }
   ],
   "slot_comparison": {
-    "ausnahmen": {
+    "entscheidungen_und_schleifen": {
       "status": "schlecht",
-      "score": 0.266,
-      "similarity": 0.066,
-      "keyword_coverage": 0.4,
+      "score": 0.280,
+      "similarity": 0.070,
+      "keyword_coverage": 0.35,
       "status_match": true,
       "missing_aspects": [
-        "PKW-Nutzung: Privatfahrzeug mit 0,30 EUR/km, erfordert vorherige Genehmigung",
-        "Ohne Genehmigung Konfliktfall — in der Praxis manchmal durch Vorgesetzte nachträglich genehmigt",
-        "Belegverlust: Eigenbelegerklärung möglich bis 50 EUR",
-        "Stornierte Reisen: Bereits angefallene Stornogebühren müssen abgerechnet werden, Zuordnung im Prozess unklar",
-        "Reise ohne vorherigen Antrag: Kommt regelmäßig vor, Kosten werden trotzdem erstattet (Soll-Ist-Abweichung)",
-        "Praktikanten/Werkstudenten: Keine eigenständige Einreichung, Abrechnung über Betreuer"
+        "ENTSCHEIDUNG: Reiseantrag vorhanden? — Formaler vs. tatsächlicher Prozessstart",
+        "ENTSCHEIDUNG: Genehmigungsschwelle >500 EUR — zusätzliche Bereichsleiter-Unterschrift",
+        "SCHLEIFE: Rückfragen bei unvollständigen Bewirtungsbelegen — 2-3 Iterationen keine Seltenheit",
+        "SCHLEIFE: Verspätete Belegeinreichung — trotz 30-Tage-Frist teils Monate später eingereicht"
+      ]
+    },
+    "variablen_und_daten": {
+      "status": "schlecht",
+      "score": 0.250,
+      "similarity": 0.050,
+      "keyword_coverage": 0.30,
+      "status_match": false,
+      "missing_aspects": [
+        "Reisekostenbetrag — Gesamtsumme der erstattungsfähigen Kosten",
+        "Kostenstelle — Zuordnung der Kosten zur organisatorischen Einheit",
+        "Genehmigungsschwelle — Betragsschwelle für Bereichsleiter-Genehmigung (500 EUR)",
+        "Belegfrist — Einreichungsfrist nach Reiseende (30 Tage)",
+        "Hotelkosten-Obergrenze — Max. 150 EUR/Nacht laut Reisekostenrichtlinie"
       ]
     },
     "beteiligte_systeme": {
@@ -179,45 +191,11 @@
         "Die Buchhaltung prüft Vollständigkeit und korrekte Kontierung, was häufig zu mehrfachen Rückfragen führt"
       ]
     },
-    "randbedingungen": {
-      "status": "teilweise",
-      "score": 0.499,
-      "similarity": 0.081,
-      "keyword_coverage": 0.778,
-      "status_match": false,
-      "missing_aspects": [
-        "8-10 Jahre (genaue Frist bei Frau Weber/Buchhaltung)",
-        "Genehmigungsschwelle: Reisen über 500 EUR erfordern zusätzlich Unterschrift des Bereichsleiters"
-      ]
-    },
-    "scope": {
-      "status": "schlecht",
-      "score": 0.353,
-      "similarity": 0.281,
-      "keyword_coverage": 0.4,
-      "status_match": true,
-      "missing_aspects": [
-        "Beginn: Einreichung des Reiseantrags bzw",
-        "Nicht im Scope: Reiseplanung und -buchung (vorgelagerter Prozess, teilweise über Reisebüro)",
-        "Nicht im Scope: Detailprozess Auslandsreisen (Tagessätze, Wechselkurse — eigenes Thema, Ansprechpartner: Herr Fischer, V"
-      ]
-    },
-    "umgebung": {
-      "status": "teilweise",
-      "score": 0.461,
-      "similarity": 0.08,
-      "keyword_coverage": 0.714,
-      "status_match": false,
-      "missing_aspects": [
-        "Organisation: Ca",
-        "Fachabteilungsperspektive — tiefere technische Details bei IT-Abteilung"
-      ]
-    },
     "_summary": {
       "average_score": 0.388,
-      "total_slots_evaluated": 9,
-      "slots_in_actual": 9,
-      "slots_in_expected": 9
+      "total_slots_evaluated": 7,
+      "slots_in_actual": 7,
+      "slots_in_expected": 7
     }
   }
 }

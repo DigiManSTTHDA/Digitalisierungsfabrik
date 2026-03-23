@@ -4,7 +4,7 @@
 |---|---|
 | **ID** | CR-003 |
 | **Titel** | Überarbeitung der Explorationsphase — Slot-Konsolidierung und Kontrollfluss-Vorbereitung |
-| **Status** | Freigegeben |
+| **Status** | Verifiziert |
 | **Erstellt** | 2026-03-23 |
 | **Priorität** | Hoch |
 | **Auslöser** | Praxis-Feedback: Exploration-Slots sind zu akademisch, generieren Fragen die Fachexperten nicht beantworten können, und zerreißen zusammengehörende Informationen |

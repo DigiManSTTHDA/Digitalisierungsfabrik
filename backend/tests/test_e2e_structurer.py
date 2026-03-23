@@ -171,7 +171,7 @@ async def test_e2e_structurer_flow() -> None:
 
     # Verify exploration artifact is still intact
     p_check = get_project()
-    assert len(p_check.exploration_artifact.slots) == 9, "Exploration artifact lost during S0"
+    assert len(p_check.exploration_artifact.slots) == 7, "Exploration artifact lost during S0"
 
     # ── U1: Rückfrage im Moderator ────────────────────────────────
     print("\n=== U1: Rückfrage zur Strukturierung ===")
@@ -486,9 +486,9 @@ async def test_e2e_structurer_flow() -> None:
 
     p_final = get_project()
     exp_art = p_final.exploration_artifact
-    exploration_intact = len(exp_art.slots) == 9
+    exploration_intact = len(exp_art.slots) == 7
     all_filled = all(slot.inhalt.strip() != "" for slot in exp_art.slots.values())
-    print(f"  Slots erhalten: {len(exp_art.slots)}/9")
+    print(f"  Slots erhalten: {len(exp_art.slots)}/7")
     print(f"  Alle gefüllt: {all_filled}")
     check(
         "EXP_INTACT",
@@ -624,7 +624,7 @@ async def test_e2e_structurer_flow() -> None:
     print(f"  Checkpoints passed: {passed}/{total}")
     print(f"  Final mode: {p_final.aktiver_modus}")
     print(f"  Final phase: {p_final.aktive_phase.value}")
-    print(f"  Exploration slots: {len(exp_art.slots)}/9")
+    print(f"  Exploration slots: {len(exp_art.slots)}/7")
     print(f"  Structure schritte: {len(schritte)}")
     print(f"  Prozesszusammenfassung: {'JA' if struct_art.prozesszusammenfassung else 'NEIN'}")
     print()

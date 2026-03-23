@@ -4,7 +4,7 @@ Die **Digitalisierungsfabrik** ist ein KI-gestütztes System, das nicht-technisc
 
 Das System führt den Nutzer durch **vier Phasen**:
 
-1. **Exploration** — Strukturiertes Interview, um implizites Prozesswissen in 9 Slots zu erfassen (Auslöser, Ziel, Systeme, Ausnahmen usw.)
+1. **Exploration** — Strukturiertes Interview, um implizites Prozesswissen in 7 Slots zu erfassen (Auslöser, Ziel, Prozessbeschreibung, Entscheidungen/Schleifen, Systeme, Variablen/Daten, Zusammenfassung)
 2. **Strukturierung** — Freitext aus der Exploration in ein textbasiertes BPMN zerlegen (Aktionen, Entscheidungen, Schleifen, Ausnahmen)
 3. **Spezifikation** — Jeden Strukturschritt in konkrete EMMA-RPA-Aktionssequenzen übersetzen
 4. **Validierung** — Artefakte auf Konsistenz, Vollständigkeit und EMMA-Kompatibilität prüfen
