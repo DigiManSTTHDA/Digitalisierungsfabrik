@@ -74,12 +74,6 @@ def validate_exploration(project, result: ValidationResult) -> None:
     art = project.exploration_artifact
     slots = art.slots
 
-    result.check(
-        "EXP_SLOTS_EXIST",
-        len(slots) >= 6,
-        f"Nur {len(slots)} Slots (erwartet >= 6)",
-    )
-
     expected_slots = [
         "prozessausloeser",
         "prozessziel",
@@ -89,6 +83,12 @@ def validate_exploration(project, result: ValidationResult) -> None:
         "variablen_und_daten",
         "prozesszusammenfassung",
     ]
+
+    result.check(
+        "EXP_SLOTS_EXIST",
+        len(slots) >= len(expected_slots),
+        f"Nur {len(slots)} Slots (erwartet >= {len(expected_slots)})",
+    )
     for sid in expected_slots:
         slot = slots.get(sid)
         has_content = slot is not None and slot.inhalt.strip() != ""
@@ -99,11 +99,12 @@ def validate_exploration(project, result: ValidationResult) -> None:
         )
 
     # Keyword checks (soft — reported but not blocking)
+    # Generic keywords that should appear regardless of the test process
     keyword_map = {
-        "prozessausloeser": ["Rechnung"],
-        "beteiligte_systeme": ["DATEV", "ELO"],
-        "entscheidungen_und_schleifen": ["Entscheidung", "Schleife", "Prüfung"],
-        "variablen_und_daten": ["Rechnungsnummer", "Betrag"],
+        "prozessausloeser": [],  # process-specific, no generic keywords
+        "beteiligte_systeme": [],  # process-specific
+        "entscheidungen_und_schleifen": ["Entscheidung"],
+        "variablen_und_daten": [],  # process-specific
     }
     print("\n  Keyword-Stichproben (informativ):")
     for sid, keywords in keyword_map.items():
@@ -116,8 +117,8 @@ def validate_exploration(project, result: ValidationResult) -> None:
         status = "OK" if len(miss) == 0 else f"MISS: {miss}"
         print(f"    {sid}: {status}")
 
-    # Hallucination check
-    neg_kws = ["SAP", "OCR", "Blockchain", "Machine Learning", "API", "PowerShell"]
+    # Hallucination check (generic — no process-specific terms)
+    neg_kws = ["OCR", "Blockchain", "Machine Learning", "PowerShell"]
     all_text = " ".join(s.inhalt for s in slots.values() if s.inhalt).lower()
     hallucinations = [kw for kw in neg_kws if kw.lower() in all_text]
     if hallucinations:
@@ -312,11 +313,11 @@ def validate_cross_phase(project, result: ValidationResult) -> None:
     print(f"  Projektstatus: {status}")
     print(f"  Aktiver Modus: {project.aktiver_modus}")
 
-    # Exploration artifact survives through all phases
+    # Exploration artifact survives through all phases (7 slots after CR-003)
     exp_slots = len(project.exploration_artifact.slots)
     result.check(
         "CROSS_EXP_INTACT",
-        exp_slots >= 8,
+        exp_slots >= 7,
         f"Exploration nur {exp_slots} Slots nach Phase-Transitions",
     )
 
