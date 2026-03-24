@@ -2,7 +2,7 @@
 
 AI-geführtes System zur Prozesserhebung für Digitalisierungsprojekte.
 
-**Status:** Epics 00–11 abgeschlossen + Change Requests CR-001 bis CR-006 verifiziert — Prototyp vollständig.
+**Status:** Epics 00–11 abgeschlossen + Change Requests CR-001 bis CR-009 verifiziert — Prototyp vollständig.
 
 ---
 
@@ -264,7 +264,7 @@ digitalisierungsfabrik/
 │   ├── core/                   # Orchestrator, Executor, Working Memory
 │   ├── artifacts/
 │   │   ├── models.py           # Pydantic-Modelle (alle drei Artefakte)
-│   │   ├── init_validator.py   # Deterministischer Validator R-1 bis R-6 (CR-006)
+│   │   ├── init_validator.py   # Deterministischer Validator R-1 + R-5 (CR-009)
 │   │   └── ...
 │   ├── persistence/            # SQLite Repository
 │   ├── llm/                    # LLM-Client-Abstraktion
@@ -305,7 +305,7 @@ digitalisierungsfabrik/
 │   └── openapi.json            # Versionierter OpenAPI-Snapshot
 │
 └── agent-docs/
-    ├── change-requests/        # Change Requests (CR-001 bis CR-006)
+    ├── change-requests/        # Change Requests (CR-001 bis CR-009)
     ├── cr-runs/                # Run-Logs der Change-Request-Workflows
     ├── decisions/              # Architecture Decision Records (ADRs)
     ├── epics/                  # Epic-Planung (Epic 00–11)
@@ -334,12 +334,7 @@ Alle Parameter werden aus `backend/.env` gelesen (Vorlage: `backend/.env.example
 | `LLM_LOG_ENABLED` | `true` | LLM-Requests loggen |
 | `LLM_DEBUG_LOG` | `false` | Vollständige LLM-Payloads pro Turn als JSON-Dateien schreiben |
 
-**Background-Init-Limits** (direkt im Code konfigurierbar, `backend/core/orchestrator.py`):
-
-| Konstante | Wert | Beschreibung |
-|---|---|---|
-| `_MAX_INIT_TURNS` | `8` | Maximale LLM-Turns im Init-Loop |
-| `_MAX_CORRECTION_TURNS` | `2` | Maximale Korrektur-Turns bei kritischen Validator-Befunden |
+**Background-Init** (CR-009, ADR-009): Die Initialisierung verwendet einen Single-Call-Ansatz — kein Loop, keine konfigurierbaren Turn-Limits. Maximal 3 LLM-Calls pro Init (Init + Coverage-Validator + optionaler Korrektur-Call).
 
 ### Turn Debug Log
 
@@ -412,7 +407,7 @@ Vollständige Begründung: `agent-docs/decisions/ADR-001-openapi-contract.md`
 | `docs/hla_architecture.md` | High-Level-Architektur (bindend) |
 | `agent-docs/decisions/` | Architecture Decision Records (ADRs) |
 | `agent-docs/epics/` | Epic-Planung mit Stories und DoD-Checklisten |
-| `agent-docs/change-requests/` | Change Requests CR-001–CR-006 mit Reviews und Verifikationen |
+| `agent-docs/change-requests/` | Change Requests CR-001–CR-009 mit Reviews und Verifikationen |
 
 ---
 
@@ -438,3 +433,6 @@ Vollständige Begründung: `agent-docs/decisions/ADR-001-openapi-contract.md`
 | CR-004 | Structurer-Prompt-Überarbeitung | ✅ verifiziert |
 | CR-005 | Phasenkette-Integrität | ✅ überholt (durch CR-006 ersetzt) |
 | CR-006 | Background-Initialisierung mit Validierung | ✅ verifiziert |
+| CR-007 | Init-Progress-Feedback | Entwurf |
+| CR-008 | Phasenende-Validator | Entwurf |
+| CR-009 | Init-Rewrite: Single-Call + aufgewerteter Coverage-Validator | ✅ verifiziert |
