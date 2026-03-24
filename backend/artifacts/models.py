@@ -77,12 +77,6 @@ class Strukturschritttyp(StrEnum):
     ausnahme = "ausnahme"
 
 
-class InitStatus(StrEnum):
-    """Fortschrittssignal der Init-Modi während Background-Initialisierung (CR-006)."""
-
-    init_in_progress = "init_in_progress"  # Mehr zu tun in nächstem Turn
-    init_complete = "init_complete"          # Alle Elemente initialisiert
-
 
 class EmmaAktionstyp(StrEnum):
     """EMMA-Aktionskatalog — alle 18 Aktionstypen aus SDD 8.3.

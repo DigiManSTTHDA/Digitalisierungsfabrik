@@ -18,7 +18,6 @@ from artifacts.models import (
     AlgorithmArtifact,
     CompletenessStatus,
     ExplorationArtifact,
-    InitStatus,
     Phasenstatus,
     Projektphase,
     StructureArtifact,
@@ -60,10 +59,15 @@ class ModeContext(BaseModel):
     completeness_state: dict[str, CompletenessStatus] = Field(default_factory=dict)
     artifact_template: ArtifactTemplate | None = None
     error_hint: str | None = None  # Retry-Hint bei ungültigen Patches (S1-T1)
+    validator_feedback: str | None = None  # CR-009: Validator-Befunde für Korrektur-Call
 
     def with_error_hint(self, hint: str) -> "ModeContext":
         """Kopie des Kontexts mit gesetztem error_hint zurückgeben (S1-T1)."""
         return self.model_copy(update={"error_hint": hint})
+
+    def with_validator_feedback(self, feedback: str) -> "ModeContext":
+        """Kopie des Kontexts mit Validator-Feedback zurückgeben (CR-009)."""
+        return self.model_copy(update={"validator_feedback": feedback})
 
 
 class ModeOutput(BaseModel):
@@ -80,7 +84,6 @@ class ModeOutput(BaseModel):
     phasenstatus: Phasenstatus
     flags: list[Flag] = Field(default_factory=list)
     validierungsbericht: Validierungsbericht | None = None
-    init_status: InitStatus | None = None  # CR-006: nur Init-Modi setzen dieses Feld
     debug_request: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]
     usage: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]  # Token usage
 

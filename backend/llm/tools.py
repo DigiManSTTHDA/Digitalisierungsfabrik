@@ -72,12 +72,11 @@ APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
     },
 }
 
-# CR-006: Tool-Schema für Init-Modi — erweitert um init_status
+# CR-009: Tool-Schema für Init-Modi — vereinfacht (kein init_status mehr)
 INIT_APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
     "name": "apply_patches",
     "description": (
-        "Wendet RFC 6902 JSON Patch Operationen auf das aktive Artefakt an "
-        "und meldet den Initialisierungsstatus."
+        "Wendet RFC 6902 JSON Patch Operationen auf das aktive Artefakt an."
     ),
     "input_schema": {
         "type": "object",
@@ -113,15 +112,7 @@ INIT_APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
                 "enum": ["in_progress"],
                 "description": "Immer 'in_progress' — Init-Modi setzen keinen phase_complete.",
             },
-            "init_status": {
-                "type": "string",
-                "enum": ["init_in_progress", "init_complete"],
-                "description": (
-                    "'init_in_progress' = es gibt noch Elemente ohne vollständige Initialisierung. "
-                    "'init_complete' = alle Elemente haben mindestens completeness_status 'teilweise'."
-                ),
-            },
         },
-        "required": ["nutzeraeusserung", "patches", "phasenstatus", "init_status"],
+        "required": ["nutzeraeusserung", "patches", "phasenstatus"],
     },
 }

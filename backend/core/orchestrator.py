@@ -20,7 +20,7 @@ from artifacts.init_validator import (
     validate_algorithm_artifact,
     validate_structure_artifact,
 )
-from artifacts.models import InitStatus, Phasenstatus
+from artifacts.models import Phasenstatus
 from config import Settings
 from core.turn_debug_log import write_turn_debug
 from core.artifact_router import (
@@ -339,11 +339,8 @@ class Orchestrator:
         )
 
     # ---------------------------------------------------------------------------
-    # CR-006: Background-Initialisierung
+    # CR-006 / CR-009: Background-Initialisierung (Single-Call, ADR-009)
     # ---------------------------------------------------------------------------
-
-    _MAX_INIT_TURNS = 8
-    _MAX_CORRECTION_TURNS = 2
 
     def _init_required(self, target_mode: str, project: "Project") -> bool:  # noqa: F821
         """Prüfen ob Background-Init erforderlich ist (Artefakt leer?)."""
@@ -359,7 +356,7 @@ class Orchestrator:
         wm: WorkingMemory,
         target_mode: str,
     ) -> None:
-        """Background-Init-Loop: Init-Modus aufrufen, Patches anwenden, validieren."""
+        """Background-Init: Single-Call + Validator + optionaler Korrektur-Call (CR-009, ADR-009)."""
         init_mode_key = f"init_{target_mode}"
         init_mode = self._modes.get(init_mode_key)
         if init_mode is None:
@@ -368,8 +365,8 @@ class Orchestrator:
 
         source_type = "structure" if target_mode == "structuring" else "algorithm"
 
-        # Phase 1: Init-Loop
-        for _turn in range(self._MAX_INIT_TURNS):
+        try:
+            # Phase 1: Single Init-Call
             context = build_context(project, {}, repository=self._repository, settings=self._settings)
             output = await init_mode.call(context)
 
@@ -381,32 +378,42 @@ class Orchestrator:
                     if result.invalidated_abschnitt_ids:
                         apply_invalidations(project, result.invalidated_abschnitt_ids, self._executor)
 
-            if output.init_status == InitStatus.init_complete:
-                break
+            # Phase 2: Python-Validator (nur R-1 + R-5)
+            py_violations = self._run_structural_validator(project, target_mode)
 
-        # Phase 2: Python-Validator (deterministisch)
-        violations = self._run_structural_validator(project, target_mode)
+            # Phase 3: LLM-Coverage-Validator (einmalig)
+            coverage_violations = await self._run_coverage_validator(project, wm)
+            all_violations = py_violations + coverage_violations
 
-        # Phase 3: LLM-Coverage-Validator (einmalig)
-        coverage_violations = await self._run_coverage_validator(project, wm)
-        all_violations = violations + coverage_violations
+            # Phase 4: Bei kritischen Befunden → EIN Korrektur-Call
+            kritische = [v for v in all_violations if v.severity == "kritisch"]
+            if kritische:
+                feedback = self._format_validator_feedback(all_violations)
+                context = build_context(project, {}, repository=self._repository, settings=self._settings)
+                context = context.with_validator_feedback(feedback)
+                output = await init_mode.call(context)
 
-        # Phase 4: Korrektur-Turns bei kritischen Befunden
-        kritische = [v for v in all_violations if v.severity == "kritisch"]
-        if kritische:
-            await self._run_correction_turns(project, wm, init_mode, source_type, kritische)
+                if output.patches:
+                    artifact = get_artifact(project, source_type)
+                    result = self._executor.apply_patches(source_type, artifact, output.patches)
+                    if result.success and result.artifact is not None:
+                        set_artifact(project, source_type, result.artifact)
 
-        # Phase 5: Warnungen als init_hinweise im WorkingMemory speichern
-        warnungen = [v for v in all_violations if v.severity == "warnung"]
-        if warnungen:
-            wm.init_hinweise = [v.message for v in warnungen]
+            # Phase 5: Warnungen als init_hinweise im WorkingMemory speichern
+            warnungen = [v for v in all_violations if v.severity == "warnung"]
+            if warnungen:
+                wm.init_hinweise = [v.message for v in warnungen]
+
+        except Exception:
+            logger.exception("orchestrator.background_init.error", target_mode=target_mode)
+            # Dialog-Modus startet auch bei Init-Fehler — mit unvollständigem Artefakt
 
     def _run_structural_validator(
         self,
         project: "Project",  # noqa: F821
         target_mode: str,
     ) -> list[StructuralViolation]:
-        """Deterministischen Python-Validator nach Init-Loop ausführen (§3.3)."""
+        """Deterministischen Python-Validator ausführen (CR-009: nur R-1 + R-5)."""
         if target_mode == "structuring":
             return validate_structure_artifact(
                 project.exploration_artifact,
@@ -424,7 +431,7 @@ class Orchestrator:
         project: "Project",  # noqa: F821
         wm: WorkingMemory,
     ) -> list[StructuralViolation]:
-        """Coverage-Validator als registrierten Modus aufrufen (ADR-008 Option B)."""
+        """Coverage-Validator als registrierten Modus aufrufen (CR-009: aufgewertet)."""
         import json
 
         coverage_mode = self._modes.get("init_coverage_validator")
@@ -446,41 +453,19 @@ class Orchestrator:
             logger.warning("orchestrator.coverage_validator.parse_error")
             return []
 
-    async def _run_correction_turns(
-        self,
-        project: "Project",  # noqa: F821
-        wm: WorkingMemory,
-        init_mode: "BaseMode",  # noqa: F821
-        source_type: str,
-        kritische: list[StructuralViolation],
-    ) -> None:
-        """Korrektur-Turns für kritische Befunde (max. _MAX_CORRECTION_TURNS=2)."""
-        violation_summary = "; ".join(
-            f"[{v.element_id or '?'}] {v.message}" for v in kritische
+    def _format_validator_feedback(self, violations: list[StructuralViolation]) -> str:
+        """Violations in lesbares Prompt-Feedback für Korrektur-Call formatieren (CR-009)."""
+        lines = ["## Validator-Befunde\n"]
+        lines.append("Das Artefakt wurde geprüft. Folgende Probleme wurden gefunden:\n")
+        for v in violations:
+            severity_label = "KRITISCH" if v.severity == "kritisch" else "Warnung"
+            element = f" ({v.element_id})" if v.element_id else ""
+            lines.append(f"- [{severity_label}]{element}: {v.message}")
+        lines.append(
+            "\nKorrigiere die kritischen Befunde. Überarbeite das bestehende Artefakt gezielt — "
+            "lege KEINE neuen Schritte/Abschnitte an, die bereits existieren."
         )
-        error_hint = (
-            f"ACHTUNG: Der Python-Validator hat {len(kritische)} kritische Befunde gefunden: "
-            f"{violation_summary}. Korrigiere diese in diesem Turn."
-        )
-
-        for _attempt in range(self._MAX_CORRECTION_TURNS):
-            context = build_context(
-                project, {}, repository=self._repository, settings=self._settings
-            )
-            context = context.with_error_hint(error_hint)
-            output = await init_mode.call(context)
-
-            if output.patches:
-                artifact = get_artifact(project, source_type)
-                result = self._executor.apply_patches(source_type, artifact, output.patches)
-                if result.success and result.artifact is not None:
-                    set_artifact(project, source_type, result.artifact)
-
-            # Re-validate after correction
-            remaining = self._run_structural_validator(project, "structuring" if source_type == "structure" else "specification")
-            kritische = [v for v in remaining if v.severity == "kritisch"]
-            if not kritische:
-                break
+        return "\n".join(lines)
 
     # ---------------------------------------------------------------------------
 

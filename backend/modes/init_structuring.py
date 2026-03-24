@@ -1,16 +1,17 @@
-"""Init-Modus Strukturierung — Background-Initialisierung des Strukturartefakts (CR-006, §3.6).
+"""Init-Modus Strukturierung — Background-Initialisierung des Strukturartefakts (CR-006, CR-009).
 
 Transformiert das Explorationsartefakt vollständig in Strukturschritte,
 bevor der Nutzer mit dem Dialog beginnt. Kein Dialog, keine Nutzeransprache.
 
-Gibt ModeOutput zurück mit init_status gesetzt. nutzeraeusserung ist immer "".
+CR-009: Single-Call statt Multi-Turn-Loop. Kein init_status mehr.
+Validator-Feedback wird als Template-Variable {validator_feedback} injiziert.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from artifacts.models import InitStatus, Phasenstatus
+from artifacts.models import Phasenstatus
 from llm.base import LLMClient
 from llm.tools import INIT_APPLY_PATCHES_TOOL
 from modes.base import BaseMode, ModeContext, ModeOutput
@@ -39,13 +40,15 @@ def _build_slot_status(context: ModeContext) -> str:
         status = schritt.completeness_status.value
         typ = schritt.typ.value
         lines.append(f"- [{schritt.reihenfolge}] {schritt.titel} ({sid}) [{typ}] [{status}]")
+        if schritt.beschreibung:
+            lines.append(f"  Beschreibung: {schritt.beschreibung}")
     return "\n".join(lines)
 
 
 class InitStructuringMode(BaseMode):
-    """Init-Modus für Strukturierung (CR-006, §3.6).
+    """Init-Modus für Strukturierung (CR-006, CR-009).
 
-    Erbt von BaseMode, gibt ModeOutput zurück mit init_status gesetzt.
+    Erbt von BaseMode, gibt ModeOutput zurück.
     Kein Dialog — nutzeraeusserung ist immer "".
     """
 
@@ -59,7 +62,6 @@ class InitStructuringMode(BaseMode):
                 patches=[],
                 phasenstatus=Phasenstatus.in_progress,
                 flags=[],
-                init_status=InitStatus.init_complete,
             )
 
         exploration_content = _build_exploration_content(context)
@@ -69,7 +71,10 @@ class InitStructuringMode(BaseMode):
         system_prompt = system_prompt.replace("{exploration_content}", exploration_content)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
 
-        # Init-Modi benötigen keinen Dialog-Verlauf — einmaliger LLM-Call ohne History
+        # CR-009: Validator-Feedback injizieren (leer beim Init-Call, befüllt beim Korrektur-Call)
+        feedback = context.validator_feedback or ""
+        system_prompt = system_prompt.replace("{validator_feedback}", feedback)
+
         response = await self._llm_client.complete(
             system=system_prompt,
             messages=[{"role": "user", "content": "[Initialisierung starten]"}],
@@ -80,18 +85,11 @@ class InitStructuringMode(BaseMode):
         tool_input = response.tool_input or {}
         patches = [p for p in (tool_input.get("patches") or []) if isinstance(p, dict)]
 
-        raw_init_status = tool_input.get("init_status", "init_in_progress")
-        try:
-            init_status = InitStatus(raw_init_status)
-        except ValueError:
-            init_status = InitStatus.init_in_progress
-
         return ModeOutput(
             nutzeraeusserung="",
             patches=patches,
             phasenstatus=Phasenstatus.in_progress,
             flags=[],
-            init_status=init_status,
             debug_request=response.debug_request,
             usage=response.usage,
         )

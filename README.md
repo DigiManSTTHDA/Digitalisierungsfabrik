@@ -130,41 +130,43 @@ Diese Modi werden ausschließlich vom Orchestrator intern aufgerufen — nie dir
 |---|---|---|
 | **Init-Structuring** | `InitStructuringMode` | Transformiert Explorationsartefakt vollständig in Strukturartefakt (Prozessschritte, Kontrollfluss, Variablen-Lineage, ANALOG-Kennzeichnung) |
 | **Init-Specification** | `InitSpecificationMode` | Transformiert Strukturartefakt vollständig in Algorithmusartefakt (EMMA-Skelett, WAIT-Aktionen für ANALOG-Schritte) |
-| **Init-Coverage-Validator** | `InitCoverageValidatorMode` | Prüft einmalig ob Entitäten aus dem Explorationsartefakt (Variablen, Beteiligte, Ausnahmen) in den nachgelagerten Artefakten abgebildet sind; gibt ausschließlich Warnungen zurück (nie kritische Befunde) |
+| **Init-Coverage-Validator** | `InitCoverageValidatorMode` | Prüft einmalig Informationsvollständigkeit, Kontrollfluss-Abbildung und Feldvollständigkeit der Artefakt-Transformation; darf "kritisch" und "warnung" melden (CR-009) |
 
 ### Background-Initialisierung (Detail)
 
-Beim erstmaligen Betreten der Strukturierungs- oder Spezifikationsphase (erkennbar daran, dass das Zielartefakt leer ist) führt der Orchestrator vor dem Dialog-Einstieg folgenden 5-stufigen Prozess aus:
+Beim erstmaligen Betreten der Strukturierungs- oder Spezifikationsphase (erkennbar daran, dass das Zielartefakt leer ist) führt der Orchestrator vor dem Dialog-Einstieg folgenden Prozess aus (CR-009, ADR-009):
 
 ```
-Phase 1 — Init-Loop (max. 8 LLM-Turns)
-    InitStructuringMode oder InitSpecificationMode aufrufen
-    Patches anwenden bis init_status = "init_complete" oder Limit erreicht
+Phase 1 — Single Init-Call
+    InitStructuringMode oder InitSpecificationMode einmalig aufrufen
+    Patches anwenden (vollständige Artefakt-Transformation in einem Call)
 
 Phase 2 — Python-Validator (deterministisch, kein LLM)
-    6 Regeln werden geprüft:
+    2 Regeln werden geprüft:
     R-1  Referenzielle Integrität  — alle nachfolger/regeln/schleifenkoerper/konvergenz-Referenzen gültig
-    R-2  Feldvollständigkeit       — titel/beschreibung/bedingung/ausnahme_beschreibung nicht leer
-    R-3  Graph-Konsistenz          — genau 1 Startschritt, mindestens 1 Endschritt
-    R-4  Variablen-Crosscheck      — alle Variablen aus Exploration tauchen in Strukturbeschreibungen auf
     R-5  Abschnitt-Mapping         — jeder Strukturschritt hat einen Algorithmusabschnitt
-    R-6  ANALOG-Konsistenz         — ANALOG-Schritte haben emma_kompatibel=false-Aktion
 
 Phase 3 — LLM Coverage-Validator (einmalig)
-    InitCoverageValidatorMode prüft ob Entitäten aus Exploration fehlen
+    InitCoverageValidatorMode prüft Informationsvollständigkeit, Kontrollfluss, Feldvollständigkeit
     Gibt reines JSON zurück (fehlende_entitaeten, coverage_vollstaendig)
-    Severity: immer "warnung", nie "kritisch"
+    Darf "kritisch" und "warnung" melden
 
-Phase 4 — Korrektur-Turns (max. 2, nur bei kritischen Befunden aus Phase 2)
-    Init-Modus erneut aufrufen mit error_hint (Violation-Liste)
-    Nach jedem Korrektur-Turn re-validieren
+Phase 4 — Korrektur-Call (optional, nur bei kritischen Befunden)
+    Init-Modus erneut aufrufen mit validator_feedback (Violation-Liste)
+    Maximal EIN Korrektur-Call
 
 Phase 5 — Warnungen speichern
     Alle Warnungen → wm.init_hinweise (list[str])
     Werden beim ersten Dialog-Turn in den System-Prompt des Structurer/Specifier injiziert
 ```
 
+Maximal 3 LLM-Calls (Init + Coverage + Korrektur), normalerweise 2 (Init + Coverage).
+
 Der gesamte Prozess läuft transparent im Hintergrund. Der Nutzer sieht nichts davon — er erhält direkt das bereits befüllte Artefakt zur Überprüfung und Korrektur.
+
+### Bekannte Beschränkungen
+
+- **Prozessgröße**: Die Background-Initialisierung ist für Prozesse mit bis zu ~15 Strukturschritten optimiert. Bei größeren Prozessen kann der Init-Call unvollständige Artefakte erzeugen. Der Dialog-Modus kann fehlende Schritte im Gespräch ergänzen.
 
 ### Steuerungsflags
 

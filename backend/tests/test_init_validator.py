@@ -1,12 +1,11 @@
-"""Tests für den deterministischen Init-Validator (CR-006, AC #12).
+"""Tests für den deterministischen Init-Validator (CR-006, CR-009).
 
-Prüft alle 6 Validierungsregeln:
+Prüft die 2 verbleibenden Validierungsregeln:
 - R-1: Referenzielle Integrität (nachfolger, regeln, schleifenkoerper, konvergenz)
-- R-2: Feldvollständigkeit (titel, beschreibung, bedingung, ausnahme_beschreibung)
-- R-3: Graph-Konsistenz (genau 1 Startschritt, mindestens 1 Endschritt)
-- R-4: Variablen-Crosscheck (variablen_und_daten → beschreibung)
 - R-5: Abschnitt-Mapping vollständig (jeder Strukturschritt hat Algorithmusabschnitt)
-- R-6: ANALOG-Konsistenz (ANALOG:-Schritt hat emma_kompatibel=false Aktion)
+
+CR-009: R-2 (Feldvollständigkeit), R-3 (Graph-Konsistenz), R-4 (Variablen-Crosscheck),
+R-6 (ANALOG-Konsistenz) wurden in den LLM-Coverage-Validator verlagert.
 """
 
 from __future__ import annotations
@@ -19,8 +18,6 @@ from artifacts.models import (
     Algorithmusabschnitt,
     AlgorithmusStatus,
     CompletenessStatus,
-    EmmaAktion,
-    EmmaAktionstyp,
     ExplorationArtifact,
     ExplorationSlot,
     StructureArtifact,
@@ -81,19 +78,6 @@ def _make_empty_exploration() -> ExplorationArtifact:
     return ExplorationArtifact(slots={})
 
 
-def _make_exploration_with_variable(var_name: str) -> ExplorationArtifact:
-    return ExplorationArtifact(
-        slots={
-            "variablen_und_daten": ExplorationSlot(
-                slot_id="variablen_und_daten",
-                titel="Variablen und Daten",
-                inhalt=f"{var_name} — Eine Testvariable",
-                completeness_status=CompletenessStatus.teilweise,
-            )
-        }
-    )
-
-
 # ---------------------------------------------------------------------------
 # R-1: Referenzielle Integrität
 # ---------------------------------------------------------------------------
@@ -145,136 +129,6 @@ class TestR1ReferenzielleIntegritaet:
 
 
 # ---------------------------------------------------------------------------
-# R-2: Feldvollständigkeit
-# ---------------------------------------------------------------------------
-
-
-class TestR2Feldvollstaendigkeit:
-    def test_titel_leer(self) -> None:
-        structure = StructureArtifact(
-            schritte={"s1": _make_schritt("s1", 1, titel="")}
-        )
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        assert any("titel leer" in v.message and v.severity == "kritisch" for v in violations)
-
-    def test_beschreibung_leer(self) -> None:
-        structure = StructureArtifact(
-            schritte={"s1": _make_schritt("s1", 1, beschreibung="")}
-        )
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        assert any("beschreibung leer" in v.message and v.severity == "warnung" for v in violations)
-
-    def test_entscheidung_ohne_bedingung(self) -> None:
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt(
-                    "s1", 1, typ=Strukturschritttyp.entscheidung, bedingung=None
-                )
-            }
-        )
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        assert any("entscheidung ohne bedingung" in v.message and v.severity == "warnung" for v in violations)
-
-    def test_ausnahme_ohne_beschreibung(self) -> None:
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt(
-                    "s1", 99, typ=Strukturschritttyp.ausnahme, ausnahme_beschreibung=None
-                )
-            }
-        )
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        assert any(
-            "ausnahme ohne ausnahme_beschreibung" in v.message and v.severity == "warnung"
-            for v in violations
-        )
-
-
-# ---------------------------------------------------------------------------
-# R-3: Graph-Konsistenz
-# ---------------------------------------------------------------------------
-
-
-class TestR3GraphKonsistenz:
-    def test_kein_startschritt(self) -> None:
-        """Wenn alle Schritte referenziert sind, gibt es keinen Startschritt."""
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt("s1", 1, nachfolger=["s2"]),
-                "s2": _make_schritt("s2", 2, nachfolger=["s1"]),  # Zyklus — beide referenziert
-            }
-        )
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        assert any("Startschritt" in v.message and v.severity == "warnung" for v in violations)
-
-    def test_mehrere_startkandidaten(self) -> None:
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt("s1", 1, nachfolger=[]),
-                "s2": _make_schritt("s2", 2, nachfolger=[]),
-            }
-        )
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        assert any("Startschritt" in v.message and v.severity == "warnung" for v in violations)
-
-    def test_kein_endschritt(self) -> None:
-        """Kein Schritt hat nachfolger: [] (abgesehen von Ausnahmen)."""
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt("s1", 1, nachfolger=["s2"]),
-                "s2": _make_schritt("s2", 2, nachfolger=["s1"]),
-            }
-        )
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        assert any("Endschritt" in v.message and v.severity == "warnung" for v in violations)
-
-    def test_valid_graph(self) -> None:
-        structure = _make_valid_structure()
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        graph_violations = [
-            v for v in violations
-            if "Startschritt" in v.message or "Endschritt" in v.message
-        ]
-        assert not graph_violations
-
-
-# ---------------------------------------------------------------------------
-# R-4: Variablen-Crosscheck
-# ---------------------------------------------------------------------------
-
-
-class TestR4VariablenCrosscheck:
-    def test_variable_nicht_in_beschreibung(self) -> None:
-        exploration = _make_exploration_with_variable("rechnungsnummer")
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt("s1", 1, beschreibung="Keine Variable hier"),
-            }
-        )
-        violations = validate_structure_artifact(exploration, structure)
-        assert any(
-            "rechnungsnummer" in v.message and v.severity == "warnung" for v in violations
-        )
-
-    def test_variable_in_beschreibung_vorhanden(self) -> None:
-        exploration = _make_exploration_with_variable("rechnungsnummer")
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt("s1", 1, beschreibung="Die rechnungsnummer wird geprüft"),
-            }
-        )
-        violations = validate_structure_artifact(exploration, structure)
-        variable_violations = [v for v in violations if "rechnungsnummer" in v.message]
-        assert not variable_violations
-
-    def test_empty_exploration_no_violations(self) -> None:
-        structure = _make_valid_structure()
-        violations = validate_structure_artifact(_make_empty_exploration(), structure)
-        variable_violations = [v for v in violations if "Variable" in v.message]
-        assert not variable_violations
-
-
-# ---------------------------------------------------------------------------
 # R-5: Abschnitt-Mapping
 # ---------------------------------------------------------------------------
 
@@ -310,95 +164,3 @@ class TestR5AbschnittMapping:
         violations = validate_algorithm_artifact(structure, algorithm)
         r5_violations = [v for v in violations if "Kein Algorithmusabschnitt" in v.message]
         assert not r5_violations
-
-
-# ---------------------------------------------------------------------------
-# R-6: ANALOG-Konsistenz
-# ---------------------------------------------------------------------------
-
-
-class TestR6AnalogKonsistenz:
-    def test_analog_schritt_ohne_inkompatible_aktion(self) -> None:
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt(
-                    "s1", 1, spannungsfeld="ANALOG: Physische Unterschrift erforderlich"
-                )
-            }
-        )
-        algorithm = AlgorithmArtifact(
-            abschnitte={
-                "ab1": Algorithmusabschnitt(
-                    abschnitt_id="ab1",
-                    titel="Schritt 1",
-                    struktur_ref="s1",
-                    aktionen={
-                        "a1": EmmaAktion(
-                            aktion_id="a1",
-                            aktionstyp=EmmaAktionstyp.FIND,
-                            emma_kompatibel=True,  # Alle kompatibel — Warnung erwartet
-                        )
-                    },
-                    completeness_status=CompletenessStatus.leer,
-                    status=AlgorithmusStatus.ausstehend,
-                )
-            }
-        )
-        violations = validate_algorithm_artifact(structure, algorithm)
-        assert any(
-            "ANALOG-Schritt" in v.message and v.severity == "warnung" for v in violations
-        )
-
-    def test_analog_schritt_mit_inkompatible_aktion(self) -> None:
-        structure = StructureArtifact(
-            schritte={
-                "s1": _make_schritt(
-                    "s1", 1, spannungsfeld="ANALOG: Physische Unterschrift"
-                )
-            }
-        )
-        algorithm = AlgorithmArtifact(
-            abschnitte={
-                "ab1": Algorithmusabschnitt(
-                    abschnitt_id="ab1",
-                    titel="Schritt 1",
-                    struktur_ref="s1",
-                    aktionen={
-                        "a1": EmmaAktion(
-                            aktion_id="a1",
-                            aktionstyp=EmmaAktionstyp.WAIT,
-                            emma_kompatibel=False,  # Inkompatibel — kein Fehler
-                        )
-                    },
-                    completeness_status=CompletenessStatus.leer,
-                    status=AlgorithmusStatus.ausstehend,
-                )
-            }
-        )
-        violations = validate_algorithm_artifact(structure, algorithm)
-        analog_violations = [v for v in violations if "ANALOG-Schritt" in v.message]
-        assert not analog_violations
-
-    def test_nicht_analog_kein_spannungsfeld(self) -> None:
-        structure = _make_valid_structure()
-        algorithm = AlgorithmArtifact(
-            abschnitte={
-                "ab1": Algorithmusabschnitt(
-                    abschnitt_id="ab1",
-                    titel="Schritt 1",
-                    struktur_ref="s1",
-                    completeness_status=CompletenessStatus.leer,
-                    status=AlgorithmusStatus.ausstehend,
-                ),
-                "ab2": Algorithmusabschnitt(
-                    abschnitt_id="ab2",
-                    titel="Schritt 2",
-                    struktur_ref="s2",
-                    completeness_status=CompletenessStatus.leer,
-                    status=AlgorithmusStatus.ausstehend,
-                ),
-            }
-        )
-        violations = validate_algorithm_artifact(structure, algorithm)
-        analog_violations = [v for v in violations if "ANALOG-Schritt" in v.message]
-        assert not analog_violations
