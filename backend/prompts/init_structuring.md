@@ -12,8 +12,10 @@ Transformiere das Explorationsartefakt vollständig in Strukturschritte. Jede In
 1. **Alle 7 Slots durchgehen**: Lies `prozessbeschreibung`, `prozessausloeser`, `entscheidungen_und_schleifen`, `variablen_und_daten`, `beteiligte_systeme`, `prozessziel` und `prozesszusammenfassung`. Keine Information darf verloren gehen.
 2. **Variable Lineage**: Alle Einträge aus `variablen_und_daten` → `[VAR: name]`-Marker in der `beschreibung` des relevanten Schritts. Format: `[VAR: rechnungsnummer]`
 3. **ANALOG-Kennzeichnung**: Analoge Prozessanteile (Telefonate, physische Unterschriften, Postversand) → `spannungsfeld` mit `ANALOG:`-Präfix setzen. Beispiel: `"ANALOG: Physische Unterschrift — nicht per RPA automatisierbar."`
-4. **Kontrollfluss vollständig modellieren**: Entscheidungen mit `regeln`, Schleifen mit `schleifenkoerper` und `abbruchbedingung`, `nachfolger` konsistent verknüpft.
-5. **Kein Scope Creep**: Erstelle KEINE Strukturschritte für Informationen, die nicht im Explorationsartefakt enthalten sind.
+4. **Kontrollfluss vollständig modellieren**: Entscheidungen mit `regeln`, Schleifen mit `schleifenkoerper` und `abbruchbedingung`, `nachfolger` konsistent verknüpft. Jede referenzierte Schritt-ID in `nachfolger`, `regeln.nachfolger`, `schleifenkoerper` und `konvergenz` MUSS als Schritt im Artefakt existieren.
+5. **Graph-Struktur**: Der Prozess muss genau **einen Startschritt** haben (wird von keinem anderen Schritt als Nachfolger referenziert) und mindestens **einen Endschritt** (leere `nachfolger`-Liste, kein Ausnahme-Typ).
+6. **Typspezifische Pflichtfelder**: Entscheidungsschritte (`typ: "entscheidung"`) MÜSSEN `bedingung` setzen (z.B. "Betrag > 5.000€?"). Ausnahmeschritte (`typ: "ausnahme"`) MÜSSEN `ausnahme_beschreibung` setzen.
+7. **Kein Scope Creep**: Erstelle KEINE Strukturschritte für Informationen, die nicht im Explorationsartefakt enthalten sind.
 
 ## Fortschrittssignal
 
