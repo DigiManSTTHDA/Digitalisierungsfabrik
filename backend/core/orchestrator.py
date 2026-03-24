@@ -11,6 +11,9 @@ SDD-Referenzen: 6.2 (Orchestrator), 6.3 (11-Schritt-Zyklus), 6.4 (Working Memory
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
+from typing import TypedDict
+
 import structlog
 from pydantic import BaseModel, Field
 
@@ -40,6 +43,20 @@ from modes.base import BaseMode, Flag
 from persistence.project_repository import ProjectRepository
 
 logger = structlog.get_logger(__name__)
+
+
+class InitProgressInfo(TypedDict):
+    """Callback data for init progress events (CR-007)."""
+
+    phase: str
+    status: str
+    turn: int
+    max_turns: int
+    message: str
+
+
+# Max init turns: 1 init-call + 1 optional correction-call (CR-009 single-call architecture)
+_MAX_INIT_TURNS = 2
 
 # Modes that trigger a switch to the Moderator (SDD 6.3 Moduswechsel-Logik)
 _MODERATOR_TRIGGER_FLAGS = {Flag.phase_complete, Flag.escalate, Flag.blocked}
@@ -94,12 +111,22 @@ class Orchestrator:
         repository: ProjectRepository,
         modes: dict[str, BaseMode],
         settings: Settings | None = None,
+        on_init_progress: Callable[[InitProgressInfo], Awaitable[None]] | None = None,
     ) -> None:
         self._repository = repository
         self._modes = modes
         self._settings = settings
+        self._on_init_progress = on_init_progress
         self._executor = Executor()
         self._calculator = CompletenessCalculator()
+
+    async def _emit_init_progress(self, info: InitProgressInfo) -> None:
+        """Emit init progress via callback (CR-007). Errors are logged, never raised."""
+        if self._on_init_progress is not None:
+            try:
+                await self._on_init_progress(info)
+            except Exception:
+                logger.warning("orchestrator.init_progress_callback_error", info=info)
 
     async def process_turn(self, project_id: str, input: TurnInput) -> TurnOutput:
         """Nutzerturn verarbeiten — 11-Schritt-Zyklus (SDD 6.3)."""
@@ -364,8 +391,16 @@ class Orchestrator:
             return
 
         source_type = "structure" if target_mode == "structuring" else "algorithm"
+        artefakt_label = "Strukturartefakt" if target_mode == "structuring" else "Algorithmusartefakt"
 
         try:
+            # CR-007: started
+            await self._emit_init_progress(InitProgressInfo(
+                phase=target_mode, status="started", turn=0,
+                max_turns=_MAX_INIT_TURNS,
+                message=f"Das System bereitet das {artefakt_label} vor...",
+            ))
+
             # Phase 1: Single Init-Call
             context = build_context(project, {}, repository=self._repository, settings=self._settings)
             output = await init_mode.call(context)
@@ -377,6 +412,20 @@ class Orchestrator:
                     set_artifact(project, source_type, result.artifact)
                     if result.invalidated_abschnitt_ids:
                         apply_invalidations(project, result.invalidated_abschnitt_ids, self._executor)
+
+            # CR-007: in_progress after init call
+            await self._emit_init_progress(InitProgressInfo(
+                phase=target_mode, status="in_progress", turn=1,
+                max_turns=_MAX_INIT_TURNS,
+                message=f"Verarbeitung läuft (Turn 1/{_MAX_INIT_TURNS})...",
+            ))
+
+            # CR-007: validating before validators
+            await self._emit_init_progress(InitProgressInfo(
+                phase=target_mode, status="validating", turn=0,
+                max_turns=_MAX_INIT_TURNS,
+                message="Qualitätsprüfung läuft...",
+            ))
 
             # Phase 2: Python-Validator (nur R-1 + R-5)
             py_violations = self._run_structural_validator(project, target_mode)
@@ -399,10 +448,24 @@ class Orchestrator:
                     if result.success and result.artifact is not None:
                         set_artifact(project, source_type, result.artifact)
 
+                # CR-007: in_progress after correction call
+                await self._emit_init_progress(InitProgressInfo(
+                    phase=target_mode, status="in_progress", turn=2,
+                    max_turns=_MAX_INIT_TURNS,
+                    message=f"Verarbeitung läuft (Turn 2/{_MAX_INIT_TURNS})...",
+                ))
+
             # Phase 5: Warnungen als init_hinweise im WorkingMemory speichern
             warnungen = [v for v in all_violations if v.severity == "warnung"]
             if warnungen:
                 wm.init_hinweise = [v.message for v in warnungen]
+
+            # CR-007: completed
+            await self._emit_init_progress(InitProgressInfo(
+                phase=target_mode, status="completed", turn=0,
+                max_turns=_MAX_INIT_TURNS,
+                message=f"Initialisierung abgeschlossen. Das {artefakt_label} ist bereit.",
+            ))
 
         except Exception:
             logger.exception("orchestrator.background_init.error", target_mode=target_mode)

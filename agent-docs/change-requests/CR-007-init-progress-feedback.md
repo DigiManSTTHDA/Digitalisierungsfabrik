@@ -4,7 +4,7 @@
 |---|---|
 | **ID** | CR-007 |
 | **Titel** | Init-Progress-Feedback — Nutzer-Rückmeldung während Background-Initialisierung |
-| **Status** | Entwurf |
+| **Status** | Verifiziert |
 | **Erstellt** | 2026-03-24 |
 | **Priorität** | Hoch |
 | **Auslöser** | CR-006 implementiert die Background-Initialisierung synchron-blockierend (Schritt 10b). Der Nutzer sieht während der ~10–40 Sekunden Init-Phase weder eine Nachricht noch ein Feedback — die UI wirkt eingefroren. Das ist für den Prototyp inakzeptabel: der Nutzer vermutet einen Fehler und bricht ab. |

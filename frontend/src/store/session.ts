@@ -53,6 +53,7 @@ export interface SessionState {
   validationReport: ValidationReportResponse | null;
   error: string | null;
   isProcessing: boolean;
+  initProgress: { status: string; message: string } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +84,8 @@ export type SessionAction =
       flags: string[];
     }
   | { type: "SET_VALIDATION_REPORT"; report: ValidationReportResponse | null }
-  | { type: "SET_ERROR"; error: string | null };
+  | { type: "SET_ERROR"; error: string | null }
+  | { type: "SET_INIT_PROGRESS"; status: string; message: string };
 
 // ---------------------------------------------------------------------------
 // Initial state
@@ -111,6 +113,7 @@ export const initialState: SessionState = {
   validationReport: null,
   error: null,
   isProcessing: false,
+  initProgress: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -172,6 +175,14 @@ export function sessionReducer(
       return { ...state, validationReport: action.report };
     case "SET_ERROR":
       return { ...state, error: action.error };
+    case "SET_INIT_PROGRESS":
+      return {
+        ...state,
+        initProgress:
+          action.status === "completed"
+            ? null
+            : { status: action.status, message: action.message },
+      };
     default:
       return state;
   }

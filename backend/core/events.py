@@ -63,6 +63,17 @@ class ErrorEvent(BaseModel):
     recoverable: bool
 
 
+class InitProgressEvent(BaseModel):
+    """Init progress event — sent during background initialization (CR-007)."""
+
+    event: Literal["init_progress"] = "init_progress"
+    phase: str
+    status: str
+    turn: int
+    max_turns: int
+    message: str
+
+
 # Discriminated union of all WebSocket event types
 WebSocketEvent = (
     ChatTokenEvent
@@ -71,4 +82,5 @@ WebSocketEvent = (
     | ProgressUpdateEvent
     | DebugUpdateEvent
     | ErrorEvent
+    | InitProgressEvent
 )

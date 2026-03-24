@@ -121,6 +121,14 @@ function handleEvent(
       d({ type: "SET_PROCESSING", value: false });
       break;
 
+    case "init_progress":
+      d({
+        type: "SET_INIT_PROGRESS",
+        status: data.status as string,
+        message: data.message as string,
+      });
+      break;
+
     default:
       console.warn("WebSocket: unknown event type", eventType);
   }

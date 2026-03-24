@@ -60,7 +60,8 @@ function ValidationBefundCard({ befund }: { befund: ValidationBefund }) {
 }
 
 export function ChatPane() {
-  const { chatMessages, isProcessing, validationReport } = useSession();
+  const { chatMessages, isProcessing, validationReport, initProgress } =
+    useSession();
   const dispatch = useSessionDispatch();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -115,6 +116,18 @@ export function ChatPane() {
             {validationReport.befunde.map((b) => (
               <ValidationBefundCard key={b.befund_id} befund={b} />
             ))}
+          </div>
+        )}
+        {initProgress && (
+          <div
+            style={{
+              padding: "0.5rem 0.75rem",
+              color: "#6b7280",
+              fontStyle: "italic",
+              fontSize: "0.85rem",
+            }}
+          >
+            {initProgress.message}
           </div>
         )}
         <div ref={messagesEndRef} />

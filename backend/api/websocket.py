@@ -19,9 +19,10 @@ from core.events import (
     ChatDoneEvent,
     DebugUpdateEvent,
     ErrorEvent,
+    InitProgressEvent,
     ProgressUpdateEvent,
 )
-from core.orchestrator import Orchestrator, TurnInput, TurnOutput
+from core.orchestrator import InitProgressInfo, Orchestrator, TurnInput, TurnOutput
 from modes.base import Flag
 from modes.exploration import ExplorationMode
 from modes.init_coverage_validator import InitCoverageValidatorMode
@@ -40,7 +41,9 @@ logger = structlog.get_logger()
 _greeting_in_progress: set[str] = set()
 
 
-def _build_orchestrator(repo: ProjectRepository, settings: Settings) -> Orchestrator:
+def _build_orchestrator(
+    repo: ProjectRepository, settings: Settings, ws: WebSocket | None = None
+) -> Orchestrator:
     """Build an Orchestrator with real mode instances."""
     from llm.factory import create_llm_client
     from modes.base import BaseMode
@@ -57,7 +60,16 @@ def _build_orchestrator(repo: ProjectRepository, settings: Settings) -> Orchestr
         "init_specification": InitSpecificationMode(llm_client=llm),
         "init_coverage_validator": InitCoverageValidatorMode(llm_client=llm),
     }
-    return Orchestrator(repository=repo, modes=modes, settings=settings)
+
+    # CR-007: Callback-Closure for init progress events
+    async def _on_init_progress(info: InitProgressInfo) -> None:
+        if ws is not None:
+            await _send_event(ws, InitProgressEvent(**info))
+
+    return Orchestrator(
+        repository=repo, modes=modes, settings=settings,
+        on_init_progress=_on_init_progress if ws else None,
+    )
 
 
 async def _send_event(ws: WebSocket, event: object) -> None:
@@ -175,7 +187,7 @@ async def websocket_session(ws: WebSocket, project_id: str) -> None:
         await ws.close()
         return
 
-    orchestrator = _build_orchestrator(repo, settings)
+    orchestrator = _build_orchestrator(repo, settings, ws=ws)
 
     # FR-D-11: Handle greeting for fresh projects.
     # If the project is in moderator mode and has no dialog history yet,

@@ -1198,3 +1198,102 @@ def test_infer_artifact_type_empty_list() -> None:
     from core.artifact_router import infer_artifact_type
 
     assert infer_artifact_type([]) is None
+
+
+# ---------------------------------------------------------------------------
+# CR-007: Init-Progress-Feedback — Callback tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_init_progress_callback_sequence() -> None:
+    """CR-007 AC#10: Callback receives started → in_progress → validating → completed."""
+    from unittest.mock import AsyncMock
+
+    db = _make_db()
+    repo = _make_repo(db)
+
+    callback = AsyncMock()
+    orch = Orchestrator(
+        repository=repo,
+        modes=_make_default_modes(),
+        on_init_progress=callback,
+    )
+
+    project = repo.create("test_progress")
+    # Set up: exploration done, structuring artifact empty → triggers init
+    project.working_memory.aktive_phase = Projektphase.strukturierung
+    project.working_memory.aktiver_modus = "moderator"
+    project.working_memory.vorheriger_modus = "exploration"
+    project.working_memory.phasenstatus = Phasenstatus.in_progress
+    # Fill exploration artifact with slots so structuring init has context
+    project.exploration_artifact.slots = {
+        "s1": ExplorationSlot(
+            slot_id="s1", titel="Prozessname", inhalt="Testprozess",
+            completeness_status=CompletenessStatus.vollstaendig,
+        ),
+    }
+    repo.save(project)
+
+    await orch._run_background_init(project, project.working_memory, "structuring")
+
+    # Extract status values from all callback calls
+    statuses = [call.args[0]["status"] for call in callback.call_args_list]
+    assert statuses[0] == "started"
+    assert "in_progress" in statuses
+    assert "validating" in statuses
+    assert statuses[-1] == "completed"
+
+
+@pytest.mark.asyncio
+async def test_init_progress_no_callback() -> None:
+    """CR-007 AC#11: Init works fine without callback (None)."""
+    db = _make_db()
+    repo = _make_repo(db)
+
+    orch = Orchestrator(repository=repo, modes=_make_default_modes())
+
+    project = repo.create("test_no_cb")
+    project.working_memory.aktive_phase = Projektphase.strukturierung
+    project.exploration_artifact.slots = {
+        "s1": ExplorationSlot(
+            slot_id="s1", titel="Prozessname", inhalt="Testprozess",
+            completeness_status=CompletenessStatus.vollstaendig,
+        ),
+    }
+    repo.save(project)
+
+    # Should not raise
+    await orch._run_background_init(project, project.working_memory, "structuring")
+
+
+@pytest.mark.asyncio
+async def test_init_progress_callback_exception_does_not_break_init() -> None:
+    """CR-007 AC#12: Callback exception does not abort init."""
+    from unittest.mock import AsyncMock
+
+    db = _make_db()
+    repo = _make_repo(db)
+
+    callback = AsyncMock(side_effect=RuntimeError("callback boom"))
+    orch = Orchestrator(
+        repository=repo,
+        modes=_make_default_modes(),
+        on_init_progress=callback,
+    )
+
+    project = repo.create("test_cb_error")
+    project.working_memory.aktive_phase = Projektphase.strukturierung
+    project.exploration_artifact.slots = {
+        "s1": ExplorationSlot(
+            slot_id="s1", titel="Prozessname", inhalt="Testprozess",
+            completeness_status=CompletenessStatus.vollstaendig,
+        ),
+    }
+    repo.save(project)
+
+    # Should not raise despite callback errors
+    await orch._run_background_init(project, project.working_memory, "structuring")
+
+    # Callback was still called (even though it raised)
+    assert callback.call_count >= 1

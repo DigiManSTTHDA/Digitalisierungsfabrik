@@ -14,6 +14,7 @@ from core.events import (
     ChatTokenEvent,
     DebugUpdateEvent,
     ErrorEvent,
+    InitProgressEvent,
     ProgressUpdateEvent,
     WebSocketEvent,
 )
@@ -77,6 +78,25 @@ def test_error_event_round_trip() -> None:
     assert restored.event == "error"
     assert restored.message == "LLM Timeout"
     assert restored.recoverable is True
+
+
+def test_init_progress_event_round_trip() -> None:
+    """CR-007 V-2: InitProgressEvent serialisation round-trip."""
+    event = InitProgressEvent(
+        phase="structuring",
+        status="in_progress",
+        turn=1,
+        max_turns=2,
+        message="Verarbeitung läuft (Turn 1/2)...",
+    )
+    data = event.model_dump_json()
+    restored = InitProgressEvent.model_validate_json(data)
+    assert restored.event == "init_progress"
+    assert restored.phase == "structuring"
+    assert restored.status == "in_progress"
+    assert restored.turn == 1
+    assert restored.max_turns == 2
+    assert restored.message == "Verarbeitung läuft (Turn 1/2)..."
 
 
 # ---------------------------------------------------------------------------
