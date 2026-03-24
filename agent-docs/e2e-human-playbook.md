@@ -1,16 +1,27 @@
 # E2E Human Validation Playbook
 
-Anleitung für manuelle End-to-End-Validierung der Digitalisierungsfabrik.
+Wissensreferenz für den Live-E2E-Test der Digitalisierungsfabrik.
 
 **Testprozess:** Reisekostenabrechnung
 **Persona:** Frau Weber, Teamleiterin Verwaltung, mittelständische Spedition
 **Ziel:** Alle vier Phasen durchlaufen, pro Phase Artefakte prüfen, Bericht ausfüllen.
 
-**Ablauf:**
-1. Eingaben pro Phase Schritt für Schritt in das System einfügen
-2. Nach jeder Eingabe System-Antwort beobachten und im Bericht notieren
-3. Am Ende jeder Phase: Artefakt im UI mit dem Ziel-Artefakt vergleichen
-4. Am Ende: `validate_e2e_artifacts.py` laufen lassen für strukturelle Checks
+---
+
+## Ablauf (Live-Persona-Modus)
+
+```
+Tool stellt Frage → User kopiert Frage zu Claude →
+Claude antwortet als Frau Weber → User kopiert Antwort ins Tool
+```
+
+1. User startet das Tool, leitet jede Frage/Antwort des Systems an Claude weiter
+2. Claude schlüpft in die Persona Frau Weber und gibt eine passende Antwort
+3. User kopiert die Antwort ins Tool
+4. Nach jeder Phase: Artefakt im UI mit Ziel-Artefakt (Teil B) vergleichen
+5. Am Ende: `validate_e2e_artifacts.py` laufen lassen
+
+**Wichtig:** Claude kennt den Prozess vollständig und antwortet so, dass die Ziel-Artefakte erreichbar sind. Keine zufälligen Antworten — jede Antwort folgt dem Testplan.
 
 ---
 
@@ -43,716 +54,239 @@ python scripts/validate_e2e_artifacts.py <projekt_id>  # prüft ein bestimmtes P
 
 ---
 
-## Persona-Briefing
+# TEIL A — PERSONA & PROZESSWISSEN
 
-Du spielst **Frau Weber**, Teamleiterin Verwaltung bei der **Müller Logistik GmbH**
-in Augsburg. 85 Mitarbeiter, davon ~30 im Außendienst/Fernverkehr die regelmäßig
-auf Dienstreise sind. Frau Weber ist sachlich, pragmatisch, leicht ungeduldig.
-Sie kennt ihren Prozess gut, hat aber keine IT-Ausbildung. Fachbegriffe wie
-"Kontrollfluss" oder "Parameter" sind ihr fremd.
+## Persona-Briefing: Frau Weber
+
+**Rolle:** Teamleiterin Verwaltung bei der **Müller Logistik GmbH** in Augsburg.
+**Unternehmen:** Spedition, 85 Mitarbeiter, davon ~30 im Außendienst/Fernverkehr.
+**Team:** 3 Personen in der Verwaltung. Frau Schmidt macht fast nur Reisekosten.
+
+**Charakter:**
+- Sachlich, pragmatisch, direkt
+- Leicht ungeduldig — hat noch andere Sachen zu tun
+- Kennt ihren Prozess sehr gut, beschreibt ihn aus der Praxis
+- Keine IT-Ausbildung — Fachbegriffe wie "Kontrollfluss", "Parameter", "Iteration" sind ihr fremd
+- Reagiert gereizt auf IT-Jargon und EMMA-Aktionstypen
+- Spricht in konkreten Beispielen, nicht abstrakt
+- Nennt Kolleginnen beim Namen (Frau Schmidt, Frau Klein, Herr Brenner)
+- Verwendet Alltagssprache, gelegentlich Umgangssprache
+
+**Typische Formulierungen:**
+- "Also der Prozess läuft so: ..."
+- "Das ist ein bekanntes Problem."
+- "Das weiß ich nicht genau, da müsste ich die IT fragen."
+- "Können wir das abkürzen?"
+- "Das hab ich doch schon gesagt."
 
 ---
 
-# TEIL A — EINGABEN
+## Prozesswissen: Reisekostenabrechnung
 
-> Jede Nachricht exakt kopieren und einfügen.
-> Nach jeder Eingabe: Antwort lesen, Modus-Anzeige prüfen, ggf. im Bericht notieren.
+### Überblick
+~40-50 Abrechnungen pro Monat. Vom Reiseantrag bis zur Erstattung auf dem Gehaltszettel.
+
+### Systeme
+| System | Funktion |
+|--------|----------|
+| **TravelPro** | Neues Reiseportal (seit ~6 Monaten). Anträge, Belegverwaltung, Genehmigung. Nur ~50% nutzen es. URL: travelpro.mueller-logistik.de, Login über Active Directory. |
+| **SAP HR** | Verbuchung der Erstattung, Gehaltsabrechnung. Zugang nur Frau Schmidt + Frau Klein (Lohnbuchhaltung). |
+| **Outlook** | Kommunikation, Rückfragen, Backup-Benachrichtigungen. |
+| **Excel** | Parallelliste von Frau Schmidt (Datum, Name, Betrag, Status). Redundant zu TravelPro, aber Frau Schmidt vertraut den TravelPro-Auswertungen nicht. |
+| **Scanner** | Flachbettscanner bei Frau Schmidt. Belege einzeln scannen, benennen nach "Nachname_Datum_Belegtyp.pdf". |
+
+### Prozessablauf (Normalfall)
+
+1. **Reiseantrag stellen**
+   - TravelPro: "Neue Reise" klicken → Formular (Reiseziel, Datum von/bis, Reisegrund, geschätzte Kosten, Kostenstelle) → Absenden
+   - Papier: Formular ausdrucken (liegt im Intranet), ausfüllen, Teamleiter vorlegen
+
+2. **Genehmigung** (dreistufig)
+   - Inland < 500€: nur Teamleiter
+   - Inland ≥ 500€ oder Ausland: Teamleiter + Abteilungsleiter
+   - Ab 2.000€: zusätzlich Geschäftsführer (selten, meist Messen/Schulungen)
+   - **NEU (seit letztem Monat):** Push-Benachrichtigung im Portal (Glockensymbol oben rechts). E-Mail nur noch als Backup nach 2 Tagen ohne Reaktion.
+   - **Problem:** Herr Brenner genehmigt grundsätzlich per E-Mail statt im Portal → nicht revisionssicher, Wirtschaftsprüfer hat das angemahnt
+
+3. **Reise durchführen, Belege sammeln**
+
+4. **Abrechnung einreichen**
+   - TravelPro: Reise öffnen → "Belege hochladen" → Foto/Scan als PDF/Bild → Betrag, Datum, Ausgabenart (Dropdown: Hotel, Verpflegung, Transport, Taxi, Parkgebühren, Mietwagen, Sonstiges) → "Abrechnung einreichen"
+   - Papier: Formular + angetackerte Belege per Hauspost oder in Frau Schmidts Fach
+
+5. **Prüfung durch Frau Schmidt**
+   - Öffnet TravelPro, sieht eingereichte Abrechnungen in Liste
+   - Prüft jeden Beleg einzeln: Betrag stimmt? Datum im Reisezeitraum? Beleg lesbar? Ausgabenart korrekt? Hotel > 150€/Nacht braucht Begründung
+   - Bei Fehlern: "Rückfrage"-Button in TravelPro → automatische E-Mail an Mitarbeiter
+   - Mitarbeiter hat 2 Wochen zur Nachreichung, danach Erinnerung, dann Streichung des Postens
+   - **Nachbesserungsschleife:** Abrechnung geht zurück, Mitarbeiter korrigiert, reicht neu ein — kann 2-3 Runden dauern
+
+6. **Papier-Workflow** (bei ~50% der Einreicher)
+   - Frau Schmidt tippt alles manuell in TravelPro: Name, Reisedaten, jeden Beleg
+   - Papierbelege scannen und hochladen
+   - Dauert 3x so lang wie Portal-Einreichung
+
+7. **SAP-Verbuchung**
+   - Frau Schmidt öffnet SAP HR → Bereich Reisekosten → neuer Erstattungsbeleg
+   - Eingabe: Personalnummer, Reisezeitraum, Gesamtbetrag, Kostenarten, Kostenstelle (aus TravelPro)
+   - Beleg wird automatisch in nächste Gehaltsabrechnung übernommen
+   - Frau Klein (Lohnbuchhaltung) prüft am Monatsende und gibt Zahlungslauf frei
+
+8. **Erstattung über Gehaltsabrechnung**
+
+### Fristen & Regelungen
+- Einreichfrist: 4 Wochen nach Reiseende
+- Erstattung: spätestens übernächste Gehaltsabrechnung
+- Tagessätze nach Bundesreisekostengesetz:
+  - Inland: 14€ ab 8h, 28€ ab 24h
+  - Ausland: länderspezifisch, jährlich vom Finanzministerium festgelegt
+- Belege im Original für Steuer erforderlich
+
+### Ausnahmen & Sonderfälle
+- **Privatwagen:** 30 ct/km Pauschale, Fahrtenbuch erforderlich. TravelPro berechnet automatisch. Frau Schmidt prüft Kilometer gegen Google Maps (>10% Abweichung → Rückfrage)
+- **Eigenbeleg:** Bei verlorenem Beleg. Formular mit Angabe was/wann/wo bezahlt. Teamleiter-Unterschrift. Max. 50€ pro Posten. Frau Schmidt scannt ein und lädt statt normalem Beleg hoch.
+- **Stornierte Reise:** Stornokosten werden trotzdem abgerechnet
+- **Auslandsbelege Fremdwährung:** Betrag in Originalwährung eingeben, TravelPro rechnet mit EZB-Tageskurs um. Ohne Kurs: Frau Schmidt nimmt Bundesbank-Website.
+
+### Hauptprobleme (Spannungsfelder)
+1. **Papier-Einreicher:** ~50% nutzen TravelPro nicht → doppelte Arbeit für Frau Schmidt
+2. **E-Mail-Genehmigung:** Teamleiter (v.a. Herr Brenner) genehmigen per E-Mail statt Portal → nicht revisionssicher
+3. **Excel-Parallelliste:** Frau Schmidt trackt alles nochmal in Excel → redundant, Fehlerquelle
+4. **Fehlende Belege:** Dauerthema, Nachbesserungsschleifen kosten Zeit
+
+### Beteiligte Rollen
+- Reisender Mitarbeiter
+- Teamleiter (Genehmigung Stufe 1)
+- Abteilungsleiter (Genehmigung Stufe 2)
+- Geschäftsführer (Genehmigung Stufe 3)
+- Frau Schmidt (Verwaltung — Prüfung, Papier-Erfassung, SAP-Verbuchung)
+- Frau Klein (Lohnbuchhaltung — Zahlungslauf-Freigabe)
+
+### Variablen & Daten
+Personalnummer, Name des Reisenden, Reiseziel, Reisezeitraum (von/bis), Reisegrund, Kostenstelle, Einzelposten (Betrag, Datum, Ausgabenart/Belegtyp), Tagessatz, Gesamtbetrag, Genehmigungsnummer, ggf. Kilometer, ggf. Währungskurs
 
 ---
 
-## Phase 1: EXPLORATION
+# TEIL A.2 — TESTPLAN
 
-### Vorbereitung
-- Neues Projekt anlegen im UI (Name: "Reisekostenabrechnung")
+## Teststrategie pro Phase
+
+### Phase 1: EXPLORATION
+
+**Ziel:** Alle 7 Slots mit korrekten Inhalten füllen.
+
+**Vorbereitung:**
+- Neues Projekt anlegen (Name: "Reisekostenabrechnung")
 - System zeigt: Phase `exploration`, Modus `moderator`
 
-### Eingaben
+**Geplante Gesprächsstrategie:**
 
-**E1-01** — Rückfrage (Moderator soll NICHT starten)
-```
-Kurze Frage vorab: Muss ich alles in einer Sitzung machen oder kann ich zwischendurch unterbrechen? Und wie detailliert muss ich das beschreiben?
-```
-Erwartung: Modus bleibt `moderator`. Beantwortet die Frage, fragt ob es losgehen kann.
+| Schritt | Thema | Antwort-Strategie | Erwartetes Systemverhalten |
+|---------|-------|-------------------|---------------------------|
+| 1 | Vorfrage | Frau Weber fragt vorab ob man unterbrechen kann, wie detailliert es sein muss | Moderator beantwortet, fragt ob es losgehen kann. Modus bleibt `moderator`. |
+| 2 | Start bestätigen | Kurzes "Ja, legen wir los" | Wechsel zu `exploration`. Erste inhaltliche Frage. |
+| 3 | Auslöser + Grobablauf | Reiseantrag, Genehmigung, Belege, Prüfung, Erstattung. Portal vs. Papier erwähnen. Beiläufig TravelPro-Akzeptanzproblem. | Explorer extrahiert prozessausloeser, beginnt prozessbeschreibung. |
+| 4 | Systeme + Medienbrüche | SAP HR, TravelPro, Outlook, Excel-Liste, Papierformular. Frau Schmidt muss abtippen. | Explorer füllt beteiligte_systeme. |
+| 5 | Genehmigungsstufen | Dreistufig: TL < 500€, AL ≥ 500€/Ausland, GF ≥ 2000€. E-Mail-Genehmigungsproblem. | Explorer erkennt Entscheidungen. |
+| 6 | **ESKALATION** | Frau Weber wird ungeduldig: "dreht sich im Kreis", "hab noch andere Sachen zu tun". **Danach: Panik-Button.** | Modus wechselt zu `moderator`. Artefakt bleibt intakt. |
+| 7 | Eskalation beim Moderator | Frau Weber beschreibt Problem: "fragt immer das Gleiche" | Moderator analysiert, schickt NICHT sofort zurück. |
+| 8 | Rückkehr bestätigen | "Ok, geben Sie mich zurück, aber er soll auf den Punkt kommen" | Wechsel zurück zu `exploration`. |
+| 9 | Systeme ergänzen (post-Eskalation) | SAP HR, TravelPro, Outlook, Excel-Liste nochmal zusammenfassen + Vertrauensproblem Excel. | Explorer-Antwort sollte kürzer sein als vor Eskalation. |
+| 10 | Ausnahmen + Sonderfälle | Privatwagen (30ct/km, Fahrtenbuch), Eigenbeleg (bis 50€, TL-Unterschrift), stornierte Reisen. | Explorer füllt entscheidungen_und_schleifen weiter. |
+| 11 | Letzte Details | Unternehmensdaten (85 MA, 30 Reisende, 40-50/Monat), Tagessätze (BRKG), Fristen. | variablen_und_daten wird gefüllt. |
+| 12 | Ende signalisieren | "Das war alles. Mehr kann ich nicht sagen." | Explorer schreibt prozesszusammenfassung SELBST, meldet phase_complete. |
+| 13 | Phasenwechsel bestätigen | "Ja, weiter zur nächsten Phase." | Phase wechselt zu `strukturierung`. |
 
----
-
-**E1-02** — Bestätigung zum Start
-```
-Ja, legen wir los.
-```
-Erwartung: Modus wechselt zu `exploration`. Explorer stellt erste inhaltliche Frage zum Prozess.
-
----
-
-**E1-03** — Auslöser und Ablauf grob
-```
-Also der Prozess startet wenn ein Mitarbeiter von einer Dienstreise zurückkommt. Oder eigentlich schon vorher: Der muss zuerst eine Reise beantragen, der Teamleiter genehmigt das, und erst dann darf er fahren. Danach sammelt er die Belege und reicht die ein. Manche Kollegen machen das auf Papier mit so einem Formular, andere nutzen unser neues TravelPro-Portal. Das Portal haben wir seit einem halben Jahr, aber die Hälfte der Leute weigert sich das zu benutzen.
-```
-
----
-
-**E1-04** — Systeme und Medienbrüche
-```
-Systeme? Wir haben SAP HR, da werden die Abrechnungen am Ende verbucht und die Erstattung angestoßen. Dann gibt es TravelPro, das ist unser neues Reiseportal — da kann man die Reise beantragen, Belege hochladen und den Status sehen. Aber wie gesagt, nur die Hälfte nutzt das. Die anderen füllen ein Papierformular aus und tackern die Belege dran. Frau Schmidt in der Verwaltung muss das dann alles abtippen in TravelPro, das ist doppelte Arbeit. Und Outlook natürlich für die ganzen Rückfragen.
-```
-
----
-
-**E1-05** — Genehmigung und Prüfung
-```
-Die Genehmigung läuft so: Für Inlandsreisen reicht die Unterschrift vom Teamleiter. Ab 500 Euro oder bei Auslandsreisen muss der Abteilungsleiter auch drüber schauen. Und ab 2000 Euro braucht man den Geschäftsführer, das sind aber meistens nur die Messereisen. Das Problem ist, manche Teamleiter genehmigen per E-Mail-Antwort statt im Portal, dann fehlt die offizielle Freigabe im System und wir müssen nachtragen.
-```
-
----
-
-**E1-06** — Frustration und Eskalation
-```
-Was soll ich denn noch erzählen? Ich hab doch schon den ganzen Ablauf beschrieben. Ehrlich gesagt dreht sich das im Kreis, immer die gleichen Fragen nur anders formuliert. Ich hab noch andere Sachen zu tun heute. Können wir das abkürzen?
-```
-**Danach: PANIK-BUTTON drücken.**
-Erwartung: Modus wechselt auf `moderator`. Artefakt bleibt erhalten.
-
----
-
-**E1-07** — Problem beim Moderator beschreiben
-```
-Der Explorer fragt mich immer das Gleiche. Ich hab den Prozess doch schon erklärt — Reiseantrag, Belege, Prüfung, Erstattung. Und jetzt will er immer noch mehr Details, aber ich weiß nicht was genau er noch wissen will.
-```
-Erwartung: Modus bleibt `moderator`. Moderator analysiert, schickt NICHT sofort zurück.
-
----
-
-**E1-08** — Rückkehr bestätigen
-```
-Ok, also es fehlen noch Entscheidungspunkte und Variablen? Naja, das sind ja keine direkten Fragen an mich, oder? Gut, dann geben Sie mich zurück, aber sagen Sie ihm er soll auf den Punkt kommen.
-```
-Erwartung: Modus wechselt zu `exploration`.
-
----
-
-**E1-09** — Beteiligte Systeme ergänzen (Post-Eskalation)
-```
-Also nochmal zu den Systemen: SAP HR für die Verbuchung und Gehaltsabrechnung, TravelPro für die Anträge und Belegverwaltung, Outlook für Kommunikation, und dann haben wir noch eine Excel-Liste wo Frau Schmidt parallel alle Abrechnungen trackt. Die Excel ist eigentlich überflüssig seit wir TravelPro haben, aber sie vertraut dem System nicht und führt die Liste weiter. Ist ein bekanntes Problem.
-```
-Erwartung: Explorer-Antwort kürzer als vor der Eskalation.
-
----
-
-**E1-10** — Ausnahmen und Sonderfälle
-```
-Ausnahmen: Erstens der Privatwagen — manche Fahrer nehmen ihren eigenen PKW statt den Firmenwagen. Da gibt es eine Kilometerpauschale von 30 Cent pro Kilometer, die müssen ein Fahrtenbuch führen. Zweitens verlorene Belege — dann muss der Mitarbeiter einen Eigenbeleg schreiben, also quasi eine eidesstattliche Erklärung was er bezahlt hat. Der muss vom Teamleiter unterschrieben werden. Drittens stornierte Reisen — wenn eine gebuchte Reise nicht stattfindet, müssen wir die Stornokosten trotzdem abrechnen.
-```
-
----
-
-**E1-11** — Letzte Details
-```
-Was noch fehlt? Ach so: Wir sind eine Spedition in Augsburg, 85 Mitarbeiter, davon rund 30 die regelmäßig reisen. Das sind so 40 bis 50 Abrechnungen im Monat. In der Verwaltung sind wir zu dritt, Frau Schmidt macht fast nur Reisekosten. Die Tagessätze richten sich nach dem Bundesreisekostengesetz, das ist gesetzlich geregelt. Inlandsreisen: 14 Euro ab 8 Stunden, 28 Euro ab 24 Stunden. Ausland hat eigene Sätze je nach Land.
-```
-
----
-
-**E1-12** — Ende signalisieren
-```
-Ja, ich denke das war alles. Mehr kann ich dazu nicht sagen.
-```
-Erwartung: Explorer schreibt `prozesszusammenfassung` SELBST und meldet `phase_complete`.
-
-Falls KEIN phase_complete, nacheinander eingeben:
-1. `Ja das war wirklich alles, wir können zur nächsten Phase.`
-2. `Bitte schließen Sie die Exploration ab, ich habe alles gesagt.`
-3. `Exploration beenden, weiter zur Strukturierung.`
-
----
-
-**E1-13** — Phasenwechsel bestätigen
-```
-Ja, weiter zur nächsten Phase.
-```
-Erwartung: Phase wechselt zu `strukturierung`.
-
----
-
-### Zusatzfragen Phase 1 — Antworten zum Copy-Paste
-
----
-
-**Agent fragt:** *Womit möchten Sie beginnen? / Über welchen Prozess sprechen wir?*
-```
-Unsere Reisekostenabrechnung. Vom Reiseantrag bis zur Erstattung auf dem Gehaltszettel.
-40 bis 50 Abrechnungen pro Monat.
-```
-
----
-
-**Agent fragt:** *Was löst den Prozess aus?*
-```
-Ein Mitarbeiter muss auf Dienstreise. Der stellt zuerst einen Reiseantrag, entweder
-im TravelPro-Portal oder auf Papier beim Teamleiter. Ohne genehmigten Antrag keine
-Erstattung — das ist die Regel.
-```
-
----
-
-**Agent fragt:** *Was ist das Ziel des Prozesses?*
-```
-Dass der Mitarbeiter seine Auslagen fristgerecht und korrekt erstattet bekommt.
-Die Erstattung läuft über die Gehaltsabrechnung in SAP HR. Und wir brauchen
-saubere Belege für die Buchhaltung und das Finanzamt.
-```
-
----
-
-**Agent fragt:** *Können Sie den Ablauf Schritt für Schritt beschreiben?*
-```
-Reiseantrag stellen, Teamleiter genehmigt, Mitarbeiter reist, sammelt Belege,
-reicht Abrechnung ein per Portal oder Papier, Frau Schmidt prüft die Belege,
-bei Unklarheiten Rückfrage an den Mitarbeiter, wenn alles stimmt wird es in
-SAP HR verbucht und mit dem nächsten Gehalt erstattet.
-```
-
----
-
-**Agent fragt:** *Wie lange dauert der Prozess?*
-```
-Vom Einreichen bis zur Erstattung meistens 2 bis 3 Wochen. Die reine Prüfung
-dauert vielleicht eine Stunde pro Abrechnung. Aber das Warten auf fehlende
-Belege oder Genehmigungen zieht sich oft.
-```
-
----
-
-**Agent fragt:** *Welche Rollen sind beteiligt?*
-```
-Der reisende Mitarbeiter, sein Teamleiter für die Genehmigung, bei größeren
-Beträgen auch der Abteilungsleiter oder Geschäftsführer. Frau Schmidt in der
-Verwaltung prüft und verbucht. Und unsere Lohnbuchhaltung in SAP HR erstattet
-das am Monatsende über die Gehaltsabrechnung.
-```
-
----
-
-**Agent fragt:** *Was passiert wenn Belege fehlen oder falsch sind?*
-```
-Frau Schmidt schreibt eine E-Mail an den Mitarbeiter und bittet um Nachreichung.
-Der hat 2 Wochen Zeit. Wenn nichts kommt, erinnert sie nochmal. Wenn dann immer
-noch nichts kommt, wird der Posten nicht erstattet. Bei verlorenen Belegen gibt
-es die Eigenbeleg-Regelung — der Mitarbeiter schreibt auf was er bezahlt hat und
-der Teamleiter unterschreibt das. Aber nur bis 50 Euro pro Einzelposten.
-```
-
----
-
-**Agent fragt:** *Was sind die größten Probleme im Prozess?*
-```
-Erstens die Papier-Einreicher — die Hälfte nutzt TravelPro nicht, Frau Schmidt
-muss alles abtippen. Zweitens die E-Mail-Genehmiger — manche Teamleiter genehmigen
-per E-Mail statt im Portal, das ist nicht revisionssicher. Drittens die Excel-
-Parallelliste, die eigentlich überflüssig ist aber keiner traut sich sie abzuschaffen.
-Und viertens fehlende Belege, das ist ein Dauerthema.
-```
-
----
-
-**Agent fragt:** *Gibt es Fristen die eingehalten werden müssen?*
-```
-Der Mitarbeiter muss die Abrechnung innerhalb von 4 Wochen nach Reiseende
-einreichen. Die Erstattung soll spätestens mit der übernächsten Gehaltsabrechnung
-erfolgen. Die Tagessätze sind gesetzlich geregelt nach dem Bundesreisekostengesetz.
-Und für die Steuer brauchen wir alle Originalbelege.
-```
-
----
-
-**Agent fragt:** *Welche Daten werden pro Abrechnung erfasst?*
-```
-Name des Reisenden, Reiseziel, Reisezeitraum, Reisegrund, die einzelnen
-Ausgabenposten mit Betrag und Belegtyp, Tagessatz je nach Dauer und Ziel,
-Kilometergeld bei Privatwagen, und die Genehmigungsnummer vom Reiseantrag.
-```
-
----
-
-**Agent fragt:** *Gibt es Unterschiede zwischen Inland und Ausland?*
-```
-Ja, bei Auslandsreisen gelten andere Tagessätze je nach Land — die werden
-jährlich vom Finanzministerium festgelegt. Außerdem braucht eine Auslandsreise
-immer die Genehmigung vom Abteilungsleiter, egal wie hoch der Betrag ist.
-Und bei Auslandsreisen muss man die Belege auch noch umrechnen in Euro mit
-dem Tageskurs.
-```
-
----
-
-## Phase 2: STRUKTURIERUNG
-
-### Eingaben
-
-**E2-01** — Rückfrage
-```
-Und was machen wir jetzt? Muss ich nochmal alles erzählen?
-```
-Erwartung: Modus bleibt `moderator`.
-
----
-
-**E2-02** — Bestätigung
-```
-Gut, dann zeigen Sie mal was Sie daraus gemacht haben.
-```
-Erwartung: Modus wechselt zu `structuring`.
-
----
-
-**E2-03** — Genehmigungsstufen präzisieren
-```
-Bei der Genehmigung muss ich nochmal genauer werden: Inlandsreisen unter 500 Euro brauchen nur den Teamleiter. Alles über 500 Euro oder Auslandsreisen brauchen zusätzlich den Abteilungsleiter. Und ab 2000 Euro muss der Geschäftsführer auch noch drüber. Das kommt aber selten vor, meistens bei Messen oder Schulungen im Ausland.
-```
-
----
-
-**E2-04** — Rückfrage-Schleife ergänzen
-```
-Ach ja, was ich noch vergessen hab: Wenn Frau Schmidt bei der Prüfung Fehler findet — also fehlende Belege oder Beträge die nicht stimmen — dann geht die ganze Abrechnung zurück an den Mitarbeiter. Der muss nachbessern und nochmal einreichen. Das geht manchmal zwei drei Mal hin und her. Erst wenn alles stimmt wird verbucht.
-```
-
----
-
-**E2-05** — Frustration über Fachbegriffe
-```
-Moment, was meinen Sie mit Kontrollfluss und Verzweigung? Das sind doch keine normalen Wörter. Ich beschreibe hier einen Arbeitsprozess und kein Computerprogramm. Können Sie das in normalem Deutsch erklären?
-```
-**Danach: PANIK-BUTTON drücken.**
-
----
-
-**E2-06** — Problem beim Moderator
-```
-Der redet in Fachbegriffen die ich nicht verstehe. Verzweigung, Entscheidungsknoten, Iteration — das sagt mir alles nichts. Ich will einfach erklären wie unsere Reisekostenabrechnung funktioniert, mehr nicht.
-```
-Erwartung: Modus bleibt `moderator`. Artefakt unverändert.
-
----
-
-**E2-07** — Rückkehr bestätigen
-```
-Ja, nochmal probieren. Aber bitte in normaler Sprache und immer nur eine Frage auf einmal.
-```
-Erwartung: Modus wechselt zu `structuring`.
-
----
-
-**E2-08** — Spannungsfeld Excel
-```
-Was mich am meisten nervt ist die Excel-Liste. Frau Schmidt trägt jede einzelne Abrechnung nochmal in Excel ein — Datum, Name, Betrag, Status. Das ist eigentlich alles schon in TravelPro drin, aber sie sagt die Auswertungen in TravelPro sind zu umständlich. Also führt sie die Liste parallel. Das ist doppelter Aufwand und eine Fehlerquelle weil die Daten auseinanderlaufen können. Können Sie das als Problem vermerken?
-```
-
----
-
-**E2-09** — Spannungsfeld E-Mail-Genehmigung
-```
-Und das zweite Problem: Die E-Mail-Genehmigung. Herr Brenner zum Beispiel, der genehmigt grundsätzlich per E-Mail-Antwort. Dann hat Frau Schmidt zwar die Genehmigung, aber nicht im System. Sie muss dann manuell in TravelPro den Status auf genehmigt setzen und die E-Mail als Nachweis anhängen. Das ist nicht revisionssicher, der Wirtschaftsprüfer hat das schon angemahnt.
-```
-
----
-
-**E2-10** — Fertig
-```
-Ja, ich denke die Struktur passt so. Sieht gut aus was Sie da aufgebaut haben.
-```
-Falls kein phase_complete:
-1. `Ja das war wirklich alles, die Struktur ist vollständig. Bitte abschließen.`
-2. `Strukturierung abschließen, weiter zur Spezifikation.`
-
----
-
-**E2-11** — Phasenwechsel
-```
-Ja, weiter zur nächsten Phase.
-```
-
----
-
-### Zusatzfragen Phase 2 — Antworten zum Copy-Paste
-
----
-
-**Agent fragt (Moderator):** *Soll ich die Strukturierung starten?*
-```
-Ja, legen wir los.
-```
-
----
+**Falls kein phase_complete nach Schritt 12:**
+Nudges: "Ja das war wirklich alles" → "Bitte schließen Sie die Exploration ab" → "Exploration beenden, weiter zur Strukturierung"
 
-**Agent fragt:** *Können Sie die Schritte in der richtigen Reihenfolge nennen?*
-```
-Von Anfang an: Reiseantrag stellen, Genehmigung einholen, Reise durchführen,
-Belege sammeln, Abrechnung einreichen (Portal oder Papier), Frau Schmidt prüft,
-bei Fehlern Rückfrage, wenn alles ok dann SAP-Verbuchung, dann Erstattung über
-die Gehaltsabrechnung. Das ist der Normalfall.
-```
+**Eskalations-Prüfpunkte:**
+- [ ] Panik-Button → Moderator aktiv?
+- [ ] Artefakt nach Eskalation intakt?
+- [ ] Moderator analysiert (schickt nicht sofort zurück)?
+- [ ] Moderator hat Artefakt NICHT verändert?
+- [ ] Rückkehr zu exploration nach Schritt 8?
+- [ ] Explorer-Antwort kürzer nach Eskalation?
 
 ---
 
-**Agent fragt:** *Was genau passiert beim Reiseantrag?*
-```
-Der Mitarbeiter füllt im TravelPro den Antrag aus — Reiseziel, Zeitraum,
-Grund, geschätzte Kosten. Oder er füllt das Papierformular aus und gibt
-es seinem Teamleiter. Das Papierformular hat Frau Schmidt entworfen, das
-liegt im Intranet zum Ausdrucken.
-```
+### Phase 2: STRUKTURIERUNG
 
----
-
-**Agent fragt:** *Wo gibt es Ja/Nein-Entscheidungen im Prozess?*
-```
-Erstens: Portal oder Papier — wie wird eingereicht?
-Zweitens: Inland oder Ausland?
-Drittens: Betrag unter oder über 500 Euro?
-Viertens: Belege vollständig oder nicht?
-Das sind die Hauptweggabelungen.
-```
-
----
-
-**Agent fragt:** *Was passiert wenn die Genehmigung abgelehnt wird?*
-```
-Dann wird die Reise nicht genehmigt und findet nicht statt. Der Mitarbeiter
-kann einen neuen Antrag stellen mit Änderungen. Kommt selten vor, vielleicht
-zweimal im Jahr.
-```
-
----
-
-**Agent fragt:** *Gibt es Schleifen oder Wiederholungen?*
-```
-Ja, die Nachbesserungsschleife. Wenn Frau Schmidt Fehler findet, geht die
-Abrechnung zurück, der Mitarbeiter korrigiert, reicht nochmal ein, Frau Schmidt
-prüft nochmal. Das kann zwei drei Runden dauern.
-```
-
----
-
-**Agent fragt:** *Soll ich das als Problem/Spannungsfeld vermerken?*
-```
-Ja bitte. Das sind echte Probleme die wir haben — die Excel-Parallelliste
-und die informelle E-Mail-Genehmigung statt Portal.
-```
-
----
-
-**Agent fragt:** *Ist die Struktur so vollständig?*
-```
-Ja, sieht gut aus. Fällt mir nichts mehr ein.
-```
-
----
-
-## Phase 3: SPEZIFIKATION
-
-### Eingaben
-
-**E3-01** — Rückfrage
-```
-Jetzt nochmal? Was kommt denn noch? Ich hab doch wirklich schon alles erzählt.
-```
-
----
-
-**E3-02** — Bestätigung
-```
-Also nochmal genauer wie wir was am Computer machen. Ok, dann los.
-```
-
----
-
-**E3-03** — TravelPro-Antrag (FALSCH — wird in E3-06 korrigiert!)
-```
-Im TravelPro-Portal klickt der Mitarbeiter oben auf "Neue Reise". Dann kommt ein Formular mit Feldern für Reiseziel, Datum von/bis, Reisegrund und geschätzte Kosten. Das füllt er aus und klickt auf Absenden. Der Teamleiter kriegt dann eine E-Mail mit einem Link und kann im Portal genehmigen. Ach und das Formular hat auch ein Feld für die Kostenstelle, das ist wichtig für die Verbuchung.
-```
-
----
-
-**E3-04** — Belegerfassung
-```
-Wenn der Mitarbeiter zurückkommt, geht er wieder in TravelPro und öffnet seine Reise. Da gibt es einen Bereich "Belege hochladen". Er fotografiert die Quittungen mit dem Handy oder scannt sie ein und lädt die als PDF oder Bild hoch. Zu jedem Beleg gibt er den Betrag, das Datum und die Ausgabenart an — also ob das Hotel, Verpflegung, Transport oder Sonstiges war. Am Ende klickt er auf "Abrechnung einreichen".
-```
-
----
-
-**E3-05** — Prüfung durch Frau Schmidt (UNVOLLSTÄNDIG — System soll nachfragen)
-```
-Frau Schmidt öffnet TravelPro und sieht die eingereichten Abrechnungen in einer Liste. Sie klickt eine an und prüft die Belege einzeln. Wie sie genau prüft — da gibt es noch einiges zu sagen, aber fragen Sie mich gezielt was Sie wissen wollen.
-```
-Erwartung: Antwort enthält Nachfrage (Fragezeichen).
-
----
-
-**E3-06** — WIDERSPRUCH: Genehmigungsablauf korrigieren
-```
-Moment, ich muss was korrigieren. Ich hab vorhin gesagt der Teamleiter kriegt eine E-Mail mit Link. Das stimmt so nicht mehr. Seit letztem Monat gibt es im TravelPro eine Push-Benachrichtigung direkt im Portal. Der Teamleiter sieht oben rechts ein Glockensymbol mit einer Zahl, klickt drauf und sieht die offenen Genehmigungen. Die E-Mail kommt nur noch als Backup wenn er nach 2 Tagen nicht reagiert hat. Das hat unser IT-Leiter umgestellt.
-```
-Erwartung: Artefakt wird aktualisiert. "Push-Benachrichtigung"/"Glockensymbol"/"Portal" taucht auf.
-
----
-
-**E3-07** — Frustration über EMMA-Jargon
-```
-Was soll das heißen, FIND_AND_CLICK und READ_FORM? Das sind doch keine deutschen Wörter. Ich erzähl Ihnen wie wir arbeiten und Sie schreiben da irgendwelche Computerbefehle hin. Das versteh ich nicht und das will ich auch nicht verstehen. Reden Sie normal mit mir.
-```
-**Danach: PANIK-BUTTON drücken.**
-
----
-
-**E3-08** — Eskalation beim Moderator
-```
-Der stellt mir technische Fragen die ich nicht beantworten kann. Was ist ein Parameter? Und er schreibt alles in englischen Abkürzungen auf die mir nichts sagen. Ich bin Verwaltungsleiterin und keine Programmiererin.
-```
-
----
-
-**E3-09** — Rückkehr
-```
-Ok, nochmal. Aber bitte in normalen Worten, als würde er einem Kollegen erklären was am Bildschirm passiert.
-```
-
----
-
-**E3-10** — SAP-Verbuchung
-```
-Wenn alles geprüft und genehmigt ist, geht Frau Schmidt in SAP HR. Sie öffnet dort den Bereich Reisekosten und legt einen neuen Erstattungsbeleg an. Da gibt sie ein: Personalnummer des Mitarbeiters, Reisezeitraum, Gesamtbetrag, und die einzelnen Kostenarten. Die Kostenstelle übernimmt sie aus dem TravelPro-Antrag. Dann speichert sie und der Beleg wird automatisch in die nächste Gehaltsabrechnung übernommen.
-```
-
----
-
-**E3-11** — Papier-Workflow
-```
-Bei den Papier-Einreichern ist es anders: Das ausgefüllte Formular kommt per Hauspost oder der Mitarbeiter legt es in Frau Schmidts Fach. Die Belege sind drangetackert. Frau Schmidt tippt dann alles manuell in TravelPro ein — Name, Reisedaten, jeden einzelnen Beleg mit Betrag und Typ. Die Papierbelege scannt sie ein und lädt die hoch. Das dauert pro Abrechnung dreimal so lang wie wenn der Mitarbeiter es selbst im Portal gemacht hätte.
-```
-
----
-
-**E3-12** — Eigenbeleg bei fehlendem Beleg
-```
-Wenn ein Beleg fehlt, füllt der Mitarbeiter einen Eigenbeleg aus. Das ist ein Formular wo er draufschreibt was er bezahlt hat, wann und wo. Der Teamleiter muss das unterschreiben. Frau Schmidt scannt den Eigenbeleg ein und lädt ihn statt des normalen Belegs hoch. Geht aber nur bis 50 Euro pro Posten, darüber wird nicht erstattet ohne Originalbeleg.
-```
-
----
-
-**E3-13** — Fertig
-```
-Ja, das war jetzt wirklich alles. Mehr machen wir nicht bei den Reisekosten. Sind wir dann endlich fertig?
-```
-Falls kein phase_complete:
-1. `Ja das war wirklich alles, bitte Spezifikation abschließen.`
-2. `Spezifikation abschließen, weiter zur Validierung.`
-
----
+**Ziel:** Mindestens 5 Strukturschritte mit korrekten Typen, Entscheidungen mit Bedingungen und Nachfolgern.
 
-**E3-14** — Phasenwechsel
-```
-Ja, weiter zur Prüfung. Hoffentlich ist das der letzte Schritt.
-```
+**Geplante Gesprächsstrategie:**
 
----
-
-### Zusatzfragen Phase 3 — Antworten zum Copy-Paste
-
----
-
-**Agent fragt (Moderator):** *Soll ich die Spezifikation starten?*
-```
-Ja, zeigen Sie mal. Aber bitte verständlich.
-```
-
----
-
-**Agent fragt:** *Wie genau öffnet der Mitarbeiter TravelPro?*
-```
-Er geht im Browser auf travelpro.mueller-logistik.de und meldet sich mit seinem
-normalen Windows-Login an. Also Benutzername und Passwort, das wird gegen unser
-Active Directory geprüft.
-```
-
----
-
-**Agent fragt:** *Wie wählt der Mitarbeiter die Ausgabenart?*
-```
-Es gibt ein Dropdown-Menü mit den Kategorien: Hotel, Verpflegung, Transport,
-Taxi, Parkgebühren, Mietwagen, Sonstiges. Er wählt für jeden Beleg die passende
-Kategorie aus.
-```
-
----
-
-**Agent fragt:** *Wie prüft Frau Schmidt die Belege konkret?*
-```
-Sie öffnet jeden Beleg einzeln in der Vorschau und vergleicht: Stimmt der Betrag
-mit dem was eingetragen ist? Ist das Datum plausibel — liegt es im Reisezeitraum?
-Ist der Beleg lesbar und vollständig? Passt die Ausgabenart? Bei Hotels prüft sie
-auch ob der Betrag im Rahmen liegt — über 150 Euro pro Nacht braucht eine Begründung.
-```
-
----
-
-**Agent fragt:** *Wie schreibt Frau Schmidt eine Rückfrage?*
-```
-Sie klickt in TravelPro auf "Rückfrage" bei der betroffenen Abrechnung, schreibt
-rein was fehlt oder falsch ist, und das System schickt automatisch eine E-Mail
-an den Mitarbeiter mit dem Hinweis dass eine Rückfrage offen ist.
-```
-
----
-
-**Agent fragt:** *Wie funktioniert der Papier-Scan?*
-```
-Frau Schmidt hat einen Flachbettscanner am Arbeitsplatz. Sie legt die Belege
-einzeln auf, scannt als PDF, benennt die Datei nach dem Schema
-"Nachname_Datum_Belegtyp.pdf" und lädt sie in TravelPro hoch.
-```
-
----
-
-**Agent fragt:** *Was passiert bei Auslandsbelegen mit Fremdwährung?*
-```
-Der Mitarbeiter gibt den Betrag in der Originalwährung ein und TravelPro
-rechnet automatisch mit dem Tageskurs der EZB um. Frau Schmidt prüft ob
-der Kurs plausibel ist. Wenn er keinen Kurs eingibt, nimmt sie den von
-der Bundesbank-Website.
-```
-
----
-
-**Agent fragt:** *Wie wird die Kilometerpauschale berechnet?*
-```
-Der Mitarbeiter gibt Start- und Zielort ein und die gefahrenen Kilometer.
-TravelPro rechnet automatisch 30 Cent pro Kilometer. Frau Schmidt prüft
-die Kilometerzahl über Google Maps — wenn die Angabe mehr als 10% abweicht,
-fragt sie nach.
-```
-
----
-
-**Agent fragt:** *Wer hat die Berechtigung in SAP HR?*
-```
-Nur Frau Schmidt und unsere Lohnbuchhalterin Frau Klein haben Zugang zum
-Bereich Reisekosten in SAP HR. Frau Schmidt legt die Belege an, Frau Klein
-prüft am Monatsende nochmal und gibt den Zahlungslauf frei.
-```
+| Schritt | Thema | Antwort-Strategie | Erwartetes Systemverhalten |
+|---------|-------|-------------------|---------------------------|
+| 1 | Rückfrage | "Was machen wir jetzt? Muss ich nochmal alles erzählen?" | Modus bleibt `moderator`. |
+| 2 | Start bestätigen | "Gut, dann zeigen Sie mal was Sie daraus gemacht haben." | Wechsel zu `structuring`. |
+| 3 | Genehmigung präzisieren | Dreistufig nochmal genau: < 500 TL, ≥ 500/Ausland AL, ≥ 2000 GF. Selten, meist Messen. | Entscheidungsschritte werden verfeinert. |
+| 4 | Rückfrage-Schleife | Nachbesserungsschleife bei Prüfung: Abrechnung zurück, korrigieren, nochmal einreichen. 2-3 Runden. | Schleifencharakter erkannt. |
+| 5 | **ESKALATION** | Frau Weber stört sich an Fachbegriffen: "Kontrollfluss", "Verzweigung" — "Das sind keine normalen Wörter." **Danach: Panik-Button.** | Modus wechselt zu `moderator`. |
+| 6 | Eskalation beim Moderator | "Redet in Fachbegriffen. Verzweigung, Entscheidungsknoten, Iteration — sagt mir nichts." | Moderator analysiert. Artefakt unverändert. |
+| 7 | Rückkehr bestätigen | "Ja, nochmal. Aber normale Sprache und immer nur eine Frage." | Wechsel zu `structuring`. |
+| 8 | Spannungsfeld Excel | Excel-Parallelliste detailliert beschreiben. "Das nervt mich am meisten." | Spannungsfeld wird im Artefakt vermerkt. |
+| 9 | Spannungsfeld E-Mail | Herr Brenner genehmigt per E-Mail, nicht im Portal. Wirtschaftsprüfer hat angemahnt. | Zweites Spannungsfeld vermerkt. |
+| 10 | Fertig | "Ja, die Struktur passt so." | phase_complete. |
+| 11 | Phasenwechsel | "Ja, weiter zur nächsten Phase." | Phase wechselt zu `spezifikation`. |
 
 ---
 
-## Phase 4: VALIDIERUNG
+### Phase 3: SPEZIFIKATION
 
-### Eingaben
+**Ziel:** Mindestens 6 Algorithmus-Abschnitte mit EMMA-Aktionen. Widerspruch-Korrektur eingearbeitet.
 
-**E4-01** — Validierungsergebnis bestätigen
-```
-Ja, schauen wir uns das Ergebnis an. Was hat die Prüfung ergeben?
-```
-Erwartung: System zeigt Validierungsbericht mit Befunden.
+**Geplante Gesprächsstrategie:**
 
----
-
-**E4-02** — Reaktion auf Befunde
-```
-Das klingt vernünftig. Die kritischen Punkte die Sie nennen stimmen — das sind genau unsere Schwachstellen. Wenn die Hinweise nur Kosmetik sind, können wir das so lassen.
-```
-
----
-
-**E4-03** — Abschluss
-```
-Ja, das Ergebnis ist akzeptabel. Wir können das Projekt abschließen.
-```
-Erwartung: Projekt wird als `abgeschlossen` markiert. Export verfügbar.
-
-Falls Validierung nicht bestanden:
-```
-Welche kritischen Befunde gibt es noch? Was müsste ich korrigieren?
-```
-
----
-
-### Eskalation — Universelle Antworten (alle Phasen)
-
----
-
-**Agent benutzt Fachbegriffe** (Verzweigung, Kontrollfluss, Entscheidungsknoten, Iteration, Parameter...):
-```
-Reden Sie bitte Deutsch mit mir, ich bin Verwaltungsleiterin und keine
-Programmiererin. Was meinen Sie konkret in einfachen Worten?
-```
-
----
+| Schritt | Thema | Antwort-Strategie | Erwartetes Systemverhalten |
+|---------|-------|-------------------|---------------------------|
+| 1 | Rückfrage | "Jetzt nochmal? Was kommt denn noch?" (leicht genervt) | Modus bleibt `moderator`. |
+| 2 | Start bestätigen | "Also nochmal genauer wie wir was am Computer machen. Ok, dann los." | Wechsel zu `specification`. |
+| 3 | TravelPro-Antrag (**FALSCH!**) | Beschreibt Portal-Antrag. Sagt dabei FALSCH: "Teamleiter kriegt eine E-Mail mit Link." (Wird in Schritt 6 korrigiert!) | System erfasst die Beschreibung. |
+| 4 | Belegerfassung | TravelPro → "Belege hochladen" → Foto/Scan → Betrag, Datum, Ausgabenart (Dropdown) → "Abrechnung einreichen" | Algorithmus-Abschnitt für Belegerfassung. |
+| 5 | Prüfung (**UNVOLLSTÄNDIG**) | Frau Schmidt öffnet Liste, prüft Belege. Aber bewusst vage: "Da gibt es noch einiges, fragen Sie mich gezielt." | System soll nachfragen (Fragezeichen in Antwort). |
+| 6 | **WIDERSPRUCH-KORREKTUR** | "Moment, ich muss was korrigieren." Push-Benachrichtigung statt E-Mail. Glockensymbol. E-Mail nur noch Backup nach 2 Tagen. IT-Leiter hat umgestellt. | Artefakt wird aktualisiert. Push/Glockensymbol taucht auf. |
+| 7 | **ESKALATION** | Frau Weber stört sich an EMMA-Jargon: "FIND_AND_CLICK, READ_FORM — das sind keine deutschen Wörter." **Danach: Panik-Button.** | Modus wechselt zu `moderator`. |
+| 8 | Eskalation beim Moderator | "Stellt technische Fragen. Was ist ein Parameter? Schreibt englische Abkürzungen. Ich bin Verwaltungsleiterin." | Moderator analysiert. |
+| 9 | Rückkehr | "Ok, nochmal. Aber als würde er einem Kollegen erklären was am Bildschirm passiert." | Wechsel zu `specification`. |
+| 10 | SAP-Verbuchung | SAP HR → Reisekosten → neuer Erstattungsbeleg → Personalnummer, Zeitraum, Betrag, Kostenarten, Kostenstelle → Speichern → automatisch in Gehaltsabrechnung. | Algorithmus-Abschnitt für SAP. |
+| 11 | Papier-Workflow | Hauspost/Fach, Frau Schmidt tippt alles in TravelPro, scannt Belege, 3x so lang. | Algorithmus-Abschnitt für Papier. |
+| 12 | Eigenbeleg | Formular, was/wann/wo, TL-Unterschrift, Scan, max 50€. | Algorithmus-Abschnitt für Eigenbeleg. |
+| 13 | Fertig | "Das war wirklich alles. Sind wir endlich fertig?" | phase_complete. |
+| 14 | Phasenwechsel | "Ja, weiter zur Prüfung. Hoffentlich der letzte Schritt." | Phase wechselt zu `validierung`. |
 
-**Agent benutzt EMMA-Aktionstypen direkt** (READ, FIND, TYPE, FILE_OPERATION...):
-```
-Diese technischen Kürzel sagen mir nichts. Erklären Sie mir in normalen Worten
-was das System tun soll, dann kann ich Ihnen sagen ob das so stimmt.
-```
+**Kritische Prüfpunkte Phase 3:**
+- [ ] Bei Schritt 5: System fragt nach bei unvollständiger Info?
+- [ ] Bei Schritt 6: Widerspruch-Korrektur eingearbeitet? (Push-Benachrichtigung/Glockensymbol statt E-Mail)
+- [ ] Nach Eskalation: System vermeidet EMMA-Jargon oder erklärt ihn?
 
 ---
 
-**Agent (Moderator) fragt nach dem Problem:**
-```
-Der Modus redet in Fachbegriffen die ich nicht verstehe. Ich will einfach meinen
-Prozess erklären, kein Informatik-Studium machen.
-```
+### Phase 4: VALIDIERUNG
 
----
-
-**Agent (Moderator) fragt ob zurück zur vorherigen Phase:**
-```
-Ja, aber sagen Sie ihm er soll normale Wörter benutzen und immer nur eine Sache
-auf einmal fragen.
-```
-
----
-
-**Agent (Moderator) fasst zusammen was noch fehlt:**
-```
-Ok, dann sagen Sie ihm er soll das holen was fehlt, aber kurz und bündig.
-```
-
----
+**Ziel:** Validierungsbericht angezeigt, Projekt abgeschlossen.
 
-**Agent (Moderator) fragt ob bereit zurückzugehen:**
-```
-Ja, los.
-```
+| Schritt | Thema | Antwort-Strategie | Erwartetes Systemverhalten |
+|---------|-------|-------------------|---------------------------|
+| 1 | Ergebnis ansehen | "Ja, was hat die Prüfung ergeben?" | Validierungsbericht mit Befunden. |
+| 2 | Reaktion auf Befunde | "Klingt vernünftig. Die kritischen Punkte stimmen." | System nimmt Feedback entgegen. |
+| 3 | Abschluss | "Ergebnis ist akzeptabel. Projekt abschließen." | Projekt wird als `abgeschlossen` markiert. Export verfügbar. |
 
 ---
 
-**Agent fragt etwas Technisches das Sie nicht wissen:**
-```
-Das weiß ich nicht genau, das würde ich normalerweise unsere IT fragen.
-Können wir das erstmal offen lassen?
-```
+## Universelle Reaktionen (alle Phasen)
 
----
-
-**Agent wiederholt eine Frage die schon beantwortet wurde:**
-```
-Das hab ich doch schon gesagt. Können wir weitermachen?
-```
-
----
+Diese Reaktionsmuster wendet Frau Weber an, unabhängig von der Phase:
 
-**Agent meldet kein phase_complete und Sie wollen abschließen:**
-```
-Ich hab alles gesagt was ich weiß. Bitte schließen Sie diese Phase ab
-und gehen wir weiter.
-```
+| Situation | Frau Webers Reaktion |
+|-----------|---------------------|
+| Agent benutzt Fachbegriffe (Verzweigung, Kontrollfluss, Iteration, Parameter) | "Reden Sie bitte Deutsch mit mir, ich bin Verwaltungsleiterin und keine Programmiererin." |
+| Agent benutzt EMMA-Aktionstypen (READ, FIND, TYPE, FILE_OPERATION) | "Diese technischen Kürzel sagen mir nichts. Erklären Sie in normalen Worten." |
+| Agent wiederholt eine schon beantwortete Frage | "Das hab ich doch schon gesagt. Können wir weitermachen?" |
+| Agent fragt etwas Technisches das Frau Weber nicht weiß | "Das weiß ich nicht genau, da müsste ich unsere IT fragen. Können wir das erstmal offen lassen?" |
+| Agent antwortet auf Englisch | "Bitte auf Deutsch antworten." |
+| Phase will nicht enden nach mehreren Versuchen | "Ich hab alles gesagt was ich weiß. Bitte schließen Sie diese Phase ab." |
 
----
-
-**Agent antwortet auf Englisch:**
-```
-Bitte auf Deutsch antworten.
-```
-
----
 ---
 
 # TEIL B — ZIEL-ARTEFAKTE (Soll-Zustand)
@@ -923,7 +457,6 @@ PowerShell, SharePoint, REST API, SQL, XML, VBA, Python, JavaScript,
 SAP Concur, automatische Belegerkennung
 
 ---
----
 
 # TEIL C — TESTBERICHT (Vorlage)
 
@@ -944,8 +477,8 @@ Projekt-ID: _______________
 
 | Schritt | Eingabe | Erwartung | Ergebnis | OK? |
 |---------|---------|-----------|----------|-----|
-| E1-01 | Rückfrage | Modus bleibt moderator | | |
-| E1-02 | Bestätigung | Wechsel zu exploration | | |
+| 1 | Vorfrage | Modus bleibt moderator | | |
+| 2 | Start bestätigen | Wechsel zu exploration | | |
 
 ### Eskalation
 
@@ -955,7 +488,7 @@ Projekt-ID: _______________
 | Artefakt nach Eskalation intakt? | | |
 | Moderator analysiert (nicht sofort zurück)? | | |
 | Moderator hat Artefakt NICHT verändert? | | |
-| Rückkehr zu exploration nach E1-08? | | |
+| Rückkehr zu exploration nach Schritt 8? | | |
 | Explorer-Antwort kürzer nach Eskalation? | | |
 
 ### Artefakt-Vergleich (nach Phase 1)
@@ -981,8 +514,8 @@ Halluzinationen gefunden? ______
 
 | Schritt | Erwartung | Ergebnis | OK? |
 |---------|-----------|----------|-----|
-| E2-01 | Modus bleibt moderator | | |
-| E2-02 | Wechsel zu structuring | | |
+| 1 | Modus bleibt moderator | | |
+| 2 | Wechsel zu structuring | | |
 
 ### Eskalation
 
@@ -991,7 +524,7 @@ Halluzinationen gefunden? ______
 | Panik-Button → Moderator aktiv? | | |
 | Artefakt nach Eskalation intakt? | | |
 | Moderator hat Artefakt NICHT verändert? | | |
-| Rückkehr zu structuring nach E2-07? | | |
+| Rückkehr zu structuring nach Schritt 7? | | |
 
 ### Artefakt-Vergleich (nach Phase 2)
 
@@ -1024,8 +557,8 @@ Exploration-Artefakt weiterhin intakt? ______
 
 | Schritt | Erwartung | Ergebnis | OK? |
 |---------|-----------|----------|-----|
-| E3-01 | Modus bleibt moderator | | |
-| E3-02 | Wechsel zu specification | | |
+| 1 | Modus bleibt moderator | | |
+| 2 | Wechsel zu specification | | |
 
 ### Eskalation
 
@@ -1034,14 +567,14 @@ Exploration-Artefakt weiterhin intakt? ______
 | Panik-Button → Moderator aktiv? | | |
 | Artefakt nach Eskalation intakt? | | |
 | Moderator hat Artefakt NICHT verändert? | | |
-| Rückkehr zu specification nach E3-09? | | |
+| Rückkehr zu specification nach Schritt 9? | | |
 
 ### Spezielle Prüfpunkte
 
 | Prüfpunkt | Ergebnis | OK? |
 |-----------|----------|-----|
-| E3-05: System fragt nach bei unvollst. Info? | | |
-| E3-06: Widerspruch-Korrektur eingearbeitet? | | |
+| Schritt 5: System fragt nach bei unvollst. Info? | | |
+| Schritt 6: Widerspruch-Korrektur eingearbeitet? | | |
 | Korrektur-Keywords vorhanden? (Push-Benachrichtigung/Glockensymbol/Portal) | | |
 
 ### Artefakt-Vergleich (nach Phase 3)
@@ -1116,7 +649,7 @@ nicht helfen, ist das ein Befund (im Bericht unter "Bemerkungen" notieren).
 Befund notieren. Das System soll auf Deutsch kommunizieren (FR-A-08).
 
 ### Wenn das System EMMA-Begriffe benutzt ohne sie zu erklären
-Das ist der Testfall. In Phase 3 (E3-07) wird genau das als Problem
+Das ist der Testfall. In Phase 3 (Schritt 7) wird genau das als Problem
 eskaliert. Nach der Eskalation sollte das System verständlicher werden.
 
 ### Init-Progress-Feedback (CR-007)
