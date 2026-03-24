@@ -83,87 +83,375 @@ python scripts/validate_e2e_artifacts.py <projekt_id>  # prüft ein bestimmtes P
 
 ## Prozesswissen: Reisekostenabrechnung
 
+> **Hinweis:** Dieses Prozesswissen ist die **vollständige Ground Truth** auf RPA-Niveau.
+> Frau Weber kennt all diese Details implizit, gibt sie aber nicht von sich aus strukturiert preis.
+> Der Specifier muss sie durch gezielte Fragen herauskitzeln.
+> Die Ziel-Artefakte (Teil B) werden gegen dieses Wissen verglichen.
+
 ### Überblick
 ~40-50 Abrechnungen pro Monat. Vom Reiseantrag bis zur Erstattung auf dem Gehaltszettel.
+Müller Logistik GmbH, Spedition in Augsburg, 85 Mitarbeiter, davon ~30 regelmäßig auf Dienstreise.
+Verwaltungsteam: 3 Personen (Frau Weber = Teamleiterin, Frau Schmidt = Sachbearbeiterin Reisekosten, eine weitere Kollegin).
 
-### Systeme
-| System | Funktion |
-|--------|----------|
-| **TravelPro** | Neues Reiseportal (seit ~6 Monaten). Anträge, Belegverwaltung, Genehmigung. Nur ~50% nutzen es. URL: travelpro.mueller-logistik.de, Login über Active Directory. |
-| **SAP HR** | Verbuchung der Erstattung, Gehaltsabrechnung. Zugang nur Frau Schmidt + Frau Klein (Lohnbuchhaltung). |
-| **Outlook** | Kommunikation, Rückfragen, Backup-Benachrichtigungen. |
-| **Excel** | Parallelliste von Frau Schmidt (Datum, Name, Betrag, Status). Redundant zu TravelPro, aber Frau Schmidt vertraut den TravelPro-Auswertungen nicht. |
-| **Scanner** | Flachbettscanner bei Frau Schmidt. Belege einzeln scannen, benennen nach "Nachname_Datum_Belegtyp.pdf". |
+### Systeme — Übersicht
 
-### Prozessablauf (Normalfall)
+| System | Zugang | Wer nutzt es | Funktion |
+|--------|--------|-------------|----------|
+| **TravelPro** | Browser: travelpro.mueller-logistik.de | Mitarbeiter, Teamleiter, Frau Schmidt | Reiseportal: Anträge, Belege, Genehmigungen, Status |
+| **SAP HR** | SAP GUI (Desktop-Client, Icon auf Desktop) | Nur Frau Schmidt + Frau Klein | Erstattungsbelege, Gehaltsabrechnung |
+| **Outlook** | Desktop-Client | Alle | E-Mail-Kommunikation, Rückfragen, Backup-Benachrichtigungen |
+| **Excel** | Lokale Datei auf Netzlaufwerk | Frau Schmidt | Parallelliste (redundant zu TravelPro) |
+| **Scanner** | Flachbettscanner am Arbeitsplatz Frau Schmidt | Frau Schmidt | Papierbelege digitalisieren |
+| **Intranet** | Browser: intranet.mueller-logistik.de | Alle | Formulare zum Download |
 
-1. **Reiseantrag stellen**
-   - TravelPro: "Neue Reise" klicken → Formular (Reiseziel, Datum von/bis, Reisegrund, geschätzte Kosten, Kostenstelle) → Absenden
-   - Papier: Formular ausdrucken (liegt im Intranet), ausfüllen, Teamleiter vorlegen
+---
 
-2. **Genehmigung** (dreistufig)
-   - Inland < 500€: nur Teamleiter
-   - Inland ≥ 500€ oder Ausland: Teamleiter + Abteilungsleiter
-   - Ab 2.000€: zusätzlich Geschäftsführer (selten, meist Messen/Schulungen)
-   - **NEU (seit letztem Monat):** Push-Benachrichtigung im Portal (Glockensymbol oben rechts). E-Mail nur noch als Backup nach 2 Tagen ohne Reaktion.
-   - **Problem:** Herr Brenner genehmigt grundsätzlich per E-Mail statt im Portal → nicht revisionssicher, Wirtschaftsprüfer hat das angemahnt
+### Prozessschritt 1: Reiseantrag stellen
 
-3. **Reise durchführen, Belege sammeln**
+#### Variante A: TravelPro-Portal (Soll-Weg)
 
-4. **Abrechnung einreichen**
-   - TravelPro: Reise öffnen → "Belege hochladen" → Foto/Scan als PDF/Bild → Betrag, Datum, Ausgabenart (Dropdown: Hotel, Verpflegung, Transport, Taxi, Parkgebühren, Mietwagen, Sonstiges) → "Abrechnung einreichen"
-   - Papier: Formular + angetackerte Belege per Hauspost oder in Frau Schmidts Fach
+1. Mitarbeiter öffnet Browser → Adressleiste: `travelpro.mueller-logistik.de`
+2. **Login-Maske:** Feld "Benutzername" (= Windows-Login, z.B. `m.mueller`), Feld "Passwort". Wird gegen Active Directory geprüft. Button "Anmelden" unterhalb.
+3. Nach Login: **Dashboard** erscheint. Oben Menüleiste mit Tabs: "Meine Reisen", "Neue Reise", "Belege", "Status".
+4. Klick auf Tab **"Neue Reise"** in der oberen Menüleiste.
+5. **Antragsformular** öffnet sich mit folgenden Feldern:
+   - "Reiseziel" — Freitextfeld (z.B. "München, Messe")
+   - "Von" — Datumsfeld mit Datepicker (Kalender-Icon rechts)
+   - "Bis" — Datumsfeld mit Datepicker
+   - "Reisegrund" — Dropdown: "Kundenbesuch", "Messe/Konferenz", "Schulung", "Projektarbeit", "Sonstiges"
+   - "Geschätzte Kosten" — Zahlenfeld in Euro
+   - "Kostenstelle" — Dropdown, vorbelegt mit der Kostenstelle der eigenen Abteilung, änderbar
+   - "Transportmittel" — Dropdown: "Firmenwagen", "Bahn", "Flug", "Privatwagen", "Mietwagen"
+   - "Bemerkungen" — optionales Freitextfeld
+6. Button **"Absenden"** unten rechts. Danach Bestätigungsmeldung: "Ihr Reiseantrag wurde eingereicht."
+7. Status im Dashboard wechselt auf "Beantragt" (gelbes Label).
 
-5. **Prüfung durch Frau Schmidt**
-   - Öffnet TravelPro, sieht eingereichte Abrechnungen in Liste
-   - Prüft jeden Beleg einzeln: Betrag stimmt? Datum im Reisezeitraum? Beleg lesbar? Ausgabenart korrekt? Hotel > 150€/Nacht braucht Begründung
-   - Bei Fehlern: "Rückfrage"-Button in TravelPro → automatische E-Mail an Mitarbeiter
-   - Mitarbeiter hat 2 Wochen zur Nachreichung, danach Erinnerung, dann Streichung des Postens
-   - **Nachbesserungsschleife:** Abrechnung geht zurück, Mitarbeiter korrigiert, reicht neu ein — kann 2-3 Runden dauern
+#### Variante B: Papierformular (Alt-Weg, ~50% der Mitarbeiter)
 
-6. **Papier-Workflow** (bei ~50% der Einreicher)
-   - Frau Schmidt tippt alles manuell in TravelPro: Name, Reisedaten, jeden Beleg
-   - Papierbelege scannen und hochladen
-   - Dauert 3x so lang wie Portal-Einreichung
+1. Mitarbeiter öffnet Browser → `intranet.mueller-logistik.de`
+2. Navigiert zu: Bereich "Formulare" → "Personal" → "Reiseantrag"
+3. **PDF-Formular** wird heruntergeladen/geöffnet: "Reiseantrag_Vorlage.pdf"
+4. Formular enthält Felder (handschriftlich auszufüllen):
+   - Name, Personalnummer, Abteilung
+   - Reiseziel, Reisezeitraum (von/bis)
+   - Reisegrund (Freitext)
+   - Geschätzte Kosten
+   - Kostenstelle
+   - Transportmittel
+   - Unterschrift Antragsteller, Datum
+   - Unterschrift Genehmiger (leer, wird vom Teamleiter ausgefüllt)
+5. Mitarbeiter druckt aus, füllt aus, legt es dem Teamleiter auf den Schreibtisch oder ins Fach.
+6. Teamleiter unterschreibt (oder lehnt ab mit Vermerk).
+7. Genehmigtes Formular landet in Frau Schmidts Postfach/Ablage.
 
-7. **SAP-Verbuchung**
-   - Frau Schmidt öffnet SAP HR → Bereich Reisekosten → neuer Erstattungsbeleg
-   - Eingabe: Personalnummer, Reisezeitraum, Gesamtbetrag, Kostenarten, Kostenstelle (aus TravelPro)
-   - Beleg wird automatisch in nächste Gehaltsabrechnung übernommen
-   - Frau Klein (Lohnbuchhaltung) prüft am Monatsende und gibt Zahlungslauf frei
+---
 
-8. **Erstattung über Gehaltsabrechnung**
+### Prozessschritt 2: Genehmigung
+
+#### Genehmigungsstufen (Regelwerk)
+
+| Bedingung | Genehmiger | Ablauf |
+|-----------|-----------|--------|
+| Inland, < 500€ | Teamleiter | Nur 1 Genehmigung nötig |
+| Inland, ≥ 500€ | Teamleiter + Abteilungsleiter | Sequenziell: TL zuerst, dann AL |
+| Ausland (egal welcher Betrag) | Teamleiter + Abteilungsleiter | Wie ≥ 500€ |
+| Ab 2.000€ (Inland oder Ausland) | Teamleiter + Abteilungsleiter + Geschäftsführer | Selten, meist Messen/Schulungen im Ausland |
+
+#### Genehmigung im TravelPro-Portal (UI-Detail)
+
+1. **NEU (seit letztem Monat):** Teamleiter sieht oben rechts im Portal ein **Glockensymbol** (🔔) mit roter Zahl = Anzahl offener Genehmigungen.
+2. Klick auf Glockensymbol → **Dropdown-Liste** mit offenen Anträgen: "Reiseantrag von [Name] — [Ziel] — [Datum]"
+3. Klick auf einen Antrag → **Detailansicht** mit allen Antragsfeldern (read-only).
+4. Unten zwei Buttons: **"Genehmigen"** (grün) und **"Ablehnen"** (rot).
+5. Bei "Genehmigen": Bestätigungsdialog "Antrag genehmigen?", Button "Ja".
+6. Bei "Ablehnen": Pflicht-Textfeld "Ablehnungsgrund" erscheint, dann Button "Ablehnung senden".
+7. Nach Genehmigung: Status wechselt auf "Genehmigt" (grünes Label). Bei mehrstufiger Genehmigung: Status "Teilgenehmigt" bis alle Stufen durch.
+8. **E-Mail-Backup:** Wenn Teamleiter nach 2 Tagen nicht reagiert, schickt TravelPro automatisch eine E-Mail: "Sie haben einen offenen Reiseantrag von [Name]. Bitte genehmigen Sie im Portal." Mit Link zum Antrag.
+
+#### Problem: Informelle E-Mail-Genehmigung
+
+- **Herr Brenner** (ein Teamleiter) genehmigt grundsätzlich per E-Mail-Antwort an den Mitarbeiter ("Ist genehmigt, fahr los") statt im Portal zu klicken.
+- Frau Schmidt muss dann manuell in TravelPro den Status von "Beantragt" auf "Genehmigt" umstellen:
+  1. TravelPro → Tab "Meine Reisen" (Frau Schmidt hat Admin-Ansicht: sieht alle) → Antrag suchen
+  2. Antrag öffnen → Button "Status ändern" → Dropdown auf "Genehmigt" setzen
+  3. Im Feld "Bemerkungen" trägt sie ein: "Genehmigung per E-Mail, siehe Anhang"
+  4. E-Mail von Herr Brenner wird als PDF gespeichert und unter "Dokumente" hochgeladen
+- **Problem:** Nicht revisionssicher. Wirtschaftsprüfer hat das im letzten Audit angemahnt. "Ein E-Mail-Anhang ist kein rechtsverbindlicher Genehmigungsnachweis."
+
+#### Ablehnung
+
+- Selten (ca. 2x pro Jahr).
+- Mitarbeiter bekommt Benachrichtigung im Portal + E-Mail mit Ablehnungsgrund.
+- Kann neuen Antrag mit Änderungen stellen.
+
+---
+
+### Prozessschritt 3: Reise durchführen, Belege sammeln
+
+- Mitarbeiter ist unterwegs, sammelt Quittungen, Hotelrechnungen, Tankbelege, Taxiquittungen.
+- **Tipp von Frau Weber an neue Mitarbeiter:** "Fotografieren Sie jeden Beleg sofort mit dem Handy, Papier geht zu leicht verloren."
+- Belege müssen enthalten: Datum, Betrag, MwSt.-Ausweis (bei Beträgen > 250€ Pflicht), Leistungsbeschreibung.
+
+---
+
+### Prozessschritt 4: Abrechnung einreichen
+
+#### Variante A: TravelPro-Portal
+
+1. Mitarbeiter loggt sich ein (wie bei Schritt 1).
+2. Tab **"Meine Reisen"** → Liste der eigenen Reisen mit Status ("Genehmigt", "In Bearbeitung", etc.)
+3. Klick auf die genehmigte Reise → **Reise-Detailseite** öffnet sich.
+4. Bereich **"Belege"** auf der Detailseite, darunter Button **"Beleg hinzufügen"**.
+5. Klick auf "Beleg hinzufügen" → **Upload-Dialog**:
+   - **"Datei auswählen"** — Button öffnet Datei-Explorer. Akzeptiert: PDF, JPG, PNG. Max. 10 MB.
+   - **"Betrag"** — Zahlenfeld (Dezimal mit Komma, z.B. "87,50")
+   - **"Währung"** — Dropdown, vorbelegt "EUR". Bei Ausland: "USD", "GBP", "CHF", etc. TravelPro rechnet automatisch mit EZB-Tageskurs um.
+   - **"Datum"** — Datumsfeld mit Datepicker. Muss im Reisezeitraum liegen.
+   - **"Ausgabenart"** — Dropdown: "Hotel", "Verpflegung", "Transport/Bahn", "Taxi", "Parkgebühren", "Mietwagen", "Tankbeleg", "Sonstiges"
+   - **"Bemerkungen"** — optionales Freitextfeld
+6. Button **"Beleg speichern"**. Beleg erscheint in der Liste auf der Detailseite mit Vorschau-Thumbnail.
+7. Schritte 5-6 wiederholen für jeden Beleg.
+8. **Sonderfall Privatwagen:** Zusätzliches Formular auf der Detailseite: "Kilometerabrechnung"
+   - "Startort" — Freitextfeld
+   - "Zielort" — Freitextfeld
+   - "Gefahrene Kilometer" — Zahlenfeld
+   - TravelPro berechnet automatisch: Kilometer × 0,30€ = Erstattungsbetrag (wird angezeigt)
+   - "Fahrtenbuch-Scan hochladen" — Upload-Feld (PDF)
+9. Wenn alle Belege erfasst: Button **"Abrechnung einreichen"** ganz unten auf der Detailseite.
+10. Bestätigungsmeldung: "Ihre Abrechnung wurde zur Prüfung eingereicht."
+11. Status wechselt auf "Eingereicht" (blaues Label).
+
+#### Variante B: Papier-Einreichung
+
+1. Mitarbeiter füllt **Abrechnungsformular** aus (separates Formular, auch aus Intranet → "Formulare" → "Personal" → "Reisekostenabrechnung"):
+   - Name, Personalnummer, Reisezeitraum
+   - Tabelle: Zeile pro Ausgabe (Datum, Art, Betrag, Bemerkung)
+   - Summe unten
+   - Unterschrift
+2. Tackert Originalbelege an das Formular.
+3. Legt alles in **Frau Schmidts Postfach** (physisches Ablage-Fach im Büro, beschriftet "Reisekosten") oder schickt es per **Hauspost** (interne Postverteilung der Firma, kommt 1x täglich).
+
+---
+
+### Prozessschritt 5: Prüfung durch Frau Schmidt
+
+#### Im TravelPro-Portal
+
+1. Frau Schmidt loggt sich ein. Hat **Admin-Ansicht** (sieht alle Abrechnungen, nicht nur eigene).
+2. Tab **"Prüfung"** → Liste aller eingereichten Abrechnungen, sortiert nach Eingangsdatum.
+3. Spalten der Liste: "Name", "Reiseziel", "Zeitraum", "Betrag", "Eingereicht am", "Status".
+4. Klick auf eine Abrechnung → **Prüfansicht** mit:
+   - **Oberer Bereich:** Reisedaten (Ziel, Zeitraum, Grund, Genehmigungsstatus)
+   - **Mittlerer Bereich:** Belegliste mit Vorschau. Klick auf Beleg → Großansicht (Lightbox).
+   - **Unterer Bereich:** Summen und Tagessätze (automatisch berechnet)
+
+#### Prüflogik (Schritt für Schritt pro Beleg)
+
+1. Frau Schmidt klickt auf einen Beleg in der Liste → **Vorschau/Lightbox** öffnet sich.
+2. Prüft visuell:
+   - **Betrag:** Stimmt der eingetragene Betrag mit dem auf dem Beleg überein?
+   - **Datum:** Liegt das Belegdatum im Reisezeitraum?
+   - **Lesbarkeit:** Ist der Beleg/Scan lesbar? Nicht abgeschnitten, nicht verwaschen?
+   - **Ausgabenart:** Passt die gewählte Kategorie zum Beleg? (z.B. Tankquittung ≠ "Hotel")
+   - **Plausibilität Hotel:** Übernachtung > 150€/Nacht? → Begründung erforderlich (Feld "Bemerkungen" beim Beleg prüfen)
+   - **MwSt.-Ausweis:** Bei Beträgen > 250€: Ist MwSt. auf dem Beleg ausgewiesen?
+3. Neben jedem Beleg: Checkbox **"Geprüft"** und Ampelsymbol (grün/gelb/rot).
+4. Frau Schmidt setzt Ampel auf:
+   - **Grün:** Beleg ok
+   - **Gelb:** Kleinigkeit fehlt (z.B. Bemerkung bei teurem Hotel)
+   - **Rot:** Beleg nicht akzeptabel (unleserlich, fehlt, Betrag stimmt nicht)
+
+#### Bei Fehlern: Rückfrage
+
+1. Button **"Rückfrage"** auf der Prüfansicht (neben dem fehlerhaften Beleg ODER oben für die ganze Abrechnung).
+2. **Rückfrage-Dialog** öffnet sich:
+   - Textfeld "Was fehlt / was stimmt nicht?" — Frau Schmidt tippt rein, z.B. "Hotelbeleg vom 15.03. fehlt. Bitte nachreichen."
+   - Checkbox "Abrechnung zurückstellen" (Status wird auf "Rückfrage offen" gesetzt)
+   - Button "Rückfrage senden"
+3. TravelPro schickt automatisch **E-Mail an den Mitarbeiter**: Betreff "Rückfrage zu Ihrer Reisekostenabrechnung [Reiseziel, Datum]", mit dem Rückfrage-Text und Link zur Abrechnung im Portal.
+4. Status im Portal wechselt auf **"Rückfrage offen"** (oranges Label).
+5. **Frist:** Mitarbeiter hat 2 Wochen. Wenn nichts kommt → TravelPro schickt automatische Erinnerung. Wenn dann immer noch nichts kommt → Frau Schmidt streicht den Posten manuell (Button "Posten streichen" → Betrag wird auf 0 gesetzt, Vermerk "Nicht nachgereicht").
+
+#### Nachbesserungsschleife
+
+- Mitarbeiter korrigiert/ergänzt im Portal (neuen Beleg hochladen oder Betrag ändern) → Klickt "Erneut einreichen".
+- Status wechselt zurück auf "Eingereicht".
+- Frau Schmidt prüft erneut.
+- Kann 2-3 Runden dauern. Danach akzeptiert Frau Schmidt oder streicht den Posten.
+
+#### Finale Freigabe
+
+- Wenn alle Belege grün: Button **"Abrechnung freigeben"** oben auf der Prüfansicht.
+- Status wechselt auf **"Freigegeben"** (grünes Label).
+- Abrechnung erscheint auf Frau Schmidts **SAP-Warteliste** (eigene Excel-Zeile + Markierung in TravelPro).
+
+---
+
+### Prozessschritt 6: Papier-Workflow (Erfassung durch Frau Schmidt)
+
+> Dieser Schritt entfällt bei Portal-Einreichern. Betrifft ~50% der Abrechnungen.
+
+1. Frau Schmidt nimmt Papierformular + Belege aus ihrem Postfach.
+2. Öffnet TravelPro → Tab "Prüfung" → Button **"Neue Abrechnung erfassen"** (Admin-Funktion).
+3. **Erfassungsformular** (ähnlich wie Mitarbeiter-Formular, aber Frau Schmidt füllt stellvertretend aus):
+   - "Mitarbeiter" — Dropdown/Suchfeld mit allen Mitarbeitern (tippt Name, Autocomplete)
+   - "Reise auswählen" — Dropdown mit genehmigten Reisen dieses Mitarbeiters
+   - Falls keine Reise im System (Papierantrag): Button "Reise manuell anlegen" → Mini-Formular (Ziel, Zeitraum, Grund, Kostenstelle)
+4. Dann pro Beleg:
+   - Frau Schmidt legt Papierbeleg auf den **Flachbettscanner** (Canon CanoScan, steht rechts auf ihrem Schreibtisch).
+   - Scannt als PDF (Taste am Scanner oder über Canon-Software auf dem PC).
+   - Benennt die Datei: **"Nachname_Datum_Belegtyp.pdf"** (z.B. "Mueller_20260315_Hotel.pdf").
+   - Speichert auf Netzlaufwerk: `S:\Verwaltung\Reisekosten\Scans\2026\`
+   - Zurück in TravelPro: "Beleg hinzufügen" → Datei auswählen → Betrag, Datum, Ausgabenart eintragen (liest sie vom Papierbeleg ab) → "Beleg speichern"
+5. Wiederholen für jeden Beleg. **Dauert ca. 15-20 Minuten pro Abrechnung** (vs. 5 Minuten bei Portal-Einreichung).
+6. Wenn alle Belege erfasst: direkt weiter mit Prüfung (Schritt 5) — Frau Schmidt prüft ihre eigene Erfassung nochmal gegen die Papierbelege.
+7. Papierbelege kommen in einen **Ordner** ("Reisekosten 2026"), sortiert nach Monat, im Aktenschrank im Büro. Aufbewahrungsfrist: 10 Jahre (steuerlich).
+
+---
+
+### Prozessschritt 7: SAP-Verbuchung
+
+1. Frau Schmidt öffnet **SAP GUI** (Desktop-Verknüpfung "SAP Logon" auf dem Desktop).
+2. SAP Logon → System "PRD" (Produktivsystem) auswählen → Doppelklick.
+3. **SAP-Anmeldebildschirm:** Mandant "100", Benutzer "FSCHMIDT", Passwort → Enter.
+4. **SAP Easy Access** Startbildschirm erscheint. Transaktionscode-Feld oben links.
+5. Frau Schmidt gibt Transaktion **"PR05"** ein (Reisekosten) → Enter.
+6. Alternativ: Menüpfad "Personal" → "Personaladministration" → "Reisekosten" → "Erstattungsbeleg anlegen".
+7. **Erstattungsbeleg-Maske** erscheint:
+   - **"Personalnummer"** — 8-stellig, z.B. "00012345". Frau Schmidt schaut die in TravelPro nach (Mitarbeiterprofil) oder in ihrer Excel-Liste.
+   - **"Reisezeitraum"** — Feld "Von" und "Bis" (Datumsformat TT.MM.JJJJ)
+   - **"Reiseart"** — Dropdown: "Inland", "Ausland"
+   - Tab **"Kostenübersicht"**: Tabelle mit Zeilen pro Kostenart:
+     - "Kostenart" — Dropdown: "Übernachtung", "Verpflegung", "Fahrtkosten", "Nebenkosten"
+     - "Betrag" — Zahlenfeld
+     - "Kostenstelle" — wird aus TravelPro übernommen (Frau Schmidt tippt die 6-stellige Nummer ab)
+   - Tab **"Tagessätze"**: Automatisch berechnet nach Reiseart + Dauer. Frau Schmidt prüft nur.
+   - **"Gesamtbetrag"** — wird automatisch summiert, read-only.
+8. Button **"Prüfen"** (oben in der Toolbar, Häkchen-Symbol) → SAP validiert die Eingaben.
+9. Bei Fehler: SAP zeigt rote Meldung unten im Statusbalken (z.B. "Kostenstelle ungültig").
+10. Button **"Sichern"** (Disketten-Symbol) → Belegnummer wird vergeben (z.B. "5000012345").
+11. Frau Schmidt notiert die **SAP-Belegnummer** in TravelPro: Abrechnung öffnen → Feld "SAP-Referenz" → Belegnummer eintragen → Speichern.
+12. Status in TravelPro wechselt auf **"Verbucht"** (dunkelgrünes Label).
+
+---
+
+### Prozessschritt 8: Zahlungslauf & Erstattung
+
+1. **Frau Klein** (Lohnbuchhaltung) öffnet SAP HR am Monatsende.
+2. Transaktion **"PC00_M99_CIPE"** (Gehaltsabrechnung) oder spezifisch den Reisekosten-Zahlungslauf.
+3. Prüft alle offenen Erstattungsbelege → Stichproben auf Plausibilität.
+4. Gibt den **Zahlungslauf frei** (Button "Freigabe" im SAP).
+5. Erstattung erscheint auf dem **Gehaltszettel** des Mitarbeiters als separate Position "Reisekostenerstattung".
+6. Auszahlung mit dem nächsten regulären Gehaltslauf (spätestens übernächste Gehaltsabrechnung).
+
+---
+
+### Prozessschritt 9: Excel-Parallelliste (Frau Schmidt)
+
+> Dieses Spannungsfeld läuft parallel zu den Schritten 5-7.
+
+1. Frau Schmidt öffnet Excel-Datei: `S:\Verwaltung\Reisekosten\Reisekosten_Tracking_2026.xlsx`
+2. **Tabellenblatt** des aktuellen Monats (z.B. "März 2026").
+3. Spalten:
+   - A: "Lfd. Nr." (fortlaufend)
+   - B: "Name"
+   - C: "Personalnummer"
+   - D: "Reiseziel"
+   - E: "Zeitraum"
+   - F: "Betrag"
+   - G: "Eingereicht am"
+   - H: "Status" (Freitext: "eingereicht", "geprüft", "Rückfrage", "verbucht", "erstattet")
+   - I: "SAP-Belegnummer"
+   - J: "Bemerkungen"
+4. Frau Schmidt trägt **jede einzelne Abrechnung** hier ein — parallel zu TravelPro.
+5. Nutzt die Liste für:
+   - Monatsübersicht: Summenformel unten zeigt Gesamtbetrag des Monats
+   - Status-Tracking: Schnellblick wer noch offen ist
+   - Jahresauswertung: Pivot-Tabelle auf separatem Blatt "Auswertung" (nach Mitarbeiter, nach Kostenstelle, nach Monat)
+6. **Problem:** Daten laufen auseinander. Wenn Frau Schmidt einen Status in TravelPro ändert aber in Excel vergisst (oder umgekehrt) → Inkonsistenz. Ist schon vorgekommen.
+
+---
 
 ### Fristen & Regelungen
-- Einreichfrist: 4 Wochen nach Reiseende
-- Erstattung: spätestens übernächste Gehaltsabrechnung
-- Tagessätze nach Bundesreisekostengesetz:
-  - Inland: 14€ ab 8h, 28€ ab 24h
-  - Ausland: länderspezifisch, jährlich vom Finanzministerium festgelegt
-- Belege im Original für Steuer erforderlich
+
+- **Einreichfrist:** 4 Wochen nach Reiseende. Danach Erstattung nur mit Begründung und Genehmigung des Abteilungsleiters.
+- **Erstattungsfrist:** Spätestens übernächste Gehaltsabrechnung nach Freigabe.
+- **Tagessätze** nach Bundesreisekostengesetz (BRKG):
+  - Inland: 14€ ab 8h Abwesenheit, 28€ ab 24h Abwesenheit
+  - Ausland: länderspezifisch, Tabelle wird jährlich vom Finanzministerium veröffentlicht. Frau Schmidt hat die aktuelle Tabelle als PDF im Ordner `S:\Verwaltung\Reisekosten\Tagessaetze\BRKG_Ausland_2026.pdf`
+- **Belege:** Originalbelege (Papier) müssen 10 Jahre aufbewahrt werden (steuerlich). Scans sind zusätzlich, nicht Ersatz.
+- **Hotelkosten > 150€/Nacht:** Begründung erforderlich im Bemerkungsfeld.
+- **MwSt.-Ausweis:** Pflicht bei Einzelbelegen > 250€.
 
 ### Ausnahmen & Sonderfälle
-- **Privatwagen:** 30 ct/km Pauschale, Fahrtenbuch erforderlich. TravelPro berechnet automatisch. Frau Schmidt prüft Kilometer gegen Google Maps (>10% Abweichung → Rückfrage)
-- **Eigenbeleg:** Bei verlorenem Beleg. Formular mit Angabe was/wann/wo bezahlt. Teamleiter-Unterschrift. Max. 50€ pro Posten. Frau Schmidt scannt ein und lädt statt normalem Beleg hoch.
-- **Stornierte Reise:** Stornokosten werden trotzdem abgerechnet
-- **Auslandsbelege Fremdwährung:** Betrag in Originalwährung eingeben, TravelPro rechnet mit EZB-Tageskurs um. Ohne Kurs: Frau Schmidt nimmt Bundesbank-Website.
+
+#### Privatwagen (statt Firmenwagen/Bahn)
+- Pauschale: 30 ct/km
+- Im TravelPro: Detailseite der Reise → Bereich "Kilometerabrechnung":
+  - "Startort" (Freitext), "Zielort" (Freitext), "Gefahrene Kilometer" (Zahl)
+  - TravelPro berechnet automatisch: km × 0,30€
+  - Upload-Feld "Fahrtenbuch-Scan" (PDF)
+- **Frau Schmidts Prüfung:** Öffnet Google Maps im Browser, gibt Start-/Zielort ein, vergleicht die angezeigte Strecke mit der angegebenen Kilometerzahl. Bei > 10% Abweichung → Rückfrage an den Mitarbeiter.
+
+#### Eigenbeleg (verlorener Beleg)
+- Formular "Eigenbeleg" aus Intranet: `intranet.mueller-logistik.de` → "Formulare" → "Personal" → "Eigenbeleg"
+- Felder: Was bezahlt (Beschreibung), Wann (Datum), Wo (Ort/Anbieter), Betrag, Unterschrift Mitarbeiter, Unterschrift Teamleiter
+- **Limit:** Max. 50€ pro Einzelposten. Darüber wird ohne Originalbeleg nicht erstattet.
+- Frau Schmidt scannt den unterschriebenen Eigenbeleg ein und lädt ihn in TravelPro als Beleg hoch (Ausgabenart "Sonstiges", Bemerkung "Eigenbeleg").
+
+#### Stornierte Reise
+- Gebuchte Reise findet nicht statt (z.B. Messe abgesagt, Kunde storniert).
+- Stornokosten (Hotel-Storno, Flug-Storno) werden trotzdem über TravelPro abgerechnet.
+- Mitarbeiter reicht Stornobelege ein wie normale Belege.
+- Im Feld "Reisegrund" ergänzt er "STORNIERT" und im Bemerkungsfeld den Stornogrund.
+
+#### Auslandsbelege in Fremdwährung
+- Mitarbeiter gibt im TravelPro den **Betrag in Originalwährung** ein und wählt die Währung im Dropdown.
+- TravelPro rechnet automatisch mit dem **EZB-Tageskurs** des Belegdatums um und zeigt den Euro-Betrag an.
+- Falls Mitarbeiter keinen Kurs eingibt (z.B. bei Papier-Einreichung): Frau Schmidt öffnet `bundesbank.de` → "Statistiken" → "Wechselkurse" → sucht den Tageskurs zum Belegdatum → trägt den umgerechneten Euro-Betrag manuell in TravelPro ein.
 
 ### Hauptprobleme (Spannungsfelder)
-1. **Papier-Einreicher:** ~50% nutzen TravelPro nicht → doppelte Arbeit für Frau Schmidt
-2. **E-Mail-Genehmigung:** Teamleiter (v.a. Herr Brenner) genehmigen per E-Mail statt Portal → nicht revisionssicher
-3. **Excel-Parallelliste:** Frau Schmidt trackt alles nochmal in Excel → redundant, Fehlerquelle
-4. **Fehlende Belege:** Dauerthema, Nachbesserungsschleifen kosten Zeit
+
+1. **Papier-Einreicher:** ~50% nutzen TravelPro nicht → Frau Schmidt muss alles abtippen + scannen. 3x Zeitaufwand. Fehleranfällig (Tippfehler bei Beträgen).
+2. **E-Mail-Genehmigung:** Teamleiter (v.a. Herr Brenner) genehmigen per E-Mail statt Portal → nicht revisionssicher. Wirtschaftsprüfer hat es angemahnt. Frau Schmidt muss Status manuell umstellen und E-Mail als Nachweis anhängen.
+3. **Excel-Parallelliste:** Frau Schmidt trackt alles in Excel UND in TravelPro → doppelter Aufwand, Daten laufen auseinander. Frau Schmidt sagt: "Die Auswertungen in TravelPro sind zu umständlich, in Excel hab ich alles auf einen Blick."
+4. **Fehlende Belege:** Dauerthema. Mitarbeiter vergessen Belege, reichen unleserliche Scans ein, oder verlieren Quittungen. Nachbesserungsschleifen kosten Zeit (2-3 Runden keine Seltenheit).
 
 ### Beteiligte Rollen
-- Reisender Mitarbeiter
-- Teamleiter (Genehmigung Stufe 1)
-- Abteilungsleiter (Genehmigung Stufe 2)
-- Geschäftsführer (Genehmigung Stufe 3)
-- Frau Schmidt (Verwaltung — Prüfung, Papier-Erfassung, SAP-Verbuchung)
-- Frau Klein (Lohnbuchhaltung — Zahlungslauf-Freigabe)
 
-### Variablen & Daten
-Personalnummer, Name des Reisenden, Reiseziel, Reisezeitraum (von/bis), Reisegrund, Kostenstelle, Einzelposten (Betrag, Datum, Ausgabenart/Belegtyp), Tagessatz, Gesamtbetrag, Genehmigungsnummer, ggf. Kilometer, ggf. Währungskurs
+| Rolle | Person(en) | System-Zugang | Aufgaben im Prozess |
+|-------|-----------|---------------|---------------------|
+| Reisender Mitarbeiter | ~30 verschiedene | TravelPro (eigene Reisen) | Antrag stellen, Belege einreichen |
+| Teamleiter | Div., u.a. Herr Brenner | TravelPro (Genehmigungen) | Reisen genehmigen (Stufe 1) |
+| Abteilungsleiter | Div. | TravelPro (Genehmigungen) | Reisen genehmigen (Stufe 2, ≥500€/Ausland) |
+| Geschäftsführer | 1 Person | TravelPro (selten) | Reisen genehmigen (Stufe 3, ≥2000€) |
+| Frau Schmidt | 1 Person | TravelPro (Admin), SAP HR, Excel, Scanner | Prüfung, Papier-Erfassung, SAP-Verbuchung, Excel-Liste |
+| Frau Klein | 1 Person | SAP HR | Monatsend-Prüfung, Zahlungslauf-Freigabe |
+
+### Variablen & Daten (vollständig)
+
+| Variable | Typ | Quelle | Verwendet in |
+|----------|-----|--------|-------------|
+| Personalnummer | 8-stellig numerisch | SAP HR / TravelPro-Profil | SAP-Verbuchung, Excel-Liste |
+| Name des Reisenden | Text | TravelPro-Profil | Überall |
+| Reiseziel | Freitext | Reiseantrag | Antrag, Abrechnung, SAP |
+| Reisezeitraum Von | Datum (TT.MM.JJJJ) | Reiseantrag | Antrag, Tagessatzberechnung, SAP |
+| Reisezeitraum Bis | Datum (TT.MM.JJJJ) | Reiseantrag | Antrag, Tagessatzberechnung, SAP |
+| Reisegrund | Dropdown + Freitext | Reiseantrag | Antrag |
+| Kostenstelle | 6-stellig numerisch | Abteilungszuordnung | Antrag, SAP-Verbuchung |
+| Geschätzte Kosten | Dezimalzahl (€) | Reiseantrag | Genehmigungsstufe |
+| Transportmittel | Dropdown | Reiseantrag | Antrag, ggf. km-Pauschale |
+| Einzelbeleg-Betrag | Dezimalzahl (€ oder Fremdwährung) | Beleg | Abrechnung, Prüfung |
+| Einzelbeleg-Datum | Datum | Beleg | Prüfung (im Reisezeitraum?) |
+| Ausgabenart | Dropdown (7 Werte) | Beleg-Erfassung | Abrechnung, SAP-Kostenart |
+| Belegdatei | PDF/JPG/PNG | Upload/Scan | Prüfung, Archivierung |
+| Tagessatz | Berechnet (BRKG) | Reisezeitraum + Ziel | Abrechnung, SAP |
+| Gesamtbetrag | Berechnet (Summe) | Alle Belege + Tagessätze | SAP-Verbuchung, Excel |
+| Genehmigungsstatus | Enum | Portal/E-Mail | Genehmigungsstufe |
+| SAP-Belegnummer | 10-stellig numerisch | SAP nach Sichern | TravelPro-Referenz, Excel |
+| Gefahrene Kilometer | Ganzzahl | Kilometerpauschale | km × 0,30€ |
+| Währung | ISO-Code (EUR, USD...) | Beleg-Erfassung (Ausland) | Umrechnung |
+| Wechselkurs | Dezimalzahl | EZB/Bundesbank | Umrechnung Fremdwährung → EUR |
 
 ---
 
