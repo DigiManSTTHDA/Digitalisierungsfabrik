@@ -241,8 +241,10 @@ class StructuringMode(BaseMode):
         # Deterministischer Summarizer: überschreibt LLM-Bestätigung bei Patches (S2-T3)
         # Verhindert halluzinierte Bestätigungen (B10).
         # Wenn keine Patches vorhanden: LLM-Text bleibt (Rückfragen, Einleitungen).
+        summarizer_used = False
         if patches:
             nutzeraeusserung = summarize_patches(patches, context.structure_artifact)
+            summarizer_used = True
         else:
             nutzeraeusserung = response.nutzeraeusserung
 
@@ -251,6 +253,7 @@ class StructuringMode(BaseMode):
             patches=patches,
             phasenstatus=phasenstatus,
             flags=flags,
+            summarizer_active=summarizer_used,
             debug_request=response.debug_request,
             usage=response.usage,
         )

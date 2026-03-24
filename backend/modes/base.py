@@ -84,6 +84,7 @@ class ModeOutput(BaseModel):
     phasenstatus: Phasenstatus
     flags: list[Flag] = Field(default_factory=list)
     validierungsbericht: Validierungsbericht | None = None
+    summarizer_active: bool = False  # CR-010: True wenn nutzeraeusserung durch Summarizer ersetzt
     debug_request: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]
     usage: dict | None = Field(default=None, exclude=True)  # type: ignore[type-arg]  # Token usage
 

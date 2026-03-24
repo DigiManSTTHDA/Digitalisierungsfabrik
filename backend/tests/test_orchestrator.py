@@ -184,6 +184,17 @@ def test_mode_output_default_fields() -> None:
     )
     assert output.patches == []
     assert output.flags == []
+    assert output.summarizer_active is False  # CR-010: default False
+
+
+def test_mode_output_summarizer_active() -> None:
+    """CR-010: summarizer_active can be set to True without breaking ModeOutput."""
+    output = ModeOutput(
+        nutzeraeusserung="Zusammengefasst",
+        phasenstatus=Phasenstatus.in_progress,
+        summarizer_active=True,
+    )
+    assert output.summarizer_active is True
 
 
 # ---------------------------------------------------------------------------

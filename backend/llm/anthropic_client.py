@@ -97,7 +97,7 @@ class AnthropicClient(LLMClient):
                 "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
             }
 
-        # Capture full request for debug logging when enabled
+        # Capture full request + response for debug logging when enabled (CR-010)
         debug_request = None
         if self._settings.llm_debug_log:
             debug_request = {
@@ -105,6 +105,8 @@ class AnthropicClient(LLMClient):
                 "messages": messages,
                 "tool_choice": effective_tool_choice,
                 "model": self._settings.llm_model,
+                "raw_tool_input": tool_input,
+                "raw_nutzeraeusserung": nutzeraeusserung,
             }
 
         return LLMResponse(

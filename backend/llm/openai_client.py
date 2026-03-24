@@ -128,7 +128,7 @@ class OpenAIClient(LLMClient):
                 "total_tokens": response.usage.total_tokens,
             }
 
-        # Capture full request for debug logging when enabled
+        # Capture full request + response for debug logging when enabled (CR-010)
         debug_request = None
         if self._settings.llm_debug_log:
             debug_request = {
@@ -136,6 +136,8 @@ class OpenAIClient(LLMClient):
                 "messages": messages,
                 "tool_choice": kwargs.get("tool_choice"),
                 "model": self._settings.llm_model,
+                "raw_tool_input": tool_input,
+                "raw_nutzeraeusserung": nutzeraeusserung,
             }
 
         return LLMResponse(

@@ -185,6 +185,13 @@ class Orchestrator:
                 project=project,
             )
 
+        # CR-010: Artefakt-Snapshot VOR Patch-Anwendung
+        artifact_before_snapshot = None
+        if self._settings and self._settings.llm_debug_log and mode_output.patches:
+            artifact_type_for_log = infer_artifact_type(mode_output.patches)
+            if artifact_type_for_log:
+                artifact_before_snapshot = get_artifact(project, artifact_type_for_log).model_dump(mode="json")
+
         # Schritt 7: Patches anwenden (wenn vorhanden) — mit Retry-Logik (S1-T1)
         _MAX_PATCH_RETRIES = 2
 
@@ -221,6 +228,7 @@ class Orchestrator:
             if not mode_output.patches:
                 artifact_type = None  # reset so the block below is skipped cleanly
 
+        artifact_after_snapshot = None  # CR-010: init before conditional block
         if mode_output.patches and artifact_type is not None:
             artifact = get_artifact(project, artifact_type)
             result = self._executor.apply_patches(artifact_type, artifact, mode_output.patches)
@@ -237,6 +245,11 @@ class Orchestrator:
 
             assert result.artifact is not None
             set_artifact(project, artifact_type, result.artifact)
+
+            # CR-010: Artefakt-Snapshot NACH Patch-Anwendung
+            artifact_after_snapshot = None
+            if self._settings and self._settings.llm_debug_log:
+                artifact_after_snapshot = get_artifact(project, artifact_type).model_dump(mode="json")
 
             # Schritt 8: Invalidierungen auslösen (SDD 6.3 Schritt 8, FR-B-04)
             if result.invalidated_abschnitt_ids:
@@ -322,7 +335,7 @@ class Orchestrator:
             wm.cumulative_completion_tokens += turn_usage.get("completion_tokens", 0)
             wm.cumulative_total_tokens += turn_usage.get("total_tokens", 0)
 
-        # Turn Debug Log: write full LLM I/O to JSON file
+        # Turn Debug Log: write full LLM I/O to JSON file (CR-010: lückenloses Logging)
         if self._settings and self._settings.llm_debug_log and mode_output.debug_request:
             write_turn_debug(
                 base_dir=self._settings.database_path.rsplit("/", 1)[0] or "./data",
@@ -333,13 +346,16 @@ class Orchestrator:
                 messages=mode_output.debug_request.get("messages", []),
                 tool_choice=mode_output.debug_request.get("tool_choice"),
                 response_nutzeraeusserung=mode_output.nutzeraeusserung,
-                response_tool_input=mode_output.debug_request
-                if not mode_output.patches
-                else {
-                    "nutzeraeusserung": mode_output.nutzeraeusserung,
-                    "patches": mode_output.patches,
-                    "phasenstatus": wm.phasenstatus.value,
-                },
+                response_tool_input=mode_output.debug_request.get("raw_tool_input"),
+                raw_llm_nutzeraeusserung=mode_output.debug_request.get("raw_nutzeraeusserung", ""),
+                raw_llm_tool_input=mode_output.debug_request.get("raw_tool_input"),
+                final_nutzeraeusserung=mode_output.nutzeraeusserung,
+                summarizer_active=mode_output.summarizer_active,
+                patches_applied=mode_output.patches if mode_output.patches else None,
+                patch_result="success" if mode_output.patches else None,
+                artifact_before=artifact_before_snapshot,
+                artifact_after=artifact_after_snapshot if mode_output.patches else None,
+                flags=flag_strings,
                 token_usage=turn_usage,
                 cumulative_tokens={
                     "prompt_tokens": wm.cumulative_prompt_tokens,
@@ -405,6 +421,12 @@ class Orchestrator:
             context = build_context(project, {}, repository=self._repository, settings=self._settings)
             output = await init_mode.call(context)
 
+            # CR-010: Artefakt-Snapshots + Debug-Log für Init-Call
+            init_artifact_before = None
+            init_artifact_after = None
+            if self._settings and self._settings.llm_debug_log and output.patches:
+                init_artifact_before = get_artifact(project, source_type).model_dump(mode="json")
+
             if output.patches:
                 artifact = get_artifact(project, source_type)
                 result = self._executor.apply_patches(source_type, artifact, output.patches)
@@ -412,6 +434,28 @@ class Orchestrator:
                     set_artifact(project, source_type, result.artifact)
                     if result.invalidated_abschnitt_ids:
                         apply_invalidations(project, result.invalidated_abschnitt_ids, self._executor)
+                    if self._settings and self._settings.llm_debug_log:
+                        init_artifact_after = get_artifact(project, source_type).model_dump(mode="json")
+
+            if self._settings and self._settings.llm_debug_log and output.debug_request:
+                write_turn_debug(
+                    base_dir=self._settings.database_path.rsplit("/", 1)[0] or "./data",
+                    project_id=project.projekt_id,
+                    turn_number=wm.letzter_dialogturn,
+                    mode=f"init_{target_mode}",
+                    system_prompt=output.debug_request.get("system_prompt", ""),
+                    messages=output.debug_request.get("messages", []),
+                    tool_choice=output.debug_request.get("tool_choice"),
+                    response_nutzeraeusserung=output.nutzeraeusserung,
+                    response_tool_input=output.debug_request.get("raw_tool_input"),
+                    raw_llm_nutzeraeusserung=output.debug_request.get("raw_nutzeraeusserung", ""),
+                    raw_llm_tool_input=output.debug_request.get("raw_tool_input"),
+                    final_nutzeraeusserung=output.nutzeraeusserung,
+                    patches_applied=output.patches if output.patches else None,
+                    artifact_before=init_artifact_before,
+                    artifact_after=init_artifact_after,
+                    token_usage=output.usage,
+                )
 
             # CR-007: in_progress after init call
             await self._emit_init_progress(InitProgressInfo(
@@ -434,12 +478,23 @@ class Orchestrator:
             coverage_violations = await self._run_coverage_validator(project, wm)
             all_violations = py_violations + coverage_violations
 
+            # CR-010: Debug-Log für Coverage-Validator (kein separater output — Violations loggen)
+            # Coverage-Validator-Output wird über _run_coverage_validator() verarbeitet,
+            # dessen internes output wird dort geloggt (siehe _run_coverage_validator).
+
             # Phase 4: Bei kritischen Befunden → EIN Korrektur-Call
             kritische = [v for v in all_violations if v.severity == "kritisch"]
             if kritische:
                 feedback = self._format_validator_feedback(all_violations)
                 context = build_context(project, {}, repository=self._repository, settings=self._settings)
                 context = context.with_validator_feedback(feedback)
+
+                # CR-010: Artefakt-Snapshot VOR Korrektur
+                corr_artifact_before = None
+                corr_artifact_after = None
+                if self._settings and self._settings.llm_debug_log:
+                    corr_artifact_before = get_artifact(project, source_type).model_dump(mode="json")
+
                 output = await init_mode.call(context)
 
                 if output.patches:
@@ -447,6 +502,29 @@ class Orchestrator:
                     result = self._executor.apply_patches(source_type, artifact, output.patches)
                     if result.success and result.artifact is not None:
                         set_artifact(project, source_type, result.artifact)
+                        if self._settings and self._settings.llm_debug_log:
+                            corr_artifact_after = get_artifact(project, source_type).model_dump(mode="json")
+
+                # CR-010: Debug-Log für Korrektur-Call
+                if self._settings and self._settings.llm_debug_log and output.debug_request:
+                    write_turn_debug(
+                        base_dir=self._settings.database_path.rsplit("/", 1)[0] or "./data",
+                        project_id=project.projekt_id,
+                        turn_number=wm.letzter_dialogturn,
+                        mode=f"init_{target_mode}_correction",
+                        system_prompt=output.debug_request.get("system_prompt", ""),
+                        messages=output.debug_request.get("messages", []),
+                        tool_choice=output.debug_request.get("tool_choice"),
+                        response_nutzeraeusserung=output.nutzeraeusserung,
+                        response_tool_input=output.debug_request.get("raw_tool_input"),
+                        raw_llm_nutzeraeusserung=output.debug_request.get("raw_nutzeraeusserung", ""),
+                        raw_llm_tool_input=output.debug_request.get("raw_tool_input"),
+                        final_nutzeraeusserung=output.nutzeraeusserung,
+                        patches_applied=output.patches if output.patches else None,
+                        artifact_before=corr_artifact_before,
+                        artifact_after=corr_artifact_after,
+                        token_usage=output.usage,
+                    )
 
                 # CR-007: in_progress after correction call
                 await self._emit_init_progress(InitProgressInfo(
@@ -503,6 +581,25 @@ class Orchestrator:
             return []
         context = build_context(project, {}, repository=self._repository, settings=self._settings)
         output = await coverage_mode.call(context)
+
+        # CR-010: Debug-Log für Coverage-Validator
+        if self._settings and self._settings.llm_debug_log and output.debug_request:
+            write_turn_debug(
+                base_dir=self._settings.database_path.rsplit("/", 1)[0] or "./data",
+                project_id=project.projekt_id,
+                turn_number=wm.letzter_dialogturn,
+                mode="init_coverage_validator",
+                system_prompt=output.debug_request.get("system_prompt", ""),
+                messages=output.debug_request.get("messages", []),
+                tool_choice=output.debug_request.get("tool_choice"),
+                response_nutzeraeusserung=output.nutzeraeusserung,
+                response_tool_input=output.debug_request.get("raw_tool_input"),
+                raw_llm_nutzeraeusserung=output.debug_request.get("raw_nutzeraeusserung", ""),
+                raw_llm_tool_input=output.debug_request.get("raw_tool_input"),
+                final_nutzeraeusserung=output.nutzeraeusserung,
+                token_usage=output.usage,
+            )
+
         try:
             data = json.loads(output.nutzeraeusserung)
             return [

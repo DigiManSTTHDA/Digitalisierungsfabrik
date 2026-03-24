@@ -44,6 +44,14 @@ def write_turn_debug(
     patch_result: str | None = None,
     token_usage: dict | None = None,
     cumulative_tokens: dict | None = None,
+    # CR-010: Neue Parameter für lückenloses Debug-Logging
+    raw_llm_nutzeraeusserung: str = "",
+    raw_llm_tool_input: dict | None = None,
+    final_nutzeraeusserung: str = "",
+    summarizer_active: bool = False,
+    artifact_before: dict | None = None,
+    artifact_after: dict | None = None,
+    flags: list[str] | None = None,
 ) -> None:
     """Write a single turn's full LLM I/O to a JSON debug file."""
     try:
@@ -70,10 +78,21 @@ def write_turn_debug(
                 "phasenstatus": tool_input.get("phasenstatus", ""),
                 "raw_tool_input": tool_input,
             },
+            "llm_raw": {
+                "raw_nutzeraeusserung": raw_llm_nutzeraeusserung,
+                "raw_tool_input": raw_llm_tool_input,
+                "final_nutzeraeusserung": final_nutzeraeusserung,
+                "summarizer_active": summarizer_active,
+            },
             "execution": {
                 "patches_applied": patches_applied,
                 "patch_result": patch_result,
             },
+            "artifacts": {
+                "before": artifact_before,
+                "after": artifact_after,
+            },
+            "flags": flags,
             "token_usage": token_usage or {
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
