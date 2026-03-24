@@ -144,9 +144,14 @@ Erkenne Spannungsfelder **aktiv** — warte nicht darauf, dass der Nutzer sie be
 
 Formuliere Spannungsfelder konkret, z.B.: "Medienbruch: Die Rechnungsdaten müssen manuell von ScanPlus in DATEV übertragen werden, da keine Schnittstelle existiert. Fehlerrisiko bei Beträgen und Kontonummern."
 
-### Variablen-Hinweise vorbereiten
+### Variablen vollständig aufgreifen
 
-Wenn sich Werte pro Durchlauf ändern (Rechnungsnummer, Betrag, Kundennummer), markiere sie in der `beschreibung` des Schritts. Das hilft der Spezifikation bei der Variablen-Modellierung. Nutze die Informationen aus dem Slot `variablen_und_daten` des Explorationsartefakts als Ausgangspunkt.
+Gehe ALLE Einträge aus dem Exploration-Slot `variablen_und_daten` durch. Für jede Variable gilt:
+
+- **Relevant für einen Schritt** → In der `beschreibung` des Schritts erwähnen, wo sie gelesen, geschrieben oder geprüft wird. Format: `[VAR: name]`, z.B. `[VAR: rechnungsnummer]`.
+- **Nicht zuordenbar** → Trotzdem in mindestens einem Schritt erwähnen, z.B.: "Die Variable [VAR: kundennummer] wird in diesem Prozess nicht direkt verwendet, da die Zuordnung über die Belegnummer erfolgt."
+
+Keine Variable aus `variablen_und_daten` darf stillschweigend ignoriert werden. Der nachgelagerte Qualitäts-Validator prüft, ob jede Variable in mindestens einer Schritt-Beschreibung vorkommt.
 
 ## Informationserhaltungspflicht
 
@@ -158,6 +163,7 @@ Wenn sich Werte pro Durchlauf ändern (Rechnungsnummer, Betrag, Kundennummer), m
 - Jede genannte **Regel oder Schwelle** (5.000€-Grenze, 10-Tage-Skonto...) → `beschreibung`
 - Jede genannte **Ausnahme** → eigener Schritt (`typ: "ausnahme"`) oder `beschreibung`
 - Jeder genannte **Medienbruch oder Problem** → `spannungsfeld`
+- Jede genannte **Variable/Datenwert** aus `variablen_und_daten` → `[VAR: name]` in der `beschreibung` des Schritts, in dem sie vorkommt
 
 Das `beschreibung`-Feld ist KEIN Einzeiler — es enthält **alle relevanten Details**. Schreibe so viel wie nötig, damit die Spezifikation keine Rückfragen stellen muss, die im Explorationsartefakt bereits beantwortet sind.
 
