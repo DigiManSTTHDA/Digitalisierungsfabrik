@@ -69,7 +69,7 @@ export function ChatPane() {
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, validationReport]);
+  }, [chatMessages, validationReport, initProgress, isProcessing]);
 
   const handleSend = () => {
     const text = input.trim();
@@ -119,15 +119,16 @@ export function ChatPane() {
           </div>
         )}
         {initProgress && (
-          <div
-            style={{
-              padding: "0.5rem 0.75rem",
-              color: "#6b7280",
-              fontStyle: "italic",
-              fontSize: "0.85rem",
-            }}
-          >
+          <div className="init-progress">
+            <span className="init-progress-dot" />
             {initProgress.message}
+          </div>
+        )}
+        {isProcessing && !initProgress && (
+          <div className="typing-indicator">
+            <span className="typing-dot" />
+            <span className="typing-dot" />
+            <span className="typing-dot" />
           </div>
         )}
         <div ref={messagesEndRef} />
