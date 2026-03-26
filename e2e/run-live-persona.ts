@@ -226,7 +226,7 @@ async function run(config: Config): Promise<void> {
 
   // Generate qualitative analysis via LLM
   console.log('Generiere qualitative Analyse...');
-  const analysis = await generateAnalysis(apiKey, config.personaModel, playbook, report);
+  const analysis = await generateAnalysis(apiKey, config.personaModel, playbook, report, artifacts);
 
   const fullReport = report + '\n\n---\n\n' + analysis;
   await writeFile(reportPath, fullReport, 'utf-8');
@@ -236,12 +236,21 @@ async function run(config: Config): Promise<void> {
   console.log(`Rohdaten: ${jsonPath}`);
 }
 
-/** Generate qualitative analysis by feeding the report + playbook to an LLM. */
-async function generateAnalysis(apiKey: string, model: string, playbook: string, report: string): Promise<string> {
+/** Generate qualitative analysis by feeding playbook + artifacts + report to an LLM. */
+async function generateAnalysis(
+  apiKey: string, model: string, playbook: string, report: string,
+  artifacts: Record<string, unknown>,
+): Promise<string> {
   const client = new OpenAI({ apiKey });
 
   // Use a capable model for analysis (upgrade from persona model if needed)
   const analysisModel = model.includes('mini') ? model.replace('-mini', '') : model;
+
+  // Extract slot contents for direct analysis
+  const slots = extractActualSlots(artifacts);
+  const slotDump = Object.entries(slots)
+    .map(([id, content]) => `### ${id}\n${content}`)
+    .join('\n\n');
 
   const response = await client.chat.completions.create({
     model: analysisModel,
@@ -260,11 +269,15 @@ Bewertungsskala:
 - **BESTANDEN MIT LÜCKEN** — Prozess ist im Kern nachvollziehbar, aber es fehlen wichtige strukturelle Elemente (z.B. ein ganzer Entscheidungspfad, ein System, ein wesentlicher Prozessschritt).
 - **NICHT BESTANDEN** — Prozess ist nicht nachvollziehbar oder es fehlen wesentliche Teile (z.B. Start/Ende unklar, Hauptablauf unvollständig, Halluzinationen).
 
-Du bekommst:
-1. Das PLAYBOOK (Ground Truth — was der Prozess wirklich ist)
-2. Den TEST-REPORT (was der Explorer erfasst hat, inkl. Dialog und Artefakt)
+KRITISCH — Sorgfaltspflicht:
+Du bekommst drei Quellen. Prüfe JEDE Aussage die du machst gegen die ARTEFAKT-ROHDATEN. Behaupte nie, dass etwas fehlt, ohne im Artefakt nachgeschaut zu haben. Behaupte nie, dass etwas da ist, ohne es im Artefakt gefunden zu haben. Die Artefakt-Rohdaten sind die Wahrheit — nicht der Report-Text, der gekürzt sein kann.
 
-Schreibe eine qualitative Analyse auf Deutsch mit diesen Abschnitten:
+Du bekommst:
+1. PLAYBOOK — Ground Truth (was der Prozess wirklich ist, Ziel-Artefakt)
+2. ARTEFAKT-ROHDATEN — Die tatsächlichen Slot-Inhalte die der Explorer geschrieben hat (DIESE sind die Bewertungsgrundlage!)
+3. DIALOG — Der vollständige Gesprächsverlauf
+
+Schreibe eine qualitative Analyse auf Deutsch:
 
 ## Qualitative Analyse
 
@@ -272,18 +285,18 @@ Schreibe eine qualitative Analyse auf Deutsch mit diesen Abschnitten:
 Ein Absatz: Bestanden oder nicht? Warum? Könnte ein Prozessanalyst mit diesem Artefakt in die Strukturierungsphase gehen?
 
 ### Slot-für-Slot-Bewertung
-Pro Slot kurz (2-3 Sätze):
-- Ist der Inhalt sinngemäß korrekt? Was Wesentliches fehlt?
-- Keyword-"MISS" aus dem mechanischen Check: ist das ein echtes Problem oder ein False Positive (steht sinngemäß drin, nur anders formuliert)?
+Pro Slot kurz (2-3 Sätze). Prüfe den TATSÄCHLICHEN Slot-Inhalt aus den Rohdaten gegen das Playbook:
+- Was steht drin? Was Wesentliches fehlt?
+- Mechanische "MISS"-Meldungen: False Positive (steht sinngemäß im Artefakt) oder echtes Problem?
 
 ### Was fehlt (gegen Playbook)
-Nur **strukturell relevante** Lücken auflisten — also Dinge die das Prozessverständnis beeinträchtigen. NICHT: fehlende Einzelfelder, Variable die in der Spezifikation sowieso kommen, oder exakte Formulierungen.
+Nur **strukturell relevante** Lücken — Dinge die das Prozessverständnis beeinträchtigen. NICHT: fehlende Einzelfelder oder exakte Formulierungen. Für jede behauptete Lücke: Zitat oder Verweis auf den Slot wo du gesucht hast.
 
 ### Was gut funktioniert hat
-Was hat der Explorer besonders gut erfasst? Wo ist das Artefakt sogar besser/detaillierter als das Playbook-Soll?
+Was hat der Explorer besonders gut erfasst?
 
 ### Dialogführung
-Kurz: Waren die Fragen zielführend? Wiederholungen? Timing angemessen?
+Kurz: Fragen zielführend? Wiederholungen? Timing angemessen?
 
 ### Fazit
 | Aspekt | Bewertung |
@@ -291,7 +304,7 @@ Mit: Prozess-Grundverständnis, Entscheidungslogik, Systeme, Sonderfälle, Hallu
       },
       {
         role: 'user',
-        content: `PLAYBOOK:\n\n${playbook}\n\n---\n\nTEST-REPORT:\n\n${report}`
+        content: `PLAYBOOK (Ground Truth):\n\n${playbook}\n\n---\n\nARTEFAKT-ROHDATEN (Slot-Inhalte — dies ist die Bewertungsgrundlage!):\n\n${slotDump}\n\n---\n\nDIALOG (vollständiger Gesprächsverlauf):\n\n${report}`
       }
     ],
   });
