@@ -243,8 +243,8 @@ async function generateAnalysis(
 ): Promise<string> {
   const client = new OpenAI({ apiKey });
 
-  // Use a capable model for analysis (upgrade from persona model if needed)
-  const analysisModel = model.includes('mini') ? model.replace('-mini', '') : model;
+  // Always use the strongest available model for analysis — this is a quality gate
+  const analysisModel = 'gpt-5.4';
 
   // Extract slot contents for direct analysis
   const slots = extractActualSlots(artifacts);
@@ -255,7 +255,7 @@ async function generateAnalysis(
   const response = await client.chat.completions.create({
     model: analysisModel,
     temperature: 0.3,
-    max_tokens: 2000,
+    max_completion_tokens: 3000,
     messages: [
       {
         role: 'system',
@@ -270,10 +270,19 @@ Bewertungsskala:
 - **NICHT BESTANDEN** — Prozess ist nicht nachvollziehbar oder es fehlen wesentliche Teile (z.B. Start/Ende unklar, Hauptablauf unvollständig, Halluzinationen).
 
 KRITISCH — Sorgfaltspflicht:
-Du bekommst drei Quellen. Prüfe JEDE Aussage die du machst gegen die ARTEFAKT-ROHDATEN. Behaupte nie, dass etwas fehlt, ohne im Artefakt nachgeschaut zu haben. Behaupte nie, dass etwas da ist, ohne es im Artefakt gefunden zu haben. Die Artefakt-Rohdaten sind die Wahrheit — nicht der Report-Text, der gekürzt sein kann.
+Du bekommst drei Quellen. Prüfe JEDE Aussage gegen die ARTEFAKT-ROHDATEN.
+- "Implizit enthalten" oder "sinngemäß abgedeckt" zählt NICHT. Wenn ein Konzept nicht im Artefakt-Text steht, fehlt es. Punkt.
+- Behaupte nie dass etwas fehlt ohne im Artefakt nachgeschaut zu haben.
+- Behaupte nie dass etwas da ist ohne es im Artefakt gefunden zu haben.
+- Die Artefakt-Rohdaten sind die Wahrheit — nicht der Dialog, nicht der Report-Text.
+
+ANTI-SCHÖNFÄRBEREI:
+- Sei skeptisch. Dein Job ist es Lücken zu finden, nicht das Artefakt zu loben.
+- "Für die Exploration akzeptabel" ist KEIN Freibrief. Wenn ein zentraler Entscheidungspfad, eine Geschäftsregel oder ein häufiger Ausnahmefall (~wöchentlich oder öfter) im Playbook steht aber NICHT im Artefakt: das ist eine echte Lücke, auch in der Explorationsphase.
+- Unterscheide klar: (a) Detail das in Folgephasen kommt (z.B. exakte Feldnamen, Citrix-Zugang) vs. (b) strukturelles Element das den Prozess unvollständig macht (z.B. fehlende Geschäftsregel, fehlender Ausnahmefall, fehlendes System).
 
 Du bekommst:
-1. PLAYBOOK — Ground Truth (was der Prozess wirklich ist, Ziel-Artefakt)
+1. PLAYBOOK — Ground Truth (was der Prozess wirklich ist, inkl. Ziel-Artefakt)
 2. ARTEFAKT-ROHDATEN — Die tatsächlichen Slot-Inhalte die der Explorer geschrieben hat (DIESE sind die Bewertungsgrundlage!)
 3. DIALOG — Der vollständige Gesprächsverlauf
 
@@ -282,15 +291,21 @@ Schreibe eine qualitative Analyse auf Deutsch:
 ## Qualitative Analyse
 
 ### Gesamturteil
-Ein Absatz: Bestanden oder nicht? Warum? Könnte ein Prozessanalyst mit diesem Artefakt in die Strukturierungsphase gehen?
+Ein Absatz: Bestanden / Bestanden mit Lücken / Nicht bestanden? Warum? Könnte ein Prozessanalyst mit diesem Artefakt in die Strukturierungsphase gehen?
 
 ### Slot-für-Slot-Bewertung
-Pro Slot kurz (2-3 Sätze). Prüfe den TATSÄCHLICHEN Slot-Inhalt aus den Rohdaten gegen das Playbook:
-- Was steht drin? Was Wesentliches fehlt?
-- Mechanische "MISS"-Meldungen: False Positive (steht sinngemäß im Artefakt) oder echtes Problem?
+Pro Slot: Prüfe den TATSÄCHLICHEN Slot-Inhalt aus den Rohdaten gegen das Playbook.
+- Was steht drin, was fehlt? Belege mit Zitaten aus den Rohdaten.
+- Mechanische "MISS"-Meldungen: False Positive (steht wörtlich oder klar sinngemäß im Artefakt — Beleg angeben!) oder echtes Problem?
 
-### Was fehlt (gegen Playbook)
-Nur **strukturell relevante** Lücken — Dinge die das Prozessverständnis beeinträchtigen. NICHT: fehlende Einzelfelder oder exakte Formulierungen. Für jede behauptete Lücke: Zitat oder Verweis auf den Slot wo du gesucht hast.
+### Fehlende Inhalte (gegen Playbook)
+Gehe das Playbook Abschnitt für Abschnitt durch und liste ALLES was im Playbook steht aber NICHT im Artefakt:
+- Fehlende Entscheidungsregeln oder Geschäftslogik
+- Fehlende Ausnahmefälle / Sonderfälle
+- Fehlende Systeme oder Systemdetails
+- Fehlende Variablen oder Daten
+
+Für jede Lücke: Bewerte ob sie (a) strukturell relevant ist (beeinträchtigt Prozessverständnis) oder (b) ein Detail das in Folgephasen ergänzt wird.
 
 ### Was gut funktioniert hat
 Was hat der Explorer besonders gut erfasst?
