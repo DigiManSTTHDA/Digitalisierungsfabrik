@@ -130,7 +130,7 @@ class InitCoverageValidatorMode(BaseMode):
         if context.aktive_phase == Projektphase.strukturierung:
             transition_desc = (
                 "Du prüfst den Übergang **Exploration → Struktur**.\n\n"
-                "Quellartefakt: Explorationsartefakt (7 Slots mit Freitext).\n"
+                "Quellartefakt: Explorationsartefakt (6 Slots mit Freitext).\n"
                 "Zielartefakt: Strukturartefakt (Strukturschritte mit Kontrollfluss).\n\n"
                 "Hauptfrage: Wurde jede substanzielle Information aus den 7 Exploration-Slots "
                 "in mindestens einem Strukturschritt repräsentiert?"

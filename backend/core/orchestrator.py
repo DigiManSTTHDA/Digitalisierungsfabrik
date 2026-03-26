@@ -474,13 +474,11 @@ class Orchestrator:
             # Phase 2: Python-Validator (nur R-1 + R-5)
             py_violations = self._run_structural_validator(project, target_mode)
 
-            # Phase 3: LLM-Coverage-Validator (einmalig)
-            coverage_violations = await self._run_coverage_validator(project, wm)
-            all_violations = py_violations + coverage_violations
-
-            # CR-010: Debug-Log für Coverage-Validator (kein separater output — Violations loggen)
-            # Coverage-Validator-Output wird über _run_coverage_validator() verarbeitet,
-            # dessen internes output wird dort geloggt (siehe _run_coverage_validator).
+            # Phase 3: LLM-Coverage-Validator — deaktiviert (Prompt-Rewrite Q1/2026).
+            # Der Python-Validator (R-1, R-5) deckt die deterministischen Checks ab.
+            # Semantische Lücken fängt der Dialog-Modus auf.
+            # coverage_violations = await self._run_coverage_validator(project, wm)
+            all_violations = py_violations
 
             # Phase 4: Bei kritischen Befunden → EIN Korrektur-Call
             kritische = [v for v in all_violations if v.severity == "kritisch"]
