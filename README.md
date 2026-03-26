@@ -438,6 +438,35 @@ Vollständige Begründung: `agent-docs/decisions/ADR-001-openapi-contract.md`
 
 ---
 
+## E2E-Tests
+
+Die Explorationsphase wird durch End-to-End-Tests validiert. Ein LLM spielt eine Sachbearbeiter-Persona und führt ein natürliches Gespräch mit dem Explorer — genau wie ein echter Nutzer.
+
+**Verfügbare Playbooks (Testszenarien):**
+
+| Playbook | Persona | Prozess | Systeme | Komplexität |
+|----------|---------|---------|---------|-------------|
+| `e2e-human-playbook.md` | Frau Meier | Eingangsrechnungen verbuchen | Outlook, BüroWare, Acrobat | Mittel |
+| `e2e-playbook-angebotsanfragen.md` | Herr Krause | Angebotsanfragen beantworten | Outlook, ProSales, WAWI | Mittel |
+| `e2e-playbook-reklamationen.md` | Frau Hartmann | Kundenreklamationen | Outlook, ServiceDesk, proALPHA, Excel | Hoch |
+
+**Test ausführen:**
+
+```bash
+# API-Key laden
+source backend/.env
+export OPENAI_API_KEY=$LLM_API_KEY
+
+# Live-Persona-Test starten (erzeugt Report in e2e/reports/)
+npx tsx e2e/run-live-persona.ts --playbook agent-docs/e2e-playbook-reklamationen.md
+```
+
+Der Report enthält: vollständigen Dialog, Soll/Ist-Artefaktvergleich pro Slot und eine LLM-generierte qualitative Analyse.
+
+Architektur, Komponenten und Konfiguration: siehe [`e2e/ARCHITECTURE.md`](e2e/ARCHITECTURE.md).
+
+---
+
 ## Weiterführende Dokumentation
 
 | Dokument | Inhalt |
@@ -448,6 +477,7 @@ Vollständige Begründung: `agent-docs/decisions/ADR-001-openapi-contract.md`
 | `agent-docs/decisions/` | Architecture Decision Records (ADRs) |
 | `agent-docs/epics/` | Epic-Planung mit Stories und DoD-Checklisten |
 | `agent-docs/change-requests/` | Change Requests CR-001–CR-009 mit Reviews und Verifikationen |
+| `e2e/ARCHITECTURE.md` | E2E-Testarchitektur, Runner, Playbook-Format |
 
 ---
 

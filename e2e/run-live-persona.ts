@@ -217,17 +217,80 @@ async function run(config: Config): Promise<void> {
   const artifacts = await client.getArtifacts(projectId);
   client.disconnect();
 
-  // Write report
+  // Generate report
   await mkdir(config.outputDir, { recursive: true });
   const reportPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.md`);
   const jsonPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.json`);
 
   const report = generateReport(personaName, playbookName, config, turns, artifacts, phaseComplete, playbook);
-  await writeFile(reportPath, report, 'utf-8');
+
+  // Generate qualitative analysis via LLM
+  console.log('Generiere qualitative Analyse...');
+  const analysis = await generateAnalysis(apiKey, config.personaModel, playbook, report);
+
+  const fullReport = report + '\n\n---\n\n' + analysis;
+  await writeFile(reportPath, fullReport, 'utf-8');
   await writeFile(jsonPath, JSON.stringify({ turns, artifacts, config: { ...config, apiKey: '***' } }, null, 2), 'utf-8');
 
-  console.log(`Report: ${reportPath}`);
+  console.log(`\nReport: ${reportPath}`);
   console.log(`Rohdaten: ${jsonPath}`);
+}
+
+/** Generate qualitative analysis by feeding the report + playbook to an LLM. */
+async function generateAnalysis(apiKey: string, model: string, playbook: string, report: string): Promise<string> {
+  const client = new OpenAI({ apiKey });
+
+  // Use a capable model for analysis (upgrade from persona model if needed)
+  const analysisModel = model.includes('mini') ? model.replace('-mini', '') : model;
+
+  const response = await client.chat.completions.create({
+    model: analysisModel,
+    temperature: 0.3,
+    max_tokens: 2000,
+    messages: [
+      {
+        role: 'system',
+        content: `Du bist ein erfahrener Qualitätsanalyst für RPA-Prozesserhebungen. Du bewertest das Ergebnis eines E2E-Tests der Explorationsphase.
+
+Du bekommst:
+1. Das PLAYBOOK (Ground Truth — was der Prozess wirklich ist)
+2. Den TEST-REPORT (was der Explorer erfasst hat, inkl. Dialog und Artefakt)
+
+Schreibe eine qualitative Analyse auf Deutsch mit diesen Abschnitten:
+
+## Qualitative Analyse
+
+### Gesamturteil
+Ein Absatz: Bestanden oder nicht? Warum? Ist das Artefakt übergabefähig an die nächste Phase?
+
+### Slot-für-Slot-Bewertung
+Pro Slot (prozessausloeser, prozessziel, prozessbeschreibung, entscheidungen_und_schleifen, beteiligte_systeme, variablen_und_daten):
+- Ist der Inhalt sinngemäß korrekt und vollständig?
+- Was fehlt konkret (gegen das Playbook geprüft)?
+- Keyword-"MISS" aus dem mechanischen Check: ist das ein echtes Problem oder ein False Positive?
+
+### Echte Lücken
+Liste konkreter Informationen aus dem Playbook die im Artefakt fehlen und die für die Exploration relevant wären.
+
+### Dialogführung
+- Hat der Explorer die richtigen Fragen gestellt?
+- Gab es Wiederholungen?
+- War das Timing (nearing_completion, phase_complete) angemessen?
+
+### Fazit-Tabelle
+| Aspekt | Bewertung |
+Mit: Prozess-Grundverständnis, Entscheidungslogik, Systeme, Sonderfälle, Halluzinationen, Granularität
+
+Sei ehrlich und kritisch. Nenne konkret was fehlt statt pauschal "gut" zu sagen.`
+      },
+      {
+        role: 'user',
+        content: `PLAYBOOK:\n\n${playbook}\n\n---\n\nTEST-REPORT:\n\n${report}`
+      }
+    ],
+  });
+
+  return response.choices[0]?.message?.content ?? '(Analyse konnte nicht generiert werden)';
 }
 
 function generateReport(
@@ -241,26 +304,100 @@ function generateReport(
 ): string {
   const totalTime = turns.reduce((sum, t) => sum + t.response_time_ms, 0);
   const nearingIdx = turns.findIndex(t => t.phasenstatus === 'nearing_completion');
-  const lines: string[] = [
-    `# Live-Persona-Test: ${personaName}`,
-    '',
-    '## Eckdaten',
-    '',
-    `| Metrik | Wert |`,
-    `|--------|------|`,
-    `| Playbook | ${playbookName} |`,
-    `| Persona-Model | ${config.personaModel} |`,
-    `| Explorer-Model | GPT-5.4 (Backend) |`,
-    `| Turns | ${turns.length} |`,
-    `| Dauer (Backend) | ${(totalTime / 1000).toFixed(0)}s |`,
-    `| Phase complete | ${phaseComplete ? 'Ja' : 'Nein'} |`,
-    `| nearing_completion ab | Turn ${nearingIdx >= 0 ? nearingIdx + 1 : 'nie'} |`,
-    '',
-    '---',
-    '',
-    '## Vollständiger Dialog',
-    '',
-  ];
+  const personaShort = personaName.split(',')[0];
+
+  // Extract target/actual for comparison
+  const targetArtifact = extractTargetArtifact(playbook);
+  const actualSlots = extractActualSlots(artifacts);
+  const forbidden = extractForbiddenConcepts(playbook);
+
+  // Run all checks upfront for summary
+  const slotIds = ['prozessausloeser', 'prozessziel', 'prozessbeschreibung',
+    'entscheidungen_und_schleifen', 'beteiligte_systeme', 'variablen_und_daten'];
+
+  const slotResults: { id: string; keywords: { kw: string; found: boolean }[]; hasSoll: boolean; hasIst: boolean }[] = [];
+  for (const slotId of slotIds) {
+    const target = targetArtifact[slotId];
+    const actual = actualSlots[slotId];
+    const keywords = (target?.mustContain ?? []).map(kw => {
+      // Smart matching: split compound keywords on / and check each alternative
+      const alternatives = kw.split('/').map(s => s.trim());
+      const found = alternatives.some(alt => actual?.toLowerCase().includes(alt.toLowerCase()));
+      return { kw, found };
+    });
+    slotResults.push({ id: slotId, keywords, hasSoll: !!target, hasIst: !!actual?.trim() });
+  }
+
+  // Check forbidden concepts across all actual content
+  const allActual = Object.values(actualSlots).join(' ').toLowerCase();
+  const forbiddenFound = forbidden.filter(f => allActual.includes(f.toLowerCase()));
+
+  // Count totals
+  const totalKeywords = slotResults.flatMap(s => s.keywords);
+  const passCount = totalKeywords.filter(k => k.found).length;
+  const missCount = totalKeywords.filter(k => !k.found).length;
+  const filledSlots = slotResults.filter(s => s.hasIst).length;
+
+  // Avg response length
+  const avgPersonaLen = Math.round(turns.reduce((s, t) => s + t.persona_response.length, 0) / turns.length);
+
+  // =========================================================================
+  // Build report
+  // =========================================================================
+  const lines: string[] = [];
+
+  // --- Summary ---
+  lines.push(`# Live-Persona-Test: ${personaName}`, '');
+  lines.push('## Zusammenfassung', '');
+
+  const verdict = !phaseComplete ? 'NICHT ABGESCHLOSSEN'
+    : missCount === 0 && forbiddenFound.length === 0 ? 'BESTANDEN'
+    : forbiddenFound.length > 0 ? 'HALLUZINATION'
+    : missCount <= 2 ? 'BESTANDEN MIT LÜCKEN'
+    : 'LÜCKENHAFT';
+
+  lines.push(`**Ergebnis: ${verdict}**`, '');
+  lines.push(`| Metrik | Wert |`);
+  lines.push(`|--------|------|`);
+  lines.push(`| Turns bis phase_complete | ${phaseComplete ? turns.length : 'nicht erreicht'} |`);
+  lines.push(`| nearing_completion ab | Turn ${nearingIdx >= 0 ? nearingIdx + 1 : 'nie'} |`);
+  lines.push(`| Backend-Dauer | ${(totalTime / 1000).toFixed(0)}s |`);
+  lines.push(`| Slots befüllt | ${filledSlots}/${slotIds.length} |`);
+  lines.push(`| Pflichtbegriffe | ${passCount}/${totalKeywords.length} (${missCount} fehlend) |`);
+  lines.push(`| Halluzinationen | ${forbiddenFound.length === 0 ? 'keine' : forbiddenFound.join(', ')} |`);
+  lines.push(`| Persona-Model | ${config.personaModel} |`);
+  lines.push(`| Mittlere Antwortlänge Persona | ${avgPersonaLen} Zeichen |`);
+  lines.push('');
+
+  if (missCount > 0) {
+    lines.push('### Fehlende Pflichtbegriffe', '');
+    for (const sr of slotResults) {
+      const misses = sr.keywords.filter(k => !k.found);
+      if (misses.length > 0) {
+        lines.push(`- **${sr.id}:** ${misses.map(m => `"${m.kw}"`).join(', ')}`);
+      }
+    }
+    lines.push('');
+  }
+
+  if (forbiddenFound.length > 0) {
+    lines.push('### Halluzinationen gefunden', '');
+    lines.push(`Im Artefakt gefunden: ${forbiddenFound.map(f => `"${f}"`).join(', ')}`, '');
+  }
+
+  // --- Eckdaten ---
+  lines.push('---', '', '## Eckdaten', '');
+  lines.push(`| Parameter | Wert |`);
+  lines.push(`|-----------|------|`);
+  lines.push(`| Playbook | \`${playbookName}\` |`);
+  lines.push(`| Persona-Model | ${config.personaModel} |`);
+  lines.push(`| Explorer-Model | GPT-5.4 (Backend) |`);
+  lines.push(`| Max Turns | ${config.maxTurns} |`);
+  lines.push(`| Tatsächliche Turns | ${turns.length} |`);
+  lines.push('');
+
+  // --- Dialog ---
+  lines.push('---', '', '## Vollständiger Dialog', '');
 
   for (const t of turns) {
     lines.push(`### Turn ${t.turn} — \`${t.phasenstatus}\` | ${t.slots_filled}/${t.slots_total} Slots | ${(t.response_time_ms / 1000).toFixed(1)}s`);
@@ -268,45 +405,33 @@ function generateReport(
     lines.push(`**Explorer:**`);
     lines.push(`> ${t.explorer_question.replace(/\n/g, '\n> ')}`);
     lines.push('');
-    lines.push(`**${personaName.split(',')[0]}:**`);
+    lines.push(`**${personaShort}:**`);
     lines.push(`> ${t.persona_response.replace(/\n/g, '\n> ')}`);
     lines.push('');
   }
 
-  // Extract target artifact from playbook
-  const targetArtifact = extractTargetArtifact(playbook);
-  const actualSlots = extractActualSlots(artifacts);
-
+  // --- Artefakt-Vergleich ---
   lines.push('---', '', '## Artefakt-Vergleich: Soll vs. Ist', '');
 
-  const slotIds = ['prozessausloeser', 'prozessziel', 'prozessbeschreibung',
-    'entscheidungen_und_schleifen', 'beteiligte_systeme', 'variablen_und_daten'];
+  for (const sr of slotResults) {
+    const target = targetArtifact[sr.id];
+    const actual = actualSlots[sr.id];
 
-  for (const slotId of slotIds) {
-    const target = targetArtifact[slotId];
-    const actual = actualSlots[slotId];
-
-    lines.push(`### ${slotId}`);
+    lines.push(`### ${sr.id}`);
     lines.push('');
 
     if (target) {
-      lines.push('**Soll (aus Playbook):**');
+      lines.push('<details><summary>Soll (Playbook)</summary>', '');
       lines.push(`> ${target.content.replace(/\n/g, '\n> ')}`);
-      lines.push('');
-      if (target.mustContain.length > 0) {
-        const checks = target.mustContain.map(kw => {
-          const found = actual?.toLowerCase().includes(kw.toLowerCase());
-          return `${found ? 'PASS' : 'MISS'}: "${kw}"`;
-        });
-        lines.push(`**Pflichtbegriffe:** ${checks.join(' | ')}`);
-        lines.push('');
+      lines.push('', '</details>', '');
+
+      if (sr.keywords.length > 0) {
+        const checks = sr.keywords.map(k => `${k.found ? 'PASS' : '**MISS**'} ${k.kw}`);
+        lines.push(`**Pflichtbegriffe:** ${checks.join(' | ')}`, '');
       }
-    } else {
-      lines.push('**Soll:** (nicht im Playbook definiert)');
-      lines.push('');
     }
 
-    lines.push('**Ist (Explorer-Artefakt):**');
+    lines.push('**Ist:**');
     if (actual) {
       lines.push(`> ${actual.replace(/\n/g, '\n> ')}`);
     } else {
@@ -315,10 +440,20 @@ function generateReport(
     lines.push('');
   }
 
-  lines.push('---', '', '## Artefakt (Rohdaten)', '', '```json',
-    JSON.stringify(artifacts, null, 2), '```');
+  // --- Raw artifacts ---
+  lines.push('---', '', '<details><summary>Artefakt (Rohdaten JSON)</summary>', '',
+    '```json', JSON.stringify(artifacts, null, 2), '```', '', '</details>');
 
   return lines.join('\n');
+}
+
+/** Extract forbidden concepts from playbook. */
+function extractForbiddenConcepts(playbook: string): string[] {
+  const match = playbook.match(/NICHT im Artefakt stehen dürfen[^]*?\n([^#]+)/i);
+  if (!match) return [];
+  return match[1].split(/[,\n]/)
+    .map(s => s.trim())
+    .filter(s => s.length > 2 && !s.startsWith('*') && !s.startsWith('-'));
 }
 
 /** Extract target artifact sections from playbook markdown. */

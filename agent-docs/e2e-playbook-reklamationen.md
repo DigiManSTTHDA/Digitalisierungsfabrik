@@ -214,7 +214,7 @@ Der Vorgang ist fertig wenn das Ticket im ServiceDesk abgeschlossen (oder eskali
 > 7. Ticket abschließen, Reklamationsstatistik in Excel pflegen.
 > Wiederholung: ~12x pro Tag.
 
-**Muss enthalten:** Ticket, proALPHA prüfen, Entscheidung/Lösung, ServiceDesk dokumentieren, proALPHA umsetzen, E-Mail Kunde, Statistik/Excel
+**Muss enthalten:** Ticket, proALPHA, Ersatzlieferung, Gutschrift, Retoure, Ablehnung, E-Mail, Excel
 **Status:** vollstaendig
 
 ### entscheidungen_und_schleifen
@@ -226,7 +226,7 @@ Der Vorgang ist fertig wenn das Ticket im ServiceDesk abgeschlossen (oder eskali
 > ENTSCHEIDUNG: Sonderfall → Eskalation an Herr Fuchs.
 > SCHLEIFE: Jede Reklamation wird einzeln bearbeitet (~12/Tag).
 
-**Muss enthalten:** mindestens 3 Entscheidungen (Frist, Kategorie, Eskalation), 1 Schleife
+**Muss enthalten:** Reklamationsfrist, Produktmangel, Fehllieferung, Transportschaden, Eskalation, SCHLEIFE
 **Status:** vollstaendig
 
 ### beteiligte_systeme
@@ -244,7 +244,7 @@ Der Vorgang ist fertig wenn das Ticket im ServiceDesk abgeschlossen (oder eskali
 > Erstattungsbetrag — bei Gutschrift, aus Warenwert berechnet.
 > Ticketnummer — von ServiceDesk, für proALPHA-Bezug und Excel.
 
-**Muss enthalten:** mindestens 5 Variablen
+**Muss enthalten:** Kundennummer, Artikelnummer, Kategorie, Lösungstyp, Ticketnummer
 **Status:** vollstaendig
 
 ### Dinge die NICHT im Artefakt stehen dürfen (Halluzinationen)
