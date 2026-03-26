@@ -94,33 +94,8 @@ def _merge_slot_patches(
     patches: list[dict],  # type: ignore[type-arg]
     context: ModeContext,
 ) -> list[dict]:  # type: ignore[type-arg]
-    """Post-process LLM patches: merge new content with existing slot content."""
-    merged: list[dict] = []  # type: ignore[type-arg]
-    for patch in patches:
-        path = patch.get("path", "")
-        op = patch.get("op", "")
-        value = patch.get("value", "")
-
-        if (
-            op == "replace"
-            and path.endswith("/inhalt")
-            and isinstance(value, str)
-            and value.strip()
-        ):
-            parts = path.strip("/").split("/")
-            if len(parts) == 3 and parts[0] == "slots":
-                slot_id = parts[1]
-                slot = context.exploration_artifact.slots.get(slot_id)
-                existing = slot.inhalt.strip() if slot and slot.inhalt else ""
-
-                if existing and value.strip() != existing:
-                    if existing[:50] not in value:
-                        merged_value = existing + " " + value.strip()
-                        merged.append({"op": "replace", "path": path, "value": merged_value})
-                        continue
-
-        merged.append(patch)
-    return merged
+    """Pass through LLM patches unchanged. Replace means replace."""
+    return patches
 
 
 def _apply_guardrails(
