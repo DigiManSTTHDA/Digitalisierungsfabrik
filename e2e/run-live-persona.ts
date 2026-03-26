@@ -222,7 +222,7 @@ async function run(config: Config): Promise<void> {
   const reportPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.md`);
   const jsonPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.json`);
 
-  const report = generateReport(personaName, playbookName, config, turns, artifacts, phaseComplete);
+  const report = generateReport(personaName, playbookName, config, turns, artifacts, phaseComplete, playbook);
   await writeFile(reportPath, report, 'utf-8');
   await writeFile(jsonPath, JSON.stringify({ turns, artifacts, config: { ...config, apiKey: '***' } }, null, 2), 'utf-8');
 
@@ -237,34 +237,138 @@ function generateReport(
   turns: TurnLog[],
   artifacts: Record<string, unknown>,
   phaseComplete: boolean,
+  playbook: string,
 ): string {
   const totalTime = turns.reduce((sum, t) => sum + t.response_time_ms, 0);
+  const nearingIdx = turns.findIndex(t => t.phasenstatus === 'nearing_completion');
   const lines: string[] = [
     `# Live-Persona-Test: ${personaName}`,
     '',
     '## Eckdaten',
-    `- Playbook: ${playbookName}`,
-    `- Persona-Model: ${config.personaModel}`,
-    `- Turns: ${turns.length}`,
-    `- Dauer (Backend): ${(totalTime / 1000).toFixed(0)}s`,
-    `- Phase complete: ${phaseComplete ? 'Ja' : 'Nein'}`,
-    `- nearing_completion ab: Turn ${turns.findIndex(t => t.phasenstatus === 'nearing_completion') + 1 || 'nie'}`,
     '',
-    '## Dialog',
+    `| Metrik | Wert |`,
+    `|--------|------|`,
+    `| Playbook | ${playbookName} |`,
+    `| Persona-Model | ${config.personaModel} |`,
+    `| Explorer-Model | GPT-5.4 (Backend) |`,
+    `| Turns | ${turns.length} |`,
+    `| Dauer (Backend) | ${(totalTime / 1000).toFixed(0)}s |`,
+    `| Phase complete | ${phaseComplete ? 'Ja' : 'Nein'} |`,
+    `| nearing_completion ab | Turn ${nearingIdx >= 0 ? nearingIdx + 1 : 'nie'} |`,
     '',
-    '| # | Explorer (Auszug) | Persona (Auszug) | Status | Slots |',
-    '|---|-------------------|------------------|--------|-------|',
+    '---',
+    '',
+    '## Vollständiger Dialog',
+    '',
   ];
 
   for (const t of turns) {
-    const eq = t.explorer_question.substring(0, 80).replace(/\|/g, '/').replace(/\n/g, ' ');
-    const pr = t.persona_response.substring(0, 80).replace(/\|/g, '/').replace(/\n/g, ' ');
-    lines.push(`| ${t.turn} | ${eq} | ${pr} | ${t.phasenstatus} | ${t.slots_filled}/${t.slots_total} |`);
+    lines.push(`### Turn ${t.turn} — \`${t.phasenstatus}\` | ${t.slots_filled}/${t.slots_total} Slots | ${(t.response_time_ms / 1000).toFixed(1)}s`);
+    lines.push('');
+    lines.push(`**Explorer:**`);
+    lines.push(`> ${t.explorer_question.replace(/\n/g, '\n> ')}`);
+    lines.push('');
+    lines.push(`**${personaName.split(',')[0]}:**`);
+    lines.push(`> ${t.persona_response.replace(/\n/g, '\n> ')}`);
+    lines.push('');
   }
 
-  lines.push('', '## Artefakt (final)', '', '```json', JSON.stringify(artifacts, null, 2), '```');
+  // Extract target artifact from playbook
+  const targetArtifact = extractTargetArtifact(playbook);
+  const actualSlots = extractActualSlots(artifacts);
+
+  lines.push('---', '', '## Artefakt-Vergleich: Soll vs. Ist', '');
+
+  const slotIds = ['prozessausloeser', 'prozessziel', 'prozessbeschreibung',
+    'entscheidungen_und_schleifen', 'beteiligte_systeme', 'variablen_und_daten'];
+
+  for (const slotId of slotIds) {
+    const target = targetArtifact[slotId];
+    const actual = actualSlots[slotId];
+
+    lines.push(`### ${slotId}`);
+    lines.push('');
+
+    if (target) {
+      lines.push('**Soll (aus Playbook):**');
+      lines.push(`> ${target.content.replace(/\n/g, '\n> ')}`);
+      lines.push('');
+      if (target.mustContain.length > 0) {
+        const checks = target.mustContain.map(kw => {
+          const found = actual?.toLowerCase().includes(kw.toLowerCase());
+          return `${found ? 'PASS' : 'MISS'}: "${kw}"`;
+        });
+        lines.push(`**Pflichtbegriffe:** ${checks.join(' | ')}`);
+        lines.push('');
+      }
+    } else {
+      lines.push('**Soll:** (nicht im Playbook definiert)');
+      lines.push('');
+    }
+
+    lines.push('**Ist (Explorer-Artefakt):**');
+    if (actual) {
+      lines.push(`> ${actual.replace(/\n/g, '\n> ')}`);
+    } else {
+      lines.push('> (leer)');
+    }
+    lines.push('');
+  }
+
+  lines.push('---', '', '## Artefakt (Rohdaten)', '', '```json',
+    JSON.stringify(artifacts, null, 2), '```');
 
   return lines.join('\n');
+}
+
+/** Extract target artifact sections from playbook markdown. */
+function extractTargetArtifact(playbook: string): Record<string, { content: string; mustContain: string[] }> {
+  const result: Record<string, { content: string; mustContain: string[] }> = {};
+  const slotIds = ['prozessausloeser', 'prozessziel', 'prozessbeschreibung',
+    'entscheidungen_und_schleifen', 'beteiligte_systeme', 'variablen_und_daten'];
+
+  for (const slotId of slotIds) {
+    // Find ### slotId section
+    const headerPattern = new RegExp(`### ${slotId}\\b`, 'i');
+    const match = playbook.match(headerPattern);
+    if (!match || match.index === undefined) continue;
+
+    const startIdx = match.index + match[0].length;
+    // Find next ### or --- or end
+    const rest = playbook.substring(startIdx);
+    const endMatch = rest.match(/\n###\s|\n---/);
+    const section = endMatch ? rest.substring(0, endMatch.index) : rest.substring(0, 500);
+
+    // Extract quoted content (lines starting with >)
+    const quotedLines = section.split('\n')
+      .filter(l => l.trim().startsWith('>'))
+      .map(l => l.replace(/^>\s*/, '').trim())
+      .filter(Boolean);
+    const content = quotedLines.join('\n');
+
+    // Extract "Muss enthalten:" line
+    const mustMatch = section.match(/\*\*Muss enthalten:\*\*\s*(.+)/);
+    const mustContain = mustMatch
+      ? mustMatch[1].split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    result[slotId] = { content, mustContain };
+  }
+  return result;
+}
+
+/** Extract actual slot contents from artifacts response. */
+function extractActualSlots(artifacts: Record<string, unknown>): Record<string, string> {
+  const result: Record<string, string> = {};
+  const exploration = artifacts['exploration'] as Record<string, unknown> | undefined;
+  if (!exploration) return result;
+  const slots = exploration['slots'] as Record<string, Record<string, unknown>> | undefined;
+  if (!slots) return result;
+
+  for (const [slotId, slot] of Object.entries(slots)) {
+    result[slotId] = (slot['inhalt'] as string) ?? '';
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
