@@ -73,9 +73,13 @@ class OpenAIClient(LLMClient):
                 message_count=len(messages),
             )
 
+        # Newer models (gpt-5.x, o-series) require max_completion_tokens
+        model = self._settings.llm_model
+        token_param = "max_completion_tokens" if model.startswith(("gpt-5", "o")) else "max_tokens"
         kwargs: dict = {  # type: ignore[type-arg]
-            "model": self._settings.llm_model,
-            "max_tokens": 4096,
+            "model": model,
+            token_param: 4096,
+            "temperature": 0.3,
             "messages": openai_messages,
         }
         if openai_tools:

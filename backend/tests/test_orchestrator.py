@@ -231,8 +231,8 @@ async def test_exploration_mode_returns_valid_output() -> None:
     ctx = _make_context(_minimal_wm())
     output = await mode.call(ctx)
     assert isinstance(output, ModeOutput)
-    # ExplorationMode without LLM client initializes 7 Pflicht-Slots
-    assert len(output.patches) == 7
+    # ExplorationMode without LLM client initializes 6 Pflicht-Slots
+    assert len(output.patches) == 6
     assert output.flags == []
     assert output.phasenstatus == Phasenstatus.in_progress
     assert "Pflicht-Slot" in output.nutzeraeusserung or len(output.nutzeraeusserung) > 10
@@ -475,14 +475,14 @@ async def test_completeness_updated_after_turn() -> None:
     orchestrator = _make_orchestrator(repo)
     result = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Hallo"))
 
-    # ExplorationMode now initializes 7 Pflicht-Slots + 1 pre-existing = 8 total
+    # ExplorationMode now initializes 6 Pflicht-Slots + 1 pre-existing = 7 total
     # The pre-existing slot (s1) is vollstaendig → 1 filled
-    assert result.working_memory.bekannte_slots == 8
+    assert result.working_memory.bekannte_slots == 7
     assert result.working_memory.befuellte_slots == 1
 
     # Verify persisted
     reloaded = repo.load(project.projekt_id)
-    assert reloaded.working_memory.bekannte_slots == 8
+    assert reloaded.working_memory.bekannte_slots == 7
     assert reloaded.working_memory.befuellte_slots == 1
 
 

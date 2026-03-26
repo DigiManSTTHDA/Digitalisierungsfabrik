@@ -25,18 +25,9 @@ APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
     "input_schema": {
         "type": "object",
         "properties": {
-            "nutzeraeusserung": {
-                "type": "string",
-                "description": (
-                    "Deine Antwort an den Nutzer — wird im Chatbereich angezeigt. "
-                    "Muss eine gezielte Folgefrage enthalten. "
-                    "KEINE Zusammenfassung, KEINE Paraphrase des Gesagten. "
-                    "Pflichtfeld, darf nicht leer sein."
-                ),
-            },
             "patches": {
                 "type": "array",
-                "description": "Liste von RFC 6902 JSON Patch Operationen auf das aktive Artefakt",
+                "description": "Liste von RFC 6902 JSON Patch Operationen auf das aktive Artefakt. IMMER ZUERST ausfüllen.",
                 "items": {
                     "type": "object",
                     "properties": {
@@ -67,8 +58,17 @@ APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
                     "der Nutzer hat den Stand bestätigt, Übergabe an den Moderator."
                 ),
             },
+            "nutzeraeusserung": {
+                "type": "string",
+                "description": (
+                    "Deine Antwort an den Nutzer — wird im Chatbereich angezeigt. "
+                    "Muss eine gezielte Folgefrage enthalten. "
+                    "KEINE Zusammenfassung, KEINE Paraphrase des Gesagten. "
+                    "Pflichtfeld, darf nicht leer sein."
+                ),
+            },
         },
-        "required": ["nutzeraeusserung", "patches", "phasenstatus"],
+        "required": ["patches", "phasenstatus", "nutzeraeusserung"],
     },
 }
 

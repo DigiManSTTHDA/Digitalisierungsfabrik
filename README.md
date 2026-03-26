@@ -320,9 +320,9 @@ Alle Parameter werden aus `backend/.env` gelesen (Vorlage: `backend/.env.example
 
 | Parameter | Standardwert | Beschreibung |
 |---|---|---|
-| `LLM_PROVIDER` | `anthropic` | LLM-Anbieter: `anthropic` oder `ollama` |
-| `LLM_MODEL` | `claude-opus-4-6` | Modellname |
-| `LLM_API_KEY` | *(leer)* | API-Key (Anthropic) |
+| `LLM_PROVIDER` | `openai` | LLM-Anbieter: `openai`, `anthropic` oder `ollama` |
+| `LLM_MODEL` | `gpt-5.4` | Modellname (siehe Hinweis zur Modellwahl unten) |
+| `LLM_API_KEY` | *(leer)* | API-Key |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama-Endpoint (nur bei `ollama`) |
 | `DATABASE_PATH` | `./data/digitalisierungsfabrik.db` | SQLite-Datenbankpfad |
 | `DIALOG_HISTORY_N` | `3` | Anzahl letzter Turns im Kontext (Dialog-Modi) |
@@ -333,6 +333,25 @@ Alle Parameter werden aus `backend/.env` gelesen (Vorlage: `backend/.env.example
 | `LOG_LEVEL` | `INFO` | Log-Level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 | `LLM_LOG_ENABLED` | `true` | LLM-Requests loggen |
 | `LLM_DEBUG_LOG` | `false` | Vollständige LLM-Payloads pro Turn als JSON-Dateien schreiben |
+
+### Modellwahl (wichtig!)
+
+Die Modellwahl hat massiven Einfluss auf die Qualität der Prozesserhebung. Das System stellt hohe Anforderungen an Instruction Following, strukturierte Extraktion und gewissenhaftes Arbeiten mit JSON-Patches.
+
+**Empfohlene Modelle (OpenAI):**
+
+| Modell | Empfehlung | Anmerkung |
+|--------|-----------|-----------|
+| `gpt-5.4` | **Empfohlen** | Bestes Instruction Following, gewissenhafte Extraktion |
+| `gpt-5.4-mini` | Gut | Günstiger, für die meisten Fälle ausreichend |
+| `o4-mini` | Für schwierige Fälle | Reasoning-Modell mit Selbstprüfung, teurer und langsamer |
+| `gpt-4.1` | Minimum | Akzeptables Instruction Following |
+| `gpt-4o` | **Nicht verwenden** | Unzureichendes Instruction Following für diesen Use Case: überspringt Patches, markiert Slots vorzeitig als fertig, paraphrasiert statt zu extrahieren, fragt bereits beantwortete Dinge erneut. Bekanntes, von OpenAI dokumentiertes Problem (GPT-4.1 wurde explizit als Antwort darauf veröffentlicht). |
+
+**Technische Hinweise:**
+- Modelle ab GPT-5.x und o-Serie benötigen `max_completion_tokens` statt `max_tokens` — der OpenAI-Client erkennt das automatisch anhand des Modellnamens.
+- Temperature ist auf 0.3 gesetzt (optimiert für strukturierte Extraktion).
+- Das Tool-Schema ist so geordnet, dass `patches` vor `nutzeraeusserung` generiert wird (Extraktion vor Konversation).
 
 **Background-Init** (CR-009, ADR-009): Die Initialisierung verwendet einen Single-Call-Ansatz — kein Loop, keine konfigurierbaren Turn-Limits. Maximal 3 LLM-Calls pro Init (Init + Coverage-Validator + optionaler Korrektur-Call).
 

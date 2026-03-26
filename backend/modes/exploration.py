@@ -1,10 +1,9 @@
 """Explorationsmodus — erfasst implizites Prozesswissen des Nutzers (SDD 6.6.1).
 
 Calls the LLM via LLMClient to conduct a structured interview, filling the
-7 Pflicht-Slots of the ExplorationArtifact through dialog with the user.
+6 Pflicht-Slots of the ExplorationArtifact through dialog with the user.
 
-The LLM decides the phasenstatus (in_progress / nearing_completion / phase_complete).
-Deterministic guardrails prevent premature phase_complete when slots are still empty.
+The LLM decides the phasenstatus directly — no deterministic guardrails.
 
 SDD references: 6.6.1 (Explorationsmodus), FR-B-00 (Pflicht-Slots),
 FR-A-02 (Tool Use API), FR-A-08 (Systemsprache Deutsch).
@@ -20,7 +19,8 @@ from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput, translate_dialog_history
 
-# 7 Pflicht-Slots per SDD 5.3 and FR-B-00 (ADR CR-003: consolidated from 9)
+# 6 Pflicht-Slots per SDD 5.3 and FR-B-00 (ADR CR-003: consolidated from 9)
+# prozesszusammenfassung removed — redundant cognitive load, LLM wasted turns on it
 PFLICHT_SLOTS: dict[str, str] = {
     "prozessausloeser": "Prozessauslöser",
     "prozessziel": "Prozessziel",
@@ -28,7 +28,6 @@ PFLICHT_SLOTS: dict[str, str] = {
     "entscheidungen_und_schleifen": "Entscheidungen und Schleifen",
     "beteiligte_systeme": "Beteiligte Systeme",
     "variablen_und_daten": "Variablen und Daten",
-    "prozesszusammenfassung": "Prozesszusammenfassung",
 }
 
 _PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "exploration.md"
@@ -66,113 +65,19 @@ def _build_slot_status(context: ModeContext) -> str:
     for slot_id, titel in PFLICHT_SLOTS.items():
         slot = context.exploration_artifact.slots.get(slot_id)
         if slot is None or not slot.inhalt:
-            lines.append(f"- {titel} ({slot_id}) [LEER — braucht Informationen]")
+            lines.append(f"- {titel} ({slot_id}) [leer]")
         else:
             status = slot.completeness_status.value
             lines.append(f"- {titel} ({slot_id}) [{status}]: {slot.inhalt}")
     return "\n".join(lines)
 
 
-_SKIP_SLOTS = {"prozesszusammenfassung", "entscheidungen_und_schleifen", "variablen_und_daten"}
-
-
-def _next_empty_slot(context: ModeContext) -> tuple[str, str] | None:
-    """Return (slot_id, titel) of the first empty/partial Pflicht-Slot, or None."""
-    for slot_id, titel in PFLICHT_SLOTS.items():
-        if slot_id in _SKIP_SLOTS:
-            continue
-        slot = context.exploration_artifact.slots.get(slot_id)
-        if slot is None or not slot.inhalt or slot.completeness_status == CompletenessStatus.leer:
-            return slot_id, titel
-    slot = context.exploration_artifact.slots.get("prozesszusammenfassung")
-    if slot is None or not slot.inhalt or slot.completeness_status == CompletenessStatus.leer:
-        return "prozesszusammenfassung", "Prozesszusammenfassung"
-    return None
-
-
-def _merge_slot_patches(
-    patches: list[dict],  # type: ignore[type-arg]
-    context: ModeContext,
-) -> list[dict]:  # type: ignore[type-arg]
-    """Pass through LLM patches unchanged. Replace means replace."""
-    return patches
-
-
-def _apply_guardrails(
-    llm_phasenstatus: Phasenstatus,
-    context: ModeContext,
-    patches: list[dict],  # type: ignore[type-arg]
-) -> Phasenstatus:
-    """Deterministic guardrails on top of the LLM's phasenstatus decision.
-
-    The LLM decides the phasenstatus, but we enforce two hard constraints:
-
-    1. BLOCK phase_complete if any Pflicht-Slot is still leer (no content).
-       The LLM might be overconfident. Can't complete with empty slots.
-
-    2. PROMOTE to phase_complete if the LLM says nearing_completion but all
-       slots have content and no new content was written this turn. This catches
-       LLMs that are too conservative and never say phase_complete even when
-       the user is clearly done.
-    """
-    # Build projected slot states (current + patches about to be applied)
-    projected: dict[str, CompletenessStatus] = {}
-    for slot_id in PFLICHT_SLOTS:
-        slot = context.exploration_artifact.slots.get(slot_id)
-        projected[slot_id] = slot.completeness_status if slot else CompletenessStatus.leer
-
-    for patch in patches:
-        path = patch.get("path", "")
-        if path.endswith("/completeness_status") and patch.get("op") == "replace":
-            parts = path.strip("/").split("/")
-            if len(parts) == 3 and parts[0] == "slots" and parts[1] in PFLICHT_SLOTS:
-                try:
-                    projected[parts[1]] = CompletenessStatus(patch["value"])
-                except ValueError:
-                    pass
-        if path.endswith("/inhalt") and patch.get("op") == "replace" and patch.get("value"):
-            parts = path.strip("/").split("/")
-            if len(parts) == 3 and parts[0] == "slots" and parts[1] in PFLICHT_SLOTS:
-                if projected.get(parts[1]) == CompletenessStatus.leer:
-                    projected[parts[1]] = CompletenessStatus.teilweise
-
-    has_leer = any(s == CompletenessStatus.leer for s in projected.values())
-
-    # Guardrail 1: BLOCK — can't complete with empty or incomplete slots.
-    # All slots must be at least vollstaendig for phase_complete.
-    all_at_least_complete = all(
-        s in (CompletenessStatus.vollstaendig, CompletenessStatus.nutzervalidiert)
-        for s in projected.values()
-    )
-    if llm_phasenstatus == Phasenstatus.phase_complete and not all_at_least_complete:
-        if has_leer:
-            return Phasenstatus.in_progress
-        return Phasenstatus.nearing_completion
-
-    # Guardrail 2: PROMOTE — LLM says nearing but all slots are vollstaendig or nutzervalidiert.
-    # If all slots have sufficient content and no new content was written this turn,
-    # promote to phase_complete. This covers the common case where the user provides
-    # all information without explicitly confirming each slot individually.
-    all_sufficiently_complete = all(
-        s in (CompletenessStatus.vollstaendig, CompletenessStatus.nutzervalidiert)
-        for s in projected.values()
-    )
-    if llm_phasenstatus == Phasenstatus.nearing_completion and all_sufficiently_complete:
-        content_patches = [
-            p for p in patches if p.get("path", "").endswith("/inhalt") and p.get("value")
-        ]
-        if not content_patches:
-            return Phasenstatus.phase_complete
-
-    return llm_phasenstatus
 
 
 class ExplorationMode(BaseMode):
     """Explorationsmodus (SDD 6.6.1) — real LLM implementation.
 
-    The LLM decides the phasenstatus. Deterministic guardrails prevent
-    premature completion (empty slots) and help conservative LLMs that
-    never signal phase_complete on their own.
+    The LLM decides the phasenstatus directly without guardrails.
     """
 
     def __init__(self, llm_client: LLMClient | None = None) -> None:
@@ -198,27 +103,6 @@ class ExplorationMode(BaseMode):
         system_prompt = system_prompt.replace("{context_summary}", context_summary)
         system_prompt = system_prompt.replace("{slot_status}", slot_status)
 
-        next_slot = _next_empty_slot(context)
-        if next_slot:
-            hint = (
-                f"\n\n## Nächste Frage\n"
-                f"Stelle eine Frage zum Slot **{next_slot[1]}** ({next_slot[0]}) — "
-                f"dieser ist noch leer oder unvollständig.\n\n"
-                f"WICHTIG: Auch wenn du eine Frage zu einem bestimmten Slot stellst, "
-                f"extrahiere trotzdem ALLE neuen Informationen aus der Nutzernachricht "
-                f"und schreibe Patches für ALLE betroffenen Slots."
-            )
-        else:
-            hint = (
-                "\n\n## Nächste Frage\n"
-                "Alle Pflicht-Slots sind befüllt. Frage den Nutzer gezielt nach Details "
-                "die noch fehlen könnten oder ob er Ergänzungen hat.\n\n"
-                "WICHTIG: Auch wenn alle Slots befüllt sind — extrahiere WEITERHIN alle "
-                "neuen Informationen aus jeder Nutzernachricht und schreibe Patches. "
-                "Der Nutzer liefert oft wichtige Details in Nebensätzen. "
-                "Jede neue Information muss in den passenden Slot geschrieben werden."
-            )
-        system_prompt += hint
 
         messages = translate_dialog_history(context.dialog_history)
 
@@ -230,17 +114,16 @@ class ExplorationMode(BaseMode):
         )
 
         llm_patches = [p for p in (response.tool_input.get("patches") or []) if isinstance(p, dict)]
-        llm_patches = _merge_slot_patches(llm_patches, context)
         all_patches = init_patches + llm_patches
 
-        # LLM decides phasenstatus, guardrails enforce hard constraints
+        # LLM decides phasenstatus directly — no guardrails
         raw_status = response.tool_input.get("phasenstatus", "in_progress")
         try:
             llm_phasenstatus = Phasenstatus(raw_status)
         except ValueError:
             llm_phasenstatus = Phasenstatus.in_progress
 
-        phasenstatus = _apply_guardrails(llm_phasenstatus, context, llm_patches)
+        phasenstatus = llm_phasenstatus
 
         flags: list[Flag] = []
         if phasenstatus == Phasenstatus.phase_complete:

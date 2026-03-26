@@ -108,7 +108,6 @@ async def test_first_turn_initializes_pflicht_slots() -> None:
         "entscheidungen_und_schleifen",
         "beteiligte_systeme",
         "variablen_und_daten",
-        "prozesszusammenfassung",
     }
     assert slot_ids == expected_ids
     db.close()
@@ -185,12 +184,12 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
     llm = _make_mock_llm()
     orchestrator = _make_orchestrator(repo, llm)
 
-    # First turn: initializes 7 slots
+    # First turn: initializes 6 slots
     result1 = await orchestrator.process_turn(project.projekt_id, TurnInput(text="Erster Turn"))
     assert result1.error is None
 
     reloaded_after_first = repo.load(project.projekt_id)
-    assert len(reloaded_after_first.exploration_artifact.slots) == 7
+    assert len(reloaded_after_first.exploration_artifact.slots) == 6
 
     # Second turn: LLM returns an empty patches list (no new slot writes)
     llm2 = _make_mock_llm(patches=[])
@@ -200,10 +199,10 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
     assert result2.error is None
 
     reloaded_after_second = repo.load(project.projekt_id)
-    # Still exactly 7 slots — no duplicate add patches
-    assert len(reloaded_after_second.exploration_artifact.slots) == 7
+    # Still exactly 6 slots — no duplicate add patches
+    assert len(reloaded_after_second.exploration_artifact.slots) == 6
 
-    # The 7 slot IDs must be unchanged (no new slots added, none removed)
+    # The 6 slot IDs must be unchanged (no new slots added, none removed)
     expected_ids = {
         "prozessausloeser",
         "prozessziel",
@@ -211,7 +210,6 @@ async def test_second_turn_does_not_reinitialize_slots() -> None:
         "entscheidungen_und_schleifen",
         "beteiligte_systeme",
         "variablen_und_daten",
-        "prozesszusammenfassung",
     }
     assert set(reloaded_after_second.exploration_artifact.slots.keys()) == expected_ids
     db.close()
@@ -367,7 +365,7 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
     assert "LEER" in status or "leer" in status, (
         "Uninitialized Pflicht-Slots must appear as 'leer'/'LEER' in the slot status string"
     )
-    # All 7 Pflicht-Slots must be listed by their German title
+    # All 6 Pflicht-Slots must be listed by their German title
     for titel in (
         "Prozessauslöser",
         "Prozessziel",
@@ -375,12 +373,11 @@ def test_build_slot_status_shows_leer_for_uninitialized_slots() -> None:
         "Entscheidungen und Schleifen",
         "Beteiligte Systeme",
         "Variablen und Daten",
-        "Prozesszusammenfassung",
     ):
         assert titel in status, f"Pflicht-Slot '{titel}' missing from slot status"
-    # Verify count: 7 lines expected
+    # Verify count: 6 lines expected
     lines = [line for line in status.splitlines() if line.strip()]
-    assert len(lines) == 7, f"Expected 7 slot lines, got {len(lines)}"
+    assert len(lines) == 6, f"Expected 6 slot lines, got {len(lines)}"
 
 
 async def test_output_validator_rejects_invalid_path() -> None:
@@ -412,10 +409,9 @@ async def test_output_validator_rejects_invalid_path() -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_nearing_completion_escalates_to_phase_complete() -> None:
-    """When all slots are teilweise and LLM returns no content patches,
-    phase_complete should be emitted so the Moderator can propose transition."""
-    from artifacts.models import CompletenessStatus, ExplorationSlot
+async def test_nearing_completion_stays_nearing_without_guardrails() -> None:
+    """Without guardrails, LLM's nearing_completion is used directly — no auto-promote."""
+    from artifacts.models import CompletenessStatus, ExplorationSlot, Phasenstatus
     from modes.exploration import PFLICHT_SLOTS
 
     db = Database(":memory:")
@@ -423,8 +419,7 @@ async def test_nearing_completion_escalates_to_phase_complete() -> None:
     project = repo.create("Test")
     _set_exploration_mode(repo, project)
 
-    # Pre-fill all 7 slots with nutzervalidiert status (FR-C-07: user confirmed).
-    # Bump version so save() actually writes the new state.
+    # Pre-fill all 6 slots with nutzervalidiert status.
     for slot_id, titel in PFLICHT_SLOTS.items():
         project.exploration_artifact.slots[slot_id] = ExplorationSlot(
             slot_id=slot_id,
@@ -435,9 +430,7 @@ async def test_nearing_completion_escalates_to_phase_complete() -> None:
     project.exploration_artifact.version += 1
     repo.save(project)
 
-    # LLM returns no content patches, says nearing_completion (user said "I'm done").
-    # Guardrail should promote to phase_complete because all slots have content
-    # and no new content was written.
+    # LLM returns nearing_completion — should stay as-is (no guardrail promotion).
     llm = _make_mock_llm(
         nutzeraeusserung="Alles klar, wir können weitermachen.",
         patches=[],
@@ -448,9 +441,10 @@ async def test_nearing_completion_escalates_to_phase_complete() -> None:
         project.projekt_id, TurnInput(text="Mir fällt nichts mehr ein")
     )
 
-    # Should escalate to moderator via phase_complete
     assert result.error is None
     reloaded = repo.load(project.projekt_id)
-    assert reloaded.aktiver_modus == "moderator"
-    assert "phase_complete" in result.flags
+    # LLM said nearing_completion, no guardrail to promote — stays in exploration
+    assert reloaded.working_memory.phasenstatus == Phasenstatus.nearing_completion
+    assert reloaded.aktiver_modus == "exploration"
+    assert "phase_complete" not in result.flags
     db.close()

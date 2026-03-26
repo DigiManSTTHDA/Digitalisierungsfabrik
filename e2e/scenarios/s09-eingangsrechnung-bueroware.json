@@ -1,0 +1,116 @@
+{
+  "id": "S09",
+  "name": "Eingangsrechnung BüroWare (Frau Meier)",
+  "description": "E2E-Test Exploration: Frau Meier beschreibt ihren Rechnungsverbuchungsprozess (Outlook → PDF → BüroWare). Testet kalibriertem Prompt mit GPT-5.4: Granularität 7-12 Schritte, Abschluss-Timing, keine Wiederholungen.",
+  "tags": ["exploration", "kalibrierung", "bueroware", "live-persona"],
+  "intent": {
+    "process_description": "Eingangsrechnungen verbuchen: PDF aus Outlook speichern, Daten ablesen, in BüroWare eintippen, PDF anhängen, E-Mail verschieben",
+    "expected_structure_steps": 8,
+    "expected_complexity": "mittel",
+    "key_concepts": ["Eingangsrechnung", "Outlook", "BüroWare", "PDF", "Kreditor", "Kostenstelle", "Rechnungseingang"],
+    "forbidden_concepts": ["OCR", "KI-gestützt", "automatische Belegerkennung", "API", "REST", "Datenbankzugriff", "Machine Learning", "SAP", "DATEV"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E9-01",
+        "message": "Ja klar, können wir loslegen. Also bei mir geht's um Rechnungen einbuchen. Die kommen per E-Mail als PDF und ich tipp die dann in unser System ein. Das mach ich bestimmt 30 Mal am Tag.",
+        "note": "Initialer Dump — Prozess, Volumen, zwei Systeme",
+        "expect": {
+          "mode_should_be": "exploration",
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E9-02",
+        "message": "Das bin ich, Frau Meier, Sachbearbeiterin Buchhaltung bei der Riedel Haustechnik GmbH. Meine Kollegin Frau Engel macht eher die Zahlungsläufe und Mahnungen. EMMA würde quasi meine Arbeit übernehmen. Angefangen wird in Outlook — ich öffne morgens meinen Posteingang und da liegen dann die E-Mails mit den Rechnungen drin. Die erkennt man am Betreff, da steht dann sowas wie 'Rechnung Nr. soundso' oder manchmal auch 'Invoice'.",
+        "note": "Wer + Start klar: Frau Meier, Outlook Posteingang"
+      },
+      {
+        "id": "E9-03",
+        "message": "Das ist BüroWare, unser ERP-System. Das ist ein Desktop-Programm, hab ich als Verknüpfung auf dem Desktop. Da geh ich dann auf Buchhaltung, Rechnungseingang, Neue Rechnung — und dann kommt die Eingabemaske.",
+        "note": "Zweites System benannt: BüroWare, Menüpfad"
+      },
+      {
+        "id": "E9-04",
+        "message": "Also der Ablauf ist so: Ich klick auf die E-Mail in Outlook, dann Rechtsklick auf den PDF-Anhang, Speichern unter, und speicher das auf dem Netzlaufwerk unter S:\\Buchhaltung\\Rechnungseingang\\2026\\03\\. Dann mach ich Doppelklick drauf, die öffnet sich im Adobe Acrobat Reader, und da les ich alles ab: Lieferantenname, Rechnungsnummer, Rechnungsdatum, Nettobetrag, MwSt.-Betrag, Bruttobetrag, Zahlungsziel und die IBAN vom Lieferanten. Dann wechsel ich zu BüroWare und tipp das alles ein.",
+        "note": "Kernablauf detailliert: PDF speichern, öffnen, Daten ablesen, BüroWare eintippen"
+      },
+      {
+        "id": "E9-05",
+        "message": "In BüroWare füll ich diese Felder aus: Im Feld Kreditor tipp ich die ersten Buchstaben vom Lieferanten, da kommt ein Dropdown, ich klick den richtigen an. Dann Rechnungsnummer, Rechnungsdatum, Eingangsdatum ist das heutige Datum, Nettobetrag, MwSt.-Satz als Dropdown — meistens 19%, manchmal 7% oder 0%. Bruttobetrag berechnet BüroWare automatisch, da schau ich nur ob's stimmt. Dann noch Kostenstelle und Zahlungsziel. Wenn ich auf Speichern klicke, zeigt BüroWare eine Bestätigung: 'Rechnung erfasst, Belegnummer ER-2026-00456'.",
+        "note": "Alle BüroWare-Felder + Speichern-Bestätigung"
+      },
+      {
+        "id": "E9-06",
+        "message": "Wenn der Lieferant noch nicht im System ist — das kommt so ungefähr zweimal die Woche vor — dann gibt's da einen Button 'Neuer Kreditor'. Da kommt dann so ein kleines Formular wo ich Name, Adresse und IBAN eintrage. Danach geht's normal weiter. Und die Kostenstelle: Material oder Werkzeug ist 4100 Wareneinkauf, Bürobedarf 4200 Büro, Fahrzeuge 4300 Fuhrpark. Wenn ich's nicht zuordnen kann, nehm ich 4900 Sonstiges, das klärt Frau Engel dann.",
+        "note": "Entscheidungen: Kreditor neu anlegen, Kostenstellen-Zuordnung"
+      },
+      {
+        "id": "E9-07",
+        "message": "Ach ja, nachdem ich die Rechnung gespeichert hab, häng ich das PDF noch in BüroWare an. Da gibt's so ein Büroklammer-Icon, 'Dokument anhängen'. Datei-Dialog kommt, ich navigier zum PDF auf dem Netzlaufwerk, wähl die Datei aus, fertig. Dann wechsel ich zurück zu Outlook und verschieb die E-Mail per Drag & Drop in den Ordner 'Verarbeitet'. Dann ist die Rechnung erledigt und ich mach die nächste E-Mail.",
+        "note": "PDF anhängen + E-Mail verschieben — Abschluss pro Rechnung"
+      },
+      {
+        "id": "E9-08",
+        "message": "Und den Bruttobetrag prüf ich immer: BüroWare rechnet den automatisch aus, das Feld kann ich gar nicht bearbeiten. Wenn der nicht mit der Rechnung übereinstimmt, geh ich meine Eingaben nochmal durch — meistens hab ich mich beim Nettobetrag vertippt oder den falschen MwSt.-Satz genommen. Und das Zahlungsziel: auf der Rechnung steht meistens sowas wie '30 Tage netto', da rechne ich Rechnungsdatum plus 30 Tage und trag das Datum ein.",
+        "note": "Weitere Entscheidungen: Brutto-Check, Zahlungsziel-Berechnung"
+      },
+      {
+        "id": "E9-09",
+        "message": "Es gibt noch ein paar Sonderfälle. Gutschriften kommen auch per E-Mail, da steht 'Gutschrift' im Betreff oder auf dem PDF. Die erfass ich nicht über 'Neue Rechnung' sondern über 'Neue Gutschrift', gleiche Felder, aber BüroWare bucht den Betrag automatisch als negativ. Kommt so zweimal die Woche vor. Und ganz selten, vielleicht einmal im Monat, kommt eine Rechnung in Schweizer Franken. Da google ich den aktuellen Kurs, rechne um, trag den Euro-Betrag ein und schreib Originalbetrag und Kurs ins Bemerkungsfeld. Wenn mal ein PDF unleserlich ist, schreib ich dem Lieferanten eine Antwort-Mail und verschieb die E-Mail in den Ordner 'Klärung' statt 'Verarbeitet'.",
+        "note": "Sonderfälle: Gutschrift, Fremdwährung, unleserliches PDF"
+      },
+      {
+        "id": "E9-10",
+        "message": "Insgesamt bin ich fertig, wenn im Outlook-Posteingang keine Rechnungs-Mails mehr drin sind. Die sind dann alle in 'Verarbeitet' oder bei Sonderfällen in 'Klärung'. Das war's eigentlich.",
+        "note": "Endbedingung klar — sollte nearing_completion triggern",
+        "nudges": [
+          "Ja, das passt so. Können wir weitermachen.",
+          "Nee, mir fällt nichts mehr ein. Das haben wir alles besprochen."
+        ],
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      }
+    ],
+    "strukturierung": [],
+    "spezifikation": [],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E9-01",
+      "name": "Exploration gestartet",
+      "type": "state_check",
+      "check": {
+        "expected_mode": "exploration",
+        "expected_phase": "exploration"
+      }
+    },
+    {
+      "after_turn": "E9-05",
+      "name": "Kernslots nach Turn 5",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 3
+      }
+    },
+    {
+      "after_turn": "E9-09",
+      "name": "Keine Halluzinationen",
+      "type": "artifact_check",
+      "check": {
+        "should_not_contain": ["OCR", "KI-gestützt", "automatische Belegerkennung", "SAP", "DATEV", "API"]
+      }
+    },
+    {
+      "after_turn": "E9-10",
+      "name": "Alle Slots gefüllt",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 5
+      }
+    }
+  ]
+}
