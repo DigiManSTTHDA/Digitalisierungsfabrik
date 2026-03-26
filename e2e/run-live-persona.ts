@@ -250,7 +250,15 @@ async function generateAnalysis(apiKey: string, model: string, playbook: string,
     messages: [
       {
         role: 'system',
-        content: `Du bist ein erfahrener Qualitätsanalyst für RPA-Prozesserhebungen. Du bewertest das Ergebnis eines E2E-Tests der Explorationsphase.
+        content: `Du bist ein erfahrener Qualitätsanalyst für RPA-Prozesserhebungen. Du bewertest das Ergebnis eines E2E-Tests der **Explorationsphase**.
+
+WICHTIG — Bewertungsmaßstab:
+Dies ist die ERSTE von vier Phasen (Exploration → Strukturierung → Spezifikation → Validierung). Die Exploration muss den Prozess **im Überblick nachvollziehbar** machen — nicht jedes Detail erfassen. Fehlende Einzelfelder, Variable oder Klick-Details sind KEIN Durchfallgrund, solange der Prozess in seinen wesentlichen Abläufen, Systemen, Entscheidungen und Schleifen verstanden wurde. Details werden in den Folgephasen ergänzt.
+
+Bewertungsskala:
+- **BESTANDEN** — Prozess ist nachvollziehbar, ein Prozessanalyst könnte damit in die nächste Phase gehen. Fehlende Details sind akzeptabel.
+- **BESTANDEN MIT LÜCKEN** — Prozess ist im Kern nachvollziehbar, aber es fehlen wichtige strukturelle Elemente (z.B. ein ganzer Entscheidungspfad, ein System, ein wesentlicher Prozessschritt).
+- **NICHT BESTANDEN** — Prozess ist nicht nachvollziehbar oder es fehlen wesentliche Teile (z.B. Start/Ende unklar, Hauptablauf unvollständig, Halluzinationen).
 
 Du bekommst:
 1. Das PLAYBOOK (Ground Truth — was der Prozess wirklich ist)
@@ -261,27 +269,25 @@ Schreibe eine qualitative Analyse auf Deutsch mit diesen Abschnitten:
 ## Qualitative Analyse
 
 ### Gesamturteil
-Ein Absatz: Bestanden oder nicht? Warum? Ist das Artefakt übergabefähig an die nächste Phase?
+Ein Absatz: Bestanden oder nicht? Warum? Könnte ein Prozessanalyst mit diesem Artefakt in die Strukturierungsphase gehen?
 
 ### Slot-für-Slot-Bewertung
-Pro Slot (prozessausloeser, prozessziel, prozessbeschreibung, entscheidungen_und_schleifen, beteiligte_systeme, variablen_und_daten):
-- Ist der Inhalt sinngemäß korrekt und vollständig?
-- Was fehlt konkret (gegen das Playbook geprüft)?
-- Keyword-"MISS" aus dem mechanischen Check: ist das ein echtes Problem oder ein False Positive?
+Pro Slot kurz (2-3 Sätze):
+- Ist der Inhalt sinngemäß korrekt? Was Wesentliches fehlt?
+- Keyword-"MISS" aus dem mechanischen Check: ist das ein echtes Problem oder ein False Positive (steht sinngemäß drin, nur anders formuliert)?
 
-### Echte Lücken
-Liste konkreter Informationen aus dem Playbook die im Artefakt fehlen und die für die Exploration relevant wären.
+### Was fehlt (gegen Playbook)
+Nur **strukturell relevante** Lücken auflisten — also Dinge die das Prozessverständnis beeinträchtigen. NICHT: fehlende Einzelfelder, Variable die in der Spezifikation sowieso kommen, oder exakte Formulierungen.
+
+### Was gut funktioniert hat
+Was hat der Explorer besonders gut erfasst? Wo ist das Artefakt sogar besser/detaillierter als das Playbook-Soll?
 
 ### Dialogführung
-- Hat der Explorer die richtigen Fragen gestellt?
-- Gab es Wiederholungen?
-- War das Timing (nearing_completion, phase_complete) angemessen?
+Kurz: Waren die Fragen zielführend? Wiederholungen? Timing angemessen?
 
-### Fazit-Tabelle
+### Fazit
 | Aspekt | Bewertung |
-Mit: Prozess-Grundverständnis, Entscheidungslogik, Systeme, Sonderfälle, Halluzinationen, Granularität
-
-Sei ehrlich und kritisch. Nenne konkret was fehlt statt pauschal "gut" zu sagen.`
+Mit: Prozess-Grundverständnis, Entscheidungslogik, Systeme, Sonderfälle, Halluzinationen, Granularität`
       },
       {
         role: 'user',
