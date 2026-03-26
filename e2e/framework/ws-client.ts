@@ -197,8 +197,11 @@ export class SessionClient {
         () => { artifactsUpdated = true; });
     }
 
-    // If phase_complete triggered auto-moderator, collect that batch too
+    // If phase_complete triggered auto-moderator, collect that batch too.
+    // Preserve phase_complete flag — the moderator batch overwrites state.flags
+    // with its own (empty) flags, but phase_complete is still meaningful.
     if (state.flags.includes('phase_complete') && state.aktiver_modus === 'moderator') {
+      const preservedFlags = [...state.flags];
       for (let i = 0; i < EVENTS_PER_TURN; i++) {
         const event = await Promise.race([
           this.nextEvent(),
@@ -209,6 +212,12 @@ export class SessionClient {
         }
         this.applyEvent(event, state, (msg) => { chatMessage = msg; },
           () => { artifactsUpdated = true; });
+      }
+      // Merge: keep phase_complete (and other trigger flags) from first batch
+      for (const flag of preservedFlags) {
+        if (!state.flags.includes(flag)) {
+          state.flags.push(flag);
+        }
       }
     }
 

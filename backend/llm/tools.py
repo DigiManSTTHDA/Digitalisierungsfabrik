@@ -67,6 +67,15 @@ APPLY_PATCHES_TOOL: dict = {  # type: ignore[type-arg]
                     "Pflichtfeld, darf nicht leer sein."
                 ),
             },
+            "fragebegruendung": {
+                "type": "string",
+                "description": (
+                    "Kurze interne Begründung (1-2 Sätze, wird NICHT an den Nutzer gezeigt): "
+                    "Warum stellst du genau diese Frage? Welche Lücke im Artefakt adressiert sie? "
+                    "Wenn du merkst dass du dieselbe Frage wie im letzten Turn stellst, "
+                    "formuliere stattdessen eine andere Frage oder gehe zu nearing_completion."
+                ),
+            },
         },
         "required": ["patches", "phasenstatus", "nutzeraeusserung"],
     },

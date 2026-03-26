@@ -338,7 +338,9 @@ Alle Parameter werden aus `backend/.env` gelesen (Vorlage: `backend/.env.example
 
 Die Modellwahl hat massiven Einfluss auf die Qualität der Prozesserhebung. Das System stellt hohe Anforderungen an Instruction Following, strukturierte Extraktion und gewissenhaftes Arbeiten mit JSON-Patches.
 
-**Empfohlene Modelle (OpenAI):**
+Das System verlangt zuverlässiges **Multi-Turn Instruction Following** und **strukturierte Extraktion** via JSON-Patches. Nicht jedes Modell kann das — der relevante Benchmark ist MultiChallenge (Scale Labs), nicht MMLU oder Chatbot Arena.
+
+**Empfohlene Modelle (OpenAI API):**
 
 | Modell | Empfehlung | Anmerkung |
 |--------|-----------|-----------|
@@ -346,12 +348,31 @@ Die Modellwahl hat massiven Einfluss auf die Qualität der Prozesserhebung. Das 
 | `gpt-5.4-mini` | Gut | Günstiger, für die meisten Fälle ausreichend |
 | `o4-mini` | Für schwierige Fälle | Reasoning-Modell mit Selbstprüfung, teurer und langsamer |
 | `gpt-4.1` | Minimum | Akzeptables Instruction Following |
-| `gpt-4o` | **Nicht verwenden** | Unzureichendes Instruction Following für diesen Use Case: überspringt Patches, markiert Slots vorzeitig als fertig, paraphrasiert statt zu extrahieren, fragt bereits beantwortete Dinge erneut. Bekanntes, von OpenAI dokumentiertes Problem (GPT-4.1 wurde explizit als Antwort darauf veröffentlicht). |
+| `gpt-4o` | **Nicht verwenden** | Überspringt Patches, markiert Slots vorzeitig als fertig, paraphrasiert statt zu extrahieren, stellt Wiederholungsfragen. Bekanntes OpenAI-Problem (MultiChallenge: 27.8%). |
+
+**Empfohlene Modelle (Self-Hosting via Ollama):**
+
+Open-Source-Modelle haben bei Instruction Following aufgeholt und übertreffen GPT-4o teilweise deutlich. Für Self-Hosting über `LLM_PROVIDER=ollama`:
+
+| Modell | MultiChallenge | IFEval | Anmerkung |
+|--------|---------------|--------|-----------|
+| **Qwen 3.5** (397B MoE, ~35B aktiv) | **67.6%** | **92.6%** | Bestes OS-Modell für diesen Use Case. Benötigt ~48 GB VRAM. |
+| Nemotron 3 Super (120B MoE) | 55.2% | 89.5% | Effiziente MoE-Architektur, gut für Agentic Workflows. |
+| DeepSeek V3.1 | 46.1% | ~83% | Starkes Function Calling (94.7% BFCL), native JSON-Schema-Validierung. |
+| Qwen3 235B (22B aktiv) | 41.2% | 87.8% | Guter Kompromiss aus Qualität und Ressourcenbedarf. |
+| **Llama 3.3 70B** | — | **92.1%** | Bestes IFEval-Ergebnis unter 100B. Läuft auf Consumer-GPUs (Q4: ~40 GB). |
+| GPT-4o (Referenz) | 27.8% | ~81% | Alle oben genannten OS-Modelle sind besser. |
+
+**Wichtig:** Nicht jedes "gute" Modell eignet sich. Allgemeine Benchmarks (MMLU, Chatbot Arena) sagen wenig über die Eignung für strukturierte Extraktion aus. Ein Modell kann brillant konversieren und trotzdem bei JSON-Patch-Extraktion versagen. Die entscheidenden Benchmarks sind:
+- **MultiChallenge** (Scale Labs) — Multi-Turn Instruction Following. Minimum ~40%, empfohlen >55%.
+- **IFEval** — Single-Turn Instruction Following. Minimum ~85%.
+- **BFCL** (Berkeley Function Calling) — Tool Use / Function Calling Zuverlässigkeit.
 
 **Technische Hinweise:**
 - Modelle ab GPT-5.x und o-Serie benötigen `max_completion_tokens` statt `max_tokens` — der OpenAI-Client erkennt das automatisch anhand des Modellnamens.
 - Temperature ist auf 0.3 gesetzt (optimiert für strukturierte Extraktion).
 - Das Tool-Schema ist so geordnet, dass `patches` vor `nutzeraeusserung` generiert wird (Extraktion vor Konversation).
+- Bei Ollama: Function Calling muss vom Modell nativ unterstützt werden. Qwen3, DeepSeek V3 und Llama 3.x unterstützen das.
 
 **Background-Init** (CR-009, ADR-009): Die Initialisierung verwendet einen Single-Call-Ansatz — kein Loop, keine konfigurierbaren Turn-Limits. Maximal 3 LLM-Calls pro Init (Init + Coverage-Validator + optionaler Korrektur-Call).
 

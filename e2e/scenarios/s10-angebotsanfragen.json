@@ -1,0 +1,111 @@
+{
+  "id": "S10",
+  "name": "Angebotsanfragen (Herr Krause)",
+  "description": "E2E-Test Exploration: Herr Krause (Vertriebsinnendienst) beschreibt seinen Angebotsprozess. Wortkarge Persona, reagiert natürlich auf Explorer-Fragen. Drei Systeme (Outlook, ProSales CRM, WAWI), Rabattlogik, Neukunden.",
+  "tags": ["exploration", "kalibrierung", "crm", "wortkarg"],
+  "intent": {
+    "process_description": "Angebotsanfragen beantworten: E-Mail lesen, Kunden im CRM suchen, Preise in WAWI nachschlagen, Angebot erstellen, PDF per E-Mail versenden",
+    "expected_structure_steps": 7,
+    "expected_complexity": "mittel",
+    "key_concepts": ["Angebotsanfrage", "Outlook", "ProSales", "WAWI", "Angebot", "PDF", "Rabatt", "Kunde"],
+    "forbidden_concepts": ["OCR", "KI-gestützt", "automatische Belegerkennung", "API", "REST", "Datenbankzugriff", "Machine Learning", "SAP", "Chatbot"]
+  },
+  "phases": {
+    "exploration": [
+      {
+        "id": "E10-01",
+        "message": "Ja, bin bereit. Geht um Angebote schreiben. Kunden schicken Anfragen per Mail, ich schlag die Preise nach und mach ein Angebot in unserem CRM. Das schick ich dann als PDF zurück. Mach ich so 15 Mal am Tag.",
+        "note": "Initialer Dump — kompakt, typisch Krause",
+        "expect": {
+          "mode_should_be": "exploration",
+          "slots_should_increase": true
+        }
+      },
+      {
+        "id": "E10-02",
+        "message": "Ich bin Herr Krause, Vertriebsinnendienst bei der Bergmann Industrietechnik GmbH. Wir sind Großhandel für Industriekomponenten — Ventile, Pumpen, Dichtungen, sowas. Outlook für die Mails, ProSales ist unser CRM im Browser, Chrome. Und die WAWI hab ich als Desktop-Programm für Artikel und Preise. EMMA würde meine Arbeit machen.",
+        "note": "Wer + Systeme klar"
+      },
+      {
+        "id": "E10-03",
+        "message": "Der Anfang: Ich öffne morgens Outlook, da liegen die Anfragen. Erkennt man am Betreff — 'Anfrage', 'Preisanfrage', sowas. Oft hängt eine Excel- oder PDF-Liste mit den gewünschten Artikeln und Mengen dran, manchmal steht alles im Mailtext. Und am Ende: Wenn ich das Angebot per Mail rausgeschickt hab, den Status in ProSales auf 'Versendet' gesetzt hab, eine Wiedervorlage in 7 Tagen eingetragen hab und die Anfrage-Mail in Outlook in den Ordner 'Erledigt' verschoben hab — dann ist der Vorgang fertig. Wenn keine Anfrage-Mails mehr im Posteingang sind, bin ich für den Tag durch.",
+        "note": "Start UND Ende explizit in einem Turn — beide Lücken direkt geschlossen"
+      },
+      {
+        "id": "E10-04",
+        "message": "Also der Ablauf: Mail aufmachen, schauen was der Kunde will. Dann den Kunden in ProSales suchen — Firmenname oder Kundennummer eingeben, Kundenakte öffnen. Wenn der Kunde neu ist, gibt's nen Button 'Neuer Kunde', da trag ich Firmenname, Ansprechpartner, Mail, Telefon, Adresse ein. Kommt so dreimal die Woche vor. Dann in der WAWI die Artikel nachschlagen — Artikelnummer eingeben, Listenpreis und Verfügbarkeit checken. Wenn nicht auf Lager, steht da im Feld 'Nächster Wareneingang' ein Datum.",
+        "note": "Erster Teil des Ablaufs: Mail → ProSales → WAWI"
+      },
+      {
+        "id": "E10-05",
+        "message": "Dann zurück in ProSales: In der Kundenakte auf 'Neues Angebot' klicken. Da kriegt das Angebot gleich automatisch eine Nummer, AG-2026 und dann fortlaufend. Die Kundenadresse ist schon drin. Dann füg ich pro Artikel eine Position ein — Artikelnummer, Menge, Preis. Bei der Preisfindung gibt's Regeln: Key-Account-Kunden haben einen individuellen Rabatt in der Kundenakte hinterlegt. Sonst: über 5.000 Euro Gesamtwert gibt's 5 Prozent, über 10.000 Euro 8 Prozent. Dann noch Angebotsdatum, Gültigkeitsdauer 30 Tage Standard, Zahlungsbedingung aus der Kundenakte. 'Angebot berechnen' klicken, ProSales rechnet alles zusammen.",
+        "note": "Angebotserstellung komplett: Nummer, Positionen, Rabattlogik, Kopffelder"
+      },
+      {
+        "id": "E10-06",
+        "message": "Dann prüf ich ob alles stimmt — Positionen, Mengen, Preise, Gesamtbetrag. 'PDF erzeugen' klicken, das landet automatisch in der Kundenakte unter Dokumente. Lad's auch nochmal runter in meinen Download-Ordner. Dann in Outlook: Auf 'Antworten' klicken bei der Anfrage-Mail, Textbaustein einfügen — ich hab drei: 'Neukunde' nehm ich wenn der Kunde zum ersten Mal bei uns anfragt, 'Bestandskunde' für alle die schon im System sind, und 'Eilanfrage' wenn der Kunde 'dringend' oder 'eilig' in der Mail schreibt. PDF anhängen, Betreff auf 'Ihr Angebot AG-2026-' und die Nummer aus ProSales. Absenden.",
+        "note": "PDF + Versand + Textbaustein-Entscheidungsregel explizit erklärt"
+      },
+      {
+        "id": "E10-07",
+        "message": "Dann noch in ProSales den Status auf 'Versendet', Wiedervorlage 7 Tage eintragen, und die Anfrage-Mail in Outlook in 'Erledigt' verschieben. Nächste Mail.",
+        "note": "Nachbereitung — kurz, Krause-typisch"
+      },
+      {
+        "id": "E10-08",
+        "message": "Ja, gibt's. Manchmal hat der Kunde keine Artikelnummern und beschreibt nur was er braucht — 'Ventile für 2-Zoll-Rohr, Edelstahl' oder so. Dann such ich in der WAWI über Produktgruppe und Filter, dauert halt länger. Und ab und zu will ein Großkunde nen Sonderpreis über unsere Staffel hinaus. Bis 12 Prozent kann ich selber entscheiden, darüber muss ich das per Mail an unseren Vertriebsleiter Herr Berger weiterleiten. Dann leg ich das Angebot als Entwurf in ProSales an und warte auf Rückmeldung. Und englische Anfragen kommen auch mal, vielleicht einmal die Woche — da nehm ich den englischen Textbaustein in ProSales und schreib auch die Antwort-Mail auf Englisch.",
+        "note": "Sonderfälle: Ohne Artikelnr., Sonderpreis >12%, Englisch"
+      },
+      {
+        "id": "E10-09",
+        "message": "Nee, das war's eigentlich. Wenn keine Anfrage-Mails mehr da sind, bin ich durch. Die Wiedervorlagen vom Vortag — Kunden anrufen oder nochmal mailen — das ist ein anderer Prozess, das gehört nicht hierher.",
+        "note": "Endbedingung + klare Abgrenzung",
+        "nudges": [
+          "Passt so, ja.",
+          "Nee, da fällt mir nichts mehr ein."
+        ],
+        "expect": {
+          "flag_should_not_include": ["phase_complete"]
+        }
+      }
+    ],
+    "strukturierung": [],
+    "spezifikation": [],
+    "validierung": []
+  },
+  "behavior_probes": [
+    {
+      "after_turn": "E10-01",
+      "name": "Exploration gestartet",
+      "type": "state_check",
+      "check": {
+        "expected_mode": "exploration",
+        "expected_phase": "exploration"
+      }
+    },
+    {
+      "after_turn": "E10-05",
+      "name": "Kernslots nach Turn 5",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 4
+      }
+    },
+    {
+      "after_turn": "E10-08",
+      "name": "Keine Halluzinationen",
+      "type": "artifact_check",
+      "check": {
+        "should_not_contain": ["OCR", "KI-gestützt", "automatische Belegerkennung", "SAP", "API", "Chatbot"]
+      }
+    },
+    {
+      "after_turn": "E10-09",
+      "name": "Alle Slots gefüllt",
+      "type": "state_check",
+      "check": {
+        "min_filled_slots": 5
+      }
+    }
+  ]
+}

@@ -68,7 +68,7 @@ export class ScenarioRunner {
       // Nudge handling: if phase_complete missing after last turn
       const lastRecord = records[records.length - 1];
       const lastTurn = turns[turns.length - 1];
-      if (!lastRecord.state.flags.includes('phase_complete') && lastTurn.nudges) {
+      if (!this.isPhaseComplete(lastRecord) && lastTurn.nudges) {
         for (const nudge of lastTurn.nudges) {
           turnNr++;
           const nudgeTurn: Pick<Turn, 'id' | 'message'> = { id: `${lastTurn.id}-nudge`, message: nudge };
@@ -80,7 +80,7 @@ export class ScenarioRunner {
           prevSlots = nudgeRecord.state.befuellte_slots;
           this.logProgress(nudgeTurn, turnNr, turns.length, phaseName, nudgeRecord);
 
-          if (nudgeRecord.state.flags.includes('phase_complete')) break;
+          if (this.isPhaseComplete(nudgeRecord)) break;
         }
       }
     }
@@ -273,6 +273,12 @@ export class ScenarioRunner {
     }
 
     return { name: probe.name, passed: true, detail: 'No check implemented for type' };
+  }
+
+  /** Check phase completion via flags OR phasenstatus (flags may be consumed by auto-moderator). */
+  private isPhaseComplete(record: TurnRecord): boolean {
+    return record.state.flags.includes('phase_complete')
+      || record.state.phasenstatus === 'phase_complete';
   }
 
   private logProgress(
