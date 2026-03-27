@@ -284,6 +284,19 @@ ANTI-SCHÖNFÄRBEREI:
 - "Für die Exploration akzeptabel" ist KEIN Freibrief. Wenn ein zentraler Entscheidungspfad, eine Geschäftsregel oder ein häufiger Ausnahmefall (~wöchentlich oder öfter) im Playbook steht aber NICHT im Artefakt: das ist eine echte Lücke, auch in der Explorationsphase.
 - Unterscheide klar: (a) Detail das in Folgephasen kommt (z.B. exakte Feldnamen, Citrix-Zugang) vs. (b) strukturelles Element das den Prozess unvollständig macht (z.B. fehlende Geschäftsregel, fehlender Ausnahmefall, fehlendes System).
 
+WAS IST EINE ENTSCHEIDUNG UND WAS NICHT:
+Eine Entscheidung ist NUR dann eine Entscheidung wenn der **Prozessablauf sich dadurch verzweigt** — also wenn je nach Bedingung ein ANDERER Schritt folgt. Beispiele:
+- ENTSCHEIDUNG: "Kreditor vorhanden? Ja → weiter. Nein → erst Kreditor anlegen." (Anderer Ablauf!)
+- ENTSCHEIDUNG: "Frist abgelaufen? Ja → Kulanzregel. Nein → volle Leistung." (Anderer Ablauf!)
+- KEINE Entscheidung: "MwSt.-Satz 19%/7%/0% im Dropdown auswählen" (Dateneingabe — derselbe nächste Schritt egal welcher Wert)
+- KEINE Entscheidung: "Kostenstelle 4100/4200/4300/4900 wählen" (Dateneingabe — kein anderer Ablauf)
+- KEINE Entscheidung: "Textbaustein Neukunde/Bestandskunde/Eilanfrage wählen" (Auswahl — Mail wird so oder so gesendet)
+Ein Dropdown oder eine Auswahl aus einer Liste ist KEINE Entscheidung wenn danach immer derselbe Prozessschritt kommt. Solche Auswahlen gehören als Detail unter ihren Schritt in die prozessbeschreibung, nicht als ENTSCHEIDUNG in entscheidungen_und_schleifen.
+Flagge eine fehlende Dropdown-Auswahl NICHT als strukturelle Lücke. Flagge eine fehlende Auswahl NICHT als fehlende Entscheidung. Nur echte Verzweigungen zählen.
+
+PASSIVE SYSTEME:
+Programme die sich automatisch öffnen (z.B. PDF-Viewer bei Doppelklick auf PDF, Datei-Dialog bei "Speichern unter") sind KEINE beteiligten Systeme im Sinne der Exploration. Nur Systeme zu denen der Nutzer aktiv wechselt und in denen er arbeitet zählen. Flagge fehlende passive Systeme NICHT als Lücke.
+
 HALLUZINATIONS-CHECK:
 Prüfe ob im Artefakt Konzepte, Systeme, Entscheidungsregeln oder Prozessschritte stehen, die NICHT im Playbook vorkommen und auch nicht plausibel aus dem Dialog ableitbar sind. Wenn ja: als Halluzination flaggen.
 
