@@ -15,7 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from artifacts.models import CompletenessStatus, Phasenstatus
-from core.context_assembler import emma_action_catalog_text, prompt_context_summary
+from core.context_assembler import prompt_context_summary
 from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput, translate_dialog_history
@@ -194,13 +194,10 @@ class SpecificationMode(BaseMode):
         context_summary = prompt_context_summary(context)
         structure_content = _build_structure_content(context)
         algorithm_status = _build_algorithm_status(context)
-        emma_catalog = emma_action_catalog_text()
-
         system_prompt = _load_system_prompt()
         system_prompt = system_prompt.replace("{context_summary}", context_summary)
         system_prompt = system_prompt.replace("{structure_content}", structure_content)
         system_prompt = system_prompt.replace("{algorithm_status}", algorithm_status)
-        system_prompt = system_prompt.replace("{emma_catalog}", emma_catalog)
         system_prompt = system_prompt.replace("{validierungsbericht}", "")
 
         # CR-006 C-2: init_hinweise aus WorkingMemory injizieren

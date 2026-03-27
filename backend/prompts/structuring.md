@@ -136,37 +136,54 @@ Prüfe nach jedem Turn das Artefakt — nicht dein Gesprächswissen, sondern was
 
 ## Beispiel: Fertiges Strukturartefakt
 
-So sieht ein gut strukturierter Prozess am Ende aus (anderer Prozess als Deiner):
+So sieht ein gut strukturierter Prozess am **Ende der Strukturierungsphase** aus (anderer Prozess als Deiner). Alle Unsicherheiten sind aufgelöst, alle Beschreibungen vollständig.
 
-**prozesszusammenfassung:** Bestellabwicklung: Sachbearbeiterin Frau Weber bearbeitet eingehende Webshop-Bestellungen, prüft Kundendaten in SAP, erfasst Aufträge und versendet Auftragsbestätigungen. Bei neuen Kunden wird ein Stammdatensatz angelegt.
+**prozesszusammenfassung:** Eingangsrechnungsverarbeitung: Frau Becker (Kreditorenbuchhaltung) verarbeitet eingehende Lieferantenrechnungen, die als PDF per E-Mail im Postfach rechnungen@firma.de eintreffen. Sie digitalisiert die Rechnungen in ScanPlus (OCR), erfasst die Daten in DATEV, durchläuft je nach Betragshöhe einen gestuften Freigabeprozess, kontiert alle Positionen und legt die Zahlung im nächsten wöchentlichen Zahlungslauf an.
 
-**s1** — Webshop-Bestellung öffnen [aktion, reihenfolge 1, → s2]
-"Frau Weber öffnet das Webshop-Adminpanel im Browser und klickt die nächste Bestellung mit Status 'Neu' an. Angezeigt werden: Kundennummer, Artikelpositionen (Artikelnr., Menge, Einzelpreis), Lieferadresse, Zahlungsart."
+**s1** — Neue Rechnung aus E-Mail-Postfach öffnen [aktion, reihenfolge 1, → s2, completeness_status: vollstaendig]
+"Frau Becker öffnet das zentrale Rechnungspostfach (rechnungen@firma.de) in Outlook und wählt die älteste ungelesene E-Mail mit PDF-Anhang. Sie öffnet den PDF-Anhang in der Outlook-Vorschau und prüft visuell, ob es sich um eine Rechnung handelt (nicht Lieferschein oder Angebot). Relevante Daten auf der Rechnung: Rechnungsnummer, Rechnungsdatum, Lieferantenname und -anschrift, Einzelpositionen (Artikelbezeichnung, Menge, Einzelpreis, Gesamtpreis), Nettobetrag, Umsatzsteuer, Bruttobetrag, Bankverbindung (IBAN) des Lieferanten, Zahlungsziel in Tagen."
 
-**s2** — Kunde in SAP prüfen [entscheidung, reihenfolge 2, → s3/s2a, bedingung: "Existiert der Kunde bereits in SAP?", konvergenz: s3]
-"Frau Weber wechselt zu SAP und sucht die Kundennummer aus der Bestellung (Transaktion XD03). Prüft ob ein Stammdatensatz existiert."
+**s2** — Rechnung in ScanPlus digitalisieren [aktion, reihenfolge 2, → s3, completeness_status: vollstaendig]
+"Frau Becker speichert den PDF-Anhang lokal im Ordner C:\Rechnungen\Eingang und importiert ihn in ScanPlus (Desktop-Anwendung, geöffnet über Citrix). Sie klickt 'Neues Dokument', wählt die gespeicherte PDF-Datei. ScanPlus führt automatisch eine OCR-Texterkennung durch und extrahiert sechs Pflichtfelder: Rechnungsnummer, Rechnungsdatum, Lieferantenname, Gesamtbetrag brutto, Umsatzsteuer-Betrag, Zahlungsziel. Die erkannten Werte werden in einem Prüfformular angezeigt — links das PDF-Original, rechts die extrahierten Felder."
 
-**s2a** — Neuen Kundenstamm anlegen [aktion, reihenfolge 3, → s3]
-"Transaktion XD01: Name, Adresse, Zahlungsbedingung aus Webshop-Bestellung übernehmen. Spannungsfeld: Medienbruch — Adressdaten werden manuell vom Webshop in SAP übertragen."
-spannungsfeld: "Medienbruch: Kundendaten aus Webshop müssen manuell in SAP-Stammdaten übertragen werden. Fehlerrisiko bei Adresse und Zahlungsbedingung."
+**s3** — OCR-Ergebnis vollständig? [entscheidung, reihenfolge 3, bedingung: "Hat ScanPlus alle sechs Pflichtfelder (Rechnungsnummer, Datum, Lieferant, Betrag, USt, Zahlungsziel) korrekt erkannt?", Ja → s4, Nein → s3a, konvergenz: s4, completeness_status: vollstaendig]
+"Frau Becker vergleicht im ScanPlus-Prüfformular die sechs extrahierten OCR-Werte mit dem PDF-Original in der linken Bildschirmhälfte. Typische OCR-Fehler: Rechnungsnummer nicht erkannt (bei handschriftlichen Ergänzungen auf der Rechnung), Betrag falsch geparst (Komma/Punkt-Verwechslung bei z.B. 1.234,56), Lieferantenname abgeschnitten (bei langen Firmennamen). Ein Feld gilt als 'nicht korrekt erkannt', wenn es leer ist oder der angezeigte Wert sichtbar vom PDF abweicht."
 
-**s3** — Auftragspositionen erfassen [schleife, reihenfolge 4, schleifenkoerper: [s3a, s3b], abbruchbedingung: "Letzte Bestellposition erreicht", → s4]
-"Für jede Artikelposition der Bestellung: Artikelnummer und Menge in SAP VA01 eingeben. Typisch 1–15 Positionen pro Bestellung."
+**s3a** — Fehlende Rechnungsdaten manuell nachtragen [aktion, reihenfolge 4, → s4, completeness_status: vollstaendig]
+"Frau Becker klickt in ScanPlus auf das jeweilige fehlerhafte oder leere Feld und korrigiert es manuell anhand des PDF-Originals. Bei der Rechnungsnummer tippt sie die Nummer exakt ab (inkl. Präfixe wie 'RE-'), bei Beträgen achtet sie auf das korrekte Dezimalformat (Komma als Trenner, zwei Nachkommastellen). Nach Korrektur aller Felder klickt sie 'Validieren' — ScanPlus prüft ob alle Pflichtfelder befüllt sind und das Rechnungsdatum nicht in der Zukunft liegt."
+spannungsfeld: "ScanPlus läuft in Citrix, das PDF-Original wird lokal in Outlook angezeigt. Frau Becker muss Werte vom lokalen Bildschirm ablesen und in der Citrix-Sitzung eintippen — kein Copy-Paste zwischen lokaler Umgebung und Citrix möglich."
 
-**s3a** — Position eingeben [aktion]
-"Artikelnummer eingeben, Menge eintragen. SAP prüft Verfügbarkeit automatisch."
+**s4** — Rechnungsdaten in DATEV übernehmen [aktion, reihenfolge 5, → s5, completeness_status: vollstaendig]
+"Frau Becker klickt in ScanPlus auf 'An DATEV übergeben'. ScanPlus überträgt die erfassten Daten über eine Schnittstelle an DATEV Unternehmen Online. In DATEV öffnet Frau Becker den Arbeitsvorrat 'Offene Eingangsrechnungen' und wählt den soeben importierten Datensatz aus. DATEV zeigt die übernommenen Felder an: Rechnungsnummer, Rechnungsdatum, Kreditor (automatisch zugeordnet anhand des Lieferantennamens aus den Stammdaten), Bruttobetrag, Steuersatz (19% oder 7%, automatisch erkannt anhand des USt-Betrags), Nettobetrag, Zahlungsziel. Die DATEV-Belegnummer wird automatisch vergeben. Frau Becker prüft, ob der richtige Kreditor zugeordnet wurde — bei neuen Lieferanten schlägt DATEV den ähnlichsten Stammdatensatz vor; wenn keiner passt, muss sie den Kreditor manuell auswählen oder neu anlegen."
 
-**s3b** — Verfügbarkeit prüfen [entscheidung, bedingung: "Artikel verfügbar?", → s3a (nächste Position)/s3b_rueckstand]
-"Bei 'nicht verfügbar': Rückstand markieren, Liefertermin auf nächsten Verfügbarkeitstermin setzen."
+**s5** — Freigabestufe bestimmen [entscheidung, reihenfolge 6, regeln: (1) "Rechnungsbetrag brutto > 5.000 €" → s5a (Freigabe Abteilungsleiter), (2) "Rechnungsbetrag brutto > 1.000 €" → s5b (Freigabe Teamleiter), (3) Sonst → s5c (Direktfreigabe), nachfolger: [s5a, s5b, s5c], konvergenz: s6, completeness_status: vollstaendig]
+"Frau Becker liest den Bruttobetrag der Rechnung in DATEV ab. Die Freigabestufe richtet sich nach der internen Zeichnungsrichtlinie (dokumentiert im Intranet unter 'Finanzhandbuch → Freigabegrenzen'): Rechnungen über 5.000 € brutto benötigen die Freigabe des Abteilungsleiters Herrn Schmidt, Rechnungen über 1.000 € brutto die Freigabe der Teamleiterin Frau Hoffmann, Rechnungen bis 1.000 € brutto kann Frau Becker selbst freigeben."
 
-**s4** — Auftrag sichern und Referenz eintragen [aktion, reihenfolge 5, → s5]
-"Auftrag in SAP sichern → Auftragsnummer wird vergeben. Zurück zum Webshop: Auftragsnummer im Feld 'ERP-Referenz' eintragen, Status auf 'In Bearbeitung' setzen."
+**s5a** — Freigabe durch Abteilungsleiter einholen [aktion, reihenfolge 7, → s6, completeness_status: vollstaendig]
+"Frau Becker setzt in DATEV den Rechnungsstatus auf 'Freigabe angefordert' und wählt als Freigeber 'Schmidt, Thomas (Abteilungsleiter)' aus der Dropdown-Liste. DATEV versendet automatisch eine Freigabeanforderung per E-Mail an Herrn Schmidt mit einem Link zum Beleg. Herr Schmidt öffnet den Link, sieht Rechnungskopf und alle Positionen, und klickt entweder 'Freigeben' oder 'Ablehnen mit Kommentar'. Bei Ablehnung erhält Frau Becker eine E-Mail-Benachrichtigung und kontaktiert den Lieferanten zur Klärung. Übliche Bearbeitungszeit: 1–2 Werktage."
 
-**s5** — Auftragsbestätigung versenden [aktion, reihenfolge 6, → []]
-"In SAP Transaktion VA02 den Auftrag aufrufen, Drucktaste 'Auftragsbestätigung versenden'. SAP verschickt E-Mail automatisch an den Kunden."
+**s5b** — Freigabe durch Teamleiterin einholen [aktion, reihenfolge 8, → s6, completeness_status: vollstaendig]
+"Frau Becker setzt in DATEV den Rechnungsstatus auf 'Freigabe angefordert' und wählt als Freigeber 'Hoffmann, Lisa (Teamleiter)'. DATEV versendet die Freigabeanforderung per E-Mail. Frau Hoffmann öffnet den Link und gibt die Rechnung frei oder lehnt sie ab — Ablauf identisch zu s5a. Übliche Bearbeitungszeit: gleicher Tag, da Frau Hoffmann im selben Büro sitzt."
+spannungsfeld: "ANALOG: Bei dringenden Rechnungen (Zahlungsziel < 7 Tage) spricht Frau Becker Frau Hoffmann direkt mündlich an. Die formale Freigabe in DATEV wird dann nachträglich nachgeholt — zwischen mündlicher Zusage und formaler Freigabe vergehen manchmal mehrere Stunden."
 
-**s_storno** — Stornierte Bestellung [ausnahme, reihenfolge 99]
-"Wenn eine Bestellung im Webshop bereits storniert wurde bevor die Bearbeitung beginnt: Status auf 'Storniert' setzen, kein SAP-Auftrag anlegen."
+**s5c** — Rechnung selbst freigeben [aktion, reihenfolge 9, → s6, completeness_status: vollstaendig]
+"Frau Becker klickt in DATEV direkt auf 'Freigeben' und bestätigt mit ihrem DATEV-Passwort. Die Rechnung erhält sofort den Status 'Freigegeben'. Kein Warten auf andere Personen."
+
+**s6** — Rechnungspositionen kontieren [schleife, reihenfolge 10, schleifenkoerper: [s6a], abbruchbedingung: "Alle Positionen der Rechnung sind kontiert und verbucht", → s7, completeness_status: vollstaendig]
+"Für jede Position der Rechnung wird eine Buchungszeile in DATEV erzeugt. Typischerweise 1–20 Positionen pro Rechnung. Bei Sammelrechnungen (monatliche Abrechnung eines Lieferanten) können es bis zu 50 Positionen sein. Frau Becker arbeitet die Positionen in der DATEV-Belegansicht von oben nach unten ab."
+
+**s6a** — Einzelne Rechnungsposition kontieren und verbuchen [aktion, reihenfolge 11, → [], completeness_status: vollstaendig]
+"Frau Becker wählt die nächste unkontierte Position in der DATEV-Belegansicht aus. Sie ordnet ein Sachkonto zu — DATEV schlägt anhand des Kreditors und der letzten Buchungen ein Konto vor (z.B. 3400 'Wareneingang 19% Vorsteuer' für Materiallieferungen, 4980 'Sonstige betriebliche Aufwendungen' für Dienstleistungen). Frau Becker prüft den Vorschlag und korrigiert bei Bedarf. Sie trägt die Kostenstelle ein (vierstellig, z.B. 1200 für Abteilung Einkauf — die Zuordnung ergibt sich aus der bestellenden Abteilung, die auf der Rechnung im Feld 'Ihre Bestellnummer' kodiert ist). Dann klickt sie 'Position buchen'. DATEV verbucht den Nettobetrag auf das Sachkonto und den Steuerbetrag automatisch auf das zugehörige Vorsteuerkonto (1576 bei 19%, 1571 bei 7%)."
+
+**s7** — Zahlung anlegen und Zahlungslauf zuordnen [aktion, reihenfolge 12, → s8, completeness_status: vollstaendig]
+"Frau Becker wechselt in DATEV zum Modul 'Zahlungsverkehr' und öffnet den aktuellen Zahlungslauf (Laufdatum = nächster Mittwoch, Zahlungsrhythmus wöchentlich). Sie klickt 'Offene Posten hinzufügen' und wählt die soeben verbuchte Rechnung aus. DATEV zeigt an: Zahlbetrag (= Bruttobetrag), Empfänger-IBAN (aus Kreditorenstammdaten), Verwendungszweck (automatisch: Rechnungsnummer). Bei Skontoabzug prüft Frau Becker, ob das Skontodatum noch nicht überschritten ist (typisch: 2% bei Zahlung innerhalb 10 Tagen). Wenn Skonto möglich, aktiviert sie den Skontoabzug — DATEV berechnet den reduzierten Zahlbetrag und bucht die Skontodifferenz automatisch auf Konto 3736 'Erhaltene Skonti'."
+
+**s8** — Rechnung archivieren und E-Mail als erledigt markieren [aktion, reihenfolge 13, → [], completeness_status: vollstaendig]
+"Frau Becker klickt in DATEV auf 'Beleg archivieren'. DATEV speichert den Beleg revisionssicher im integrierten DMS (Dokumentenmanagementsystem) — der Beleg ist über die Belegnummer, Kreditor und Rechnungsnummer suchbar. Der Rechnungsstatus wechselt auf 'Archiviert'. Anschließend wechselt Frau Becker zu Outlook, markiert die ursprüngliche E-Mail mit dem grünen Häkchen-Flag ('Erledigt') und verschiebt sie in den Unterordner 'rechnungen@firma.de → Verarbeitet'."
+
+**s_err_dup** — Duplikatrechnung erkannt [ausnahme, reihenfolge 99, → [], completeness_status: vollstaendig]
+ausnahme_beschreibung: "Beim Import in DATEV (Schritt s4) meldet das System, dass eine Rechnung mit derselben Rechnungsnummer und demselben Kreditor bereits verbucht ist. Tritt auf wenn der Lieferant eine Rechnung versehentlich doppelt versendet hat."
+"Frau Becker bricht die Erfassung in DATEV ab und prüft in der DATEV-Belegsuche, ob die bereits verbuchte Rechnung identisch ist (gleicher Betrag, gleiches Datum). Wenn ja: Sie antwortet dem Lieferanten per E-Mail, dass die Rechnung bereits erfasst wurde, und markiert die E-Mail in Outlook als 'Erledigt'. Wenn nein (z.B. Korrekturrechnung mit derselben Nummer): Sie kontaktiert den Lieferanten telefonisch zur Klärung und legt die E-Mail in Outlook auf Wiedervorlage (Erinnerung in 3 Werktagen)."
 
 ---
 
