@@ -158,7 +158,7 @@ async function run(config: Config): Promise<void> {
   console.log(`Max Turns: ${config.maxTurns}\n`);
 
   const persona = new PersonaLLM(apiKey, config.personaModel, playbook);
-  const client = new SessionClient(config.backendUrl, 120_000);
+  const client = new SessionClient(config.backendUrl, 180_000);
 
   // Create project and connect
   const projectId = await client.createProject(`live-persona-${Date.now()}`);
@@ -226,7 +226,7 @@ async function run(config: Config): Promise<void> {
 
   // Generate qualitative analysis via LLM
   console.log('Generiere qualitative Analyse...');
-  const analysis = await generateAnalysis(apiKey, config.personaModel, playbook, report, artifacts);
+  const analysis = await generateAnalysis(apiKey, playbook, artifacts, turns, phaseComplete);
 
   const fullReport = report + '\n\n---\n\n' + analysis;
   await writeFile(reportPath, fullReport, 'utf-8');
@@ -238,8 +238,8 @@ async function run(config: Config): Promise<void> {
 
 /** Generate qualitative analysis by feeding playbook + artifacts + report to an LLM. */
 async function generateAnalysis(
-  apiKey: string, model: string, playbook: string, report: string,
-  artifacts: Record<string, unknown>,
+  apiKey: string, playbook: string,
+  artifacts: Record<string, unknown>, turns: TurnLog[], phaseComplete: boolean,
 ): Promise<string> {
   const client = new OpenAI({ apiKey });
 
@@ -252,10 +252,15 @@ async function generateAnalysis(
     .map(([id, content]) => `### ${id}\n${content}`)
     .join('\n\n');
 
+  // Build concise dialog summary (not the full report with JSON)
+  const dialogSummary = turns
+    .map(t => `Turn ${t.turn} [${t.phasenstatus}]: Explorer: "${t.explorer_question.substring(0, 150)}" → Persona: "${t.persona_response.substring(0, 150)}"`)
+    .join('\n');
+
   const response = await client.chat.completions.create({
     model: analysisModel,
     temperature: 0.3,
-    max_completion_tokens: 3000,
+    max_completion_tokens: 8000,
     messages: [
       {
         role: 'system',
@@ -319,12 +324,18 @@ Mit: Prozess-Grundverständnis, Entscheidungslogik, Systeme, Sonderfälle, Hallu
       },
       {
         role: 'user',
-        content: `PLAYBOOK (Ground Truth):\n\n${playbook}\n\n---\n\nARTEFAKT-ROHDATEN (Slot-Inhalte — dies ist die Bewertungsgrundlage!):\n\n${slotDump}\n\n---\n\nDIALOG (vollständiger Gesprächsverlauf):\n\n${report}`
+        content: `PLAYBOOK (Ground Truth):\n\n${playbook}\n\n---\n\nARTEFAKT-ROHDATEN (Slot-Inhalte — dies ist die Bewertungsgrundlage!):\n\n${slotDump}\n\n---\n\nDIALOG-ZUSAMMENFASSUNG (${turns.length} Turns, phase_complete: ${phaseComplete}):\n\n${dialogSummary}`
       }
     ],
   });
 
-  return response.choices[0]?.message?.content ?? '(Analyse konnte nicht generiert werden)';
+  const analysisContent = response.choices[0]?.message?.content;
+  const finishReason = response.choices[0]?.finish_reason;
+  console.log(`Analyse: ${analysisContent ? analysisContent.length + ' Zeichen' : 'LEER'}, finish_reason: ${finishReason}`);
+  if (!analysisContent) {
+    console.error('Analyse-Response:', JSON.stringify(response.choices[0]?.message).substring(0, 500));
+  }
+  return analysisContent ?? '(Analyse konnte nicht generiert werden)';
 }
 
 function generateReport(
