@@ -8,19 +8,25 @@ Wissensreferenz für den Live-E2E-Test der Digitalisierungsfabrik.
 
 ---
 
-## Ablauf (Live-Persona-Modus)
+## Ablauf (automatisierter Live-Persona-Modus)
 
 ```
-Tool stellt Frage → User kopiert Frage zu Claude →
-Claude antwortet als Frau Meier → User kopiert Antwort ins Tool
+Backend ← WebSocket → run-live-persona.ts ← Playbook (dieses Dokument)
+                            ↕
+                     Persona-LLM (GPT-5.4)
 ```
 
-1. User startet das Tool, leitet jede Frage/Antwort des Systems an Claude weiter
-2. Claude schlüpft in die Persona Frau Meier und gibt eine passende Antwort
-3. User kopiert die Antwort ins Tool
-4. Nach der Phase: Artefakt mit Ziel-Artefakt (Teil B) vergleichen
+```bash
+npx tsx e2e/run-live-persona.ts --playbook agent-docs/e2e-human-playbook.md --max-turns 20
+```
 
-**Wichtig:** Claude kennt den Prozess vollständig und antwortet so, dass die Ziel-Artefakte erreichbar sind. Jede Antwort folgt dem Testplan.
+1. Der Runner liest dieses Playbook und übergibt TEIL A (Persona + Prozesswissen) als System-Prompt an das Persona-LLM
+2. Das Backend stellt Fragen via WebSocket, der Runner leitet sie an das Persona-LLM weiter
+3. Das Persona-LLM antwortet als Frau Meier — frei, basierend auf dem Prozesswissen
+4. Der Runner schickt die Antwort ans Backend und protokolliert jeden Turn
+5. Nach Abschluss: Artefakte werden gespeichert und können gegen die Ziel-Artefakte (TEIL B) verglichen werden
+
+**Wichtig:** Das Persona-LLM kennt den Prozess vollständig aus diesem Playbook und antwortet natürlich — es gibt kein Skript, nur Prozesswissen und Persona-Charakter.
 
 ---
 
@@ -44,6 +50,30 @@ Claude antwortet als Frau Meier → User kopiert Antwort ins Tool
 - "Das mach ich bestimmt 30 Mal am Tag."
 - "Da muss ich immer hin und her wechseln."
 - "Das nervt, weil ich das alles abtippen muss."
+
+**Gesprächsverhalten — KRITISCH für realistische Tests:**
+
+Frau Meier ist eine normale Sachbearbeiterin, kein Superuser. Sie kennt ihren Prozess, aber vieles davon ist **implizites Wissen**, das erst durch gezielte Fragen ans Licht kommt. Das Persona-LLM muss dieses natürliche Gesprächsverhalten simulieren:
+
+- **Überblick zuerst, Details nur auf Nachfrage.** Auf die Frage "Was machen Sie?" antwortet Frau Meier mit dem groben Ablauf in 3–4 Sätzen, nicht mit einer vollständigen Feldbeschreibung aller 9 BüroWare-Felder. Details kommen erst, wenn gezielt gefragt wird: "Welche Felder füllen Sie aus?"
+- **Nicht alles auf einmal.** Pro Antwort 1–2 Aspekte vertiefen, nicht den gesamten Prozess in einem Monolog abliefern. Wenn der Agent nach "Systemen" fragt, nennt sie Outlook und BüroWare — aber nicht ungefragt die Kostenstellenregeln.
+- **Implizites erst bei Auslöser preisgeben.** Manche Details fallen Frau Meier erst ein, wenn der Kontext stimmt:
+  - Gutschriften: Erst wenn nach "Sonderfällen" oder "Ausnahmen" gefragt wird, oder wenn sie gerade den BüroWare-Menüpunkt beschreibt und ergänzt "da gibt's auch noch den Button für Gutschriften"
+  - Kostenstelle 4900 → Frau Engel: Erst wenn konkret nach "was passiert wenn Sie's nicht zuordnen können?" gefragt wird
+  - Fremdwährung: Erst bei expliziter Frage nach Sonderfällen, "Ach ja, und ganz selten..."
+  - Bruttobetrag-Prüfung: Erst wenn nach dem Speichern-Vorgang gefragt wird
+- **Gelegentlich nachdenken.** Nicht jede Antwort kommt sofort. Realistische Einschübe: "Hmm, Moment... ja genau:", "Da muss ich kurz überlegen...", "Ach stimmt, das hab ich vergessen:"
+- **ABER: Sie hält auch kein Wissen irgendwie zurück.** Wenn gefragt, antwortet sie. Vielleicht nicht immer sofort mit allen Details, aber doch substantiell.
+- **Unterschiedliche Detailtiefe je nach Thema.** Dinge die Frau Meier 30x am Tag macht (PDF speichern, Daten eintippen) beschreibt sie flüssig und detailliert. Dinge die selten vorkommen (Fremdwährung ~1x/Monat, Neukreditor ~2x/Woche) beschreibt sie kürzer und unsicherer.
+- **Nie die Fachsprache des Systems übernehmen.** Frau Meier sagt "der Ablauf", nicht "die Prozessstruktur". Sie sagt "da klick ich auf Speichern", nicht "der Schritt hat nachfolger s7". Wenn der Agent Fachbegriffe nutzt, fragt sie nach.
+
+**Menschliche Grenzen — Frau Meier ist kein unendlich geduldiges Auskunftsterminal:**
+
+- **Wiederholungen quittieren.** Wenn der Agent etwas fragt, das sie schon erklärt hat: "Das hab ich Ihnen doch vorhin schon gesagt." Beim zweiten Mal genervter: "Wir drehen uns im Kreis — das hatten wir schon." Sie wiederholt sich ungern, gibt aber auf Nachfrage nochmal eine Kurzversion.
+- **Überdetaillierte Nachfragen abkürzen.** Wenn der Agent zum dritten Mal nach Varianten desselben Felds fragt: "Also ehrlich, das ist jetzt wirklich nicht so kompliziert. Ich klick da drauf und fertig." Sie hat keine Lust, jedes Pixel zu erklären.
+- **Bei Zusammenfassungen nicht alles bestätigen.** Nicht einfach "Ja" zu allem sagen. Wenn etwas stimmt: "Ja, passt." Wenn etwas fast stimmt: "Ja, aber [Korrektur]." Wenn etwas überflüssig ist: "Das ist nicht so wichtig, das kommt eigentlich nie vor." Sie hat eine eigene Meinung darüber was relevant ist.
+- **Eigene Prioritäten setzen.** Frau Meier weiß was sie nervt (Abtippen, Hin-und-Her-Wechseln) und bringt das von sich aus ein. Sie wartet nicht darauf, nach Schmerzpunkten gefragt zu werden.
+- **Irgendwann ist auch mal gut.** Wenn der Agent nach 20+ Detailfragen immer noch nicht fertig ist: "Hören Sie, ich glaub wir haben jetzt wirklich alles durch. Können wir weitermachen?" Sie hat noch 30 Rechnungen auf dem Tisch.
 
 ---
 
@@ -174,28 +204,113 @@ Der Prozess ist fertig wenn alle Rechnungs-E-Mails aus dem Posteingang in "Verar
 | Belegnummer | Text (auto) | BüroWare nach Speichern | Bestätigung |
 | IBAN | Text | PDF-Rechnung | Nur bei neuem Kreditor |
 
----
+## Universelle Reaktionen
 
-# TEIL A.2 — TESTPLAN
+| Situation | Frau Meiers Reaktion |
+|-----------|---------------------|
+| Agent benutzt Fachbegriffe (Parameter, Kontrollfluss, Iteration) | "Können Sie das einfacher sagen? Ich bin Buchhalterin, keine Programmiererin." |
+| Agent wiederholt eine schon beantwortete Frage | "Das hab ich doch gerade schon erklärt." |
+| Agent fragt etwas Technisches das Frau Meier nicht weiß | "Das weiß ich nicht, da müsste ich unseren IT-Mann fragen." |
+| Agent antwortet auf Englisch | "Bitte auf Deutsch." |
+| Agent fragt nach "Kontrollfluss" oder "Nachfolger" | "Also nach dem Speichern mach ich das mit dem PDF-Anhängen, und danach die E-Mail verschieben. So meinen Sie das?" |
+| Agent zeigt eine Zusammenfassung und fragt ob es passt | "Ja, das stimmt so." ODER "Nee, da fehlt noch was: [Detail]" |
+| Agent erkennt ein Spannungsfeld und fragt nach | "Ja, das ist echt nervig. Ich muss immer hin und her wechseln zwischen dem PDF und BüroWare. Copy-Paste geht leider nicht weil BüroWare das nicht unterstützt von externen Programmen." |
+| Agent will einen Schritt aufteilen | "Ja, kann man so trennen. Für mich ist das ein Vorgang, aber wenn Sie das getrennt brauchen, klar." |
 
-## Phase 1: EXPLORATION
+## Prozesswissen: Vertiefung (Oberflächen, Regeln, Sonderfälle)
 
-**Ziel:** Alle 7 Slots mit korrekten Inhalten füllen.
+### BüroWare-Oberfläche im Detail
 
-**Geplante Gesprächsstrategie:**
+**Hauptnavigation:**
+- Desktop-Verknüpfung "BüroWare" → Programm startet, Login mit Windows-Anmeldung (automatisch)
+- Hauptmenü: Menüleiste oben → **Buchhaltung** → **Rechnungseingang** → **Neue Rechnung** (oder **Neue Gutschrift**)
+- Eingabemaske "Rechnungseingang" hat alle Felder untereinander, Tab-Taste springt zum nächsten Feld
+- Nach Speichern: BüroWare zeigt Statusleiste unten mit Bestätigung + Belegnummer
 
-| Schritt | Thema | Antwort-Strategie | Erwartetes Systemverhalten |
-|---------|-------|-------------------|---------------------------|
-| 1 | Vorfrage | "Klar bin ich bereit. Es geht um Rechnungen einbuchen." | Moderator leitet weiter. |
-| 2 | Start | "Ich buche Eingangsrechnungen ein. Die kommen per E-Mail als PDF, und ich tippe die Daten in unser System BüroWare. Das mach ich bestimmt 30 Mal am Tag." | Explorer erkennt: eine Person, ein Computerprozess, zwei Systeme. Scoping sollte schnell klar sein. |
-| 3 | Wer genau | "Das bin ich, Frau Meier, Sachbearbeiterin Buchhaltung. Meine Kollegin Frau Engel macht eher die Zahlungsläufe und Mahnungen." | Explorer klärt: EMMA soll Frau Meiers Arbeit übernehmen. |
-| 4 | Ablauf grob | "Also: E-Mail auf, PDF speichern, PDF öffnen und Daten ablesen, rüber zu BüroWare, alles eintippen, PDF anhängen, E-Mail als erledigt markieren. Nächste E-Mail." | Explorer patcht prozessbeschreibung mit chronologischen Schritten. |
-| 5 | BüroWare-Details | Auf Nachfrage: Menü Buchhaltung → Rechnungseingang → Neue Rechnung. Felder: Kreditor (Suche), Rechnungsnr., Datum, Nettobetrag, MwSt., Kostenstelle, Zahlungsziel. Speichern → Belegnummer. | Explorer vertieft prozessbeschreibung. |
-| 6 | Entscheidungen | Auf Nachfrage: Kreditor nicht gefunden → neu anlegen. MwSt. mal 7% statt 19%. Kostenstelle hängt von Rechnungsart ab. Bruttobetrag prüfen. | Explorer füllt entscheidungen_und_schleifen. |
-| 7 | Ausnahmen | Auf Nachfrage: Gutschriften (anderer Button, ~2x/Woche). Selten: Fremdwährung (CHF, manuell umrechnen). Unleserliches PDF → Rückfrage an Lieferant. | Explorer ergänzt prozessbeschreibung. |
-| 8 | Daten | Aus dem Dialog: Lieferant, Rechnungsnr., Datum, Beträge, MwSt.-Satz, Kostenstelle, Zahlungsziel, PDF-Pfad, IBAN bei Neukreditor. | variablen_und_daten gefüllt. |
-| 9 | Ende | "Das war's eigentlich. Wenn keine Rechnungs-Mails mehr im Posteingang sind, bin ich fertig." | Explorer schreibt prozesszusammenfassung, meldet nearing_completion. |
-| 10 | Bestätigung | "Ja, das passt so." | phase_complete. |
+**Feldabfolge in der Eingabemaske (exakte Reihenfolge):**
+1. **Kreditor** (Suchfeld mit Dropdown-Autocomplete)
+2. **Rechnungsnr.** (Freitextfeld)
+3. **Rechnungsdatum** (Datumsfeld TT.MM.JJJJ, Kalender-Popup verfügbar)
+4. **Eingangsdatum** (Datumsfeld, vorausgefüllt mit Tagesdatum, Frau Meier ändert es nie)
+5. **Nettobetrag** (Zahlenfeld, Dezimalkomma)
+6. **MwSt.-Satz** (Dropdown: "19%", "7%", "0%")
+7. **Bruttobetrag** (read-only, automatisch berechnet)
+8. **Kostenstelle** (Dropdown mit 4-stelligen Codes)
+9. **Zahlungsziel** (Datumsfeld, manuell berechnet)
+10. **Bemerkungen** (optionales Freitextfeld, mehrzeilig)
+11. **[Speichern]-Button**
+
+**Button "Dokument anhängen" (Büroklammer-Icon):**
+- Erscheint erst NACH dem Speichern der Rechnung
+- Öffnet Windows-Dateidialog
+- Frau Meier navigiert zum Netzlaufwerk-Ordner der aktuellen Rechnung
+- Nur PDF-Dateien auswählbar (Filter im Dialog voreingestellt)
+- Nach Anhängen: Thumbnail-Vorschau im unteren Bereich der Rechnung
+
+**Button "Neuer Kreditor":**
+- Neben dem Kreditor-Suchfeld, kleiner Button mit Plus-Zeichen
+- Öffnet modales Fenster mit Feldern: Firmenname, Straße, PLZ, Ort, IBAN
+- Nach Speichern: Neuer Kreditor ist sofort im Suchfeld verfügbar
+- Frau Meier liest alle Daten von der Rechnung ab (Kopfbereich des PDFs)
+
+### Kostenstelle-Zuordnung: Exakte Regeln
+
+| Rechnungsart | Kostenstelle | Frau Meiers Erkennung |
+|---|---|---|
+| Material, Werkzeug, Ersatzteile, Rohre, Fittings | **4100 Wareneinkauf** | Lieferant ist Großhändler (Grohe, Viega, Geberit...) oder Rechnung enthält Artikelnummern |
+| Bürobedarf, Papier, Toner, Reinigungsmittel | **4200 Büro** | Lieferant ist Büroausstatter (Staples, Viking...) |
+| Fahrzeuge, Tanken, Werkstatt, TÜV | **4300 Fuhrpark** | Lieferant ist Tankstelle, Werkstatt oder Leasinggesellschaft |
+| Unklar / passt nicht | **4900 Sonstiges** | Frau Meier kann nicht zuordnen → Frau Engel klärt es später |
+
+**Wichtig:** Frau Meier entscheidet anhand des **Lieferantennamens und des Rechnungsinhalts**, nicht anhand eines formalen Regelwerks. Sie kennt die meisten Lieferanten nach Jahren. Bei unbekannten Lieferanten liest sie die Rechnungspositionen.
+
+**Häufigkeit:** ca. 70% Wareneinkauf (4100), 15% Büro (4200), 10% Fuhrpark (4300), 5% Sonstiges (4900).
+
+### MwSt.-Satz: Entscheidungsregeln
+
+| Satz | Wann | Frau Meiers Vorgehen |
+|------|------|---------------------|
+| **19%** | Standardfall (~90% aller Rechnungen) | Default im Dropdown, nichts ändern |
+| **7%** | Ermäßigter Satz (Lebensmittel für Kantine, Bücher/Zeitschriften) | Steht auf der Rechnung, Frau Meier liest es ab und ändert Dropdown |
+| **0%** | Steuerfreie Leistungen, innergemeinschaftliche Lieferungen (EU mit USt-IdNr.) | Selten (~1x/Monat), Frau Meier erkennt es an "steuerfrei" oder "Reverse Charge" auf der Rechnung |
+
+### Bruttobetrag-Prüfung
+
+Frau Meier vergleicht **nach Eingabe von Nettobetrag und MwSt.-Satz** den von BüroWare berechneten Bruttobetrag mit dem Bruttobetrag auf der Rechnung:
+- **Stimmt überein** → weiter mit Kostenstelle
+- **Weicht ab** → Frau Meier prüft: Hat sie den Nettobetrag richtig abgetippt? Stimmt der MwSt.-Satz? Korrigiert und prüft erneut. In seltenen Fällen hat die Rechnung selbst einen Rundungsfehler — dann trägt sie den Cent-Differenzbetrag in "Bemerkungen" ein.
+
+### Gutschrift-Ablauf im Detail
+
+- **Erkennung:** Wort "Gutschrift" im PDF-Titel oder im E-Mail-Betreff
+- **BüroWare:** Buchhaltung → Rechnungseingang → **Neue Gutschrift** (Button direkt neben "Neue Rechnung")
+- **Felder:** Identisch zur Rechnung. BüroWare setzt den Betrag automatisch negativ.
+- **Rest:** Speichern, PDF anhängen, E-Mail verschieben — alles gleich.
+- **Häufigkeit:** ~2x pro Woche. Typische Gründe: Retouren, Preiskorrekturen, Mengenabweichungen.
+
+### Fremdwährungs-Ablauf im Detail
+
+- **Erkennung:** Beträge auf der Rechnung in CHF (oder anderer Nicht-EUR-Währung)
+- **Umrechnung:** Frau Meier öffnet neuen Browser-Tab → Google → "CHF EUR Kurs" → Google zeigt aktuellen Wechselkurs. Sie rechnet manuell: Nettobetrag × Kurs = EUR-Nettobetrag. Bruttobetrag × Kurs = EUR-Bruttobetrag.
+- **BüroWare:** Trägt den EUR-Betrag ein. Im Feld "Bemerkungen": "Original: [Betrag] CHF, Kurs [Kurs], umgerechnet: [EUR-Betrag] EUR"
+- **Häufigkeit:** ~1x pro Monat, fast immer CHF (Schweizer Sanitär-Zulieferer)
+- **Quelle des Kurses:** Google-Suche, kein offizielles Treasury-Tool
+
+### Unleserliches PDF: Exakter Ablauf
+
+- **Erkennung:** PDF öffnet sich, aber Inhalt ist nicht lesbar (verschmiert, zu dunkel, beschädigt, falsches Dokument angehängt)
+- **Aktion:** Frau Meier klickt in Outlook auf "Antworten" und schreibt: "Guten Tag, die beigefügte Rechnung ist leider nicht lesbar. Könnten Sie diese bitte erneut senden? Vielen Dank."
+- **E-Mail verschieben:** In Outlook-Ordner "Klärung" (nicht "Verarbeitet")
+- **Nachverfolgung:** Keine systematische — Frau Meier schaut "ab und zu" in den Klärungsordner
+- **Häufigkeit:** ~1–2x pro Monat
+
+### Warum dieser Prozess gut für RPA ist
+- **Eine Person** (Frau Meier) macht die Arbeit
+- **Repetitiv** (~30x/Tag identischer Ablauf)
+- **Regelbasiert** (keine kreativen Entscheidungen, nur Zuordnungen)
+- **Zwei Systeme** (Outlook → BüroWare), klarer Datenfluss
+- **Klarer Start** (E-Mail da) und **klares Ende** (Posteingang leer)
+- **Strukturierte Daten** (Rechnungsfelder sind standardisiert)
 
 ---
 
@@ -283,124 +398,9 @@ Machine Learning, SAP, DATEV
 
 ---
 
-## Universelle Reaktionen
+## Ziel-Artefakte: Strukturierung
 
-| Situation | Frau Meiers Reaktion |
-|-----------|---------------------|
-| Agent benutzt Fachbegriffe (Parameter, Kontrollfluss, Iteration) | "Können Sie das einfacher sagen? Ich bin Buchhalterin, keine Programmiererin." |
-| Agent wiederholt eine schon beantwortete Frage | "Das hab ich doch gerade schon erklärt." |
-| Agent fragt etwas Technisches das Frau Meier nicht weiß | "Das weiß ich nicht, da müsste ich unseren IT-Mann fragen." |
-| Agent antwortet auf Englisch | "Bitte auf Deutsch." |
-
----
-
-## Hinweise
-
-### Warum dieser Prozess gut für RPA ist
-- **Eine Person** (Frau Meier) macht die Arbeit
-- **Repetitiv** (~30x/Tag identischer Ablauf)
-- **Regelbasiert** (keine kreativen Entscheidungen, nur Zuordnungen)
-- **Zwei Systeme** (Outlook → BüroWare), klarer Datenfluss
-- **Klarer Start** (E-Mail da) und **klares Ende** (Posteingang leer)
-- **Strukturierte Daten** (Rechnungsfelder sind standardisiert)
-
----
----
-
-# TEIL A.3 — ERWEITERTES PROZESSWISSEN FÜR STRUKTURIERUNG
-
-> **Kontext:** Die Exploration hat den Prozess in Freitext erfasst. Die Strukturierung braucht präzisere Details: Welche Felder genau? Welche Reihenfolge in der Maske? Welche Regeln bei Entscheidungen? Diese Sektion enthält das Wissen, das Frau Meier im Strukturierungsdialog auf Nachfrage preisgibt.
-
-## BüroWare-Oberfläche im Detail
-
-### Hauptnavigation
-- Desktop-Verknüpfung "BüroWare" → Programm startet, Login mit Windows-Anmeldung (automatisch)
-- Hauptmenü: Menüleiste oben → **Buchhaltung** → **Rechnungseingang** → **Neue Rechnung** (oder **Neue Gutschrift**)
-- Eingabemaske "Rechnungseingang" hat alle Felder untereinander, Tab-Taste springt zum nächsten Feld
-- Nach Speichern: BüroWare zeigt Statusleiste unten mit Bestätigung + Belegnummer
-
-### Feldabfolge in der Eingabemaske (exakte Reihenfolge)
-1. **Kreditor** (Suchfeld mit Dropdown-Autocomplete)
-2. **Rechnungsnr.** (Freitextfeld)
-3. **Rechnungsdatum** (Datumsfeld TT.MM.JJJJ, Kalender-Popup verfügbar)
-4. **Eingangsdatum** (Datumsfeld, vorausgefüllt mit Tagesdatum, Frau Meier ändert es nie)
-5. **Nettobetrag** (Zahlenfeld, Dezimalkomma)
-6. **MwSt.-Satz** (Dropdown: "19%", "7%", "0%")
-7. **Bruttobetrag** (read-only, automatisch berechnet)
-8. **Kostenstelle** (Dropdown mit 4-stelligen Codes)
-9. **Zahlungsziel** (Datumsfeld, manuell berechnet)
-10. **Bemerkungen** (optionales Freitextfeld, mehrzeilig)
-11. **[Speichern]-Button**
-
-### Button "Dokument anhängen" (Büroklammer-Icon)
-- Erscheint erst NACH dem Speichern der Rechnung
-- Öffnet Windows-Dateidialog
-- Frau Meier navigiert zum Netzlaufwerk-Ordner der aktuellen Rechnung
-- Nur PDF-Dateien auswählbar (Filter im Dialog voreingestellt)
-- Nach Anhängen: Thumbnail-Vorschau im unteren Bereich der Rechnung
-
-### Button "Neuer Kreditor"
-- Neben dem Kreditor-Suchfeld, kleiner Button mit Plus-Zeichen
-- Öffnet modales Fenster mit Feldern: Firmenname, Straße, PLZ, Ort, IBAN
-- Nach Speichern: Neuer Kreditor ist sofort im Suchfeld verfügbar
-- Frau Meier liest alle Daten von der Rechnung ab (Kopfbereich des PDFs)
-
-## Kostenstelle-Zuordnung: Exakte Regeln
-
-| Rechnungsart | Kostenstelle | Frau Meiers Erkennung |
-|---|---|---|
-| Material, Werkzeug, Ersatzteile, Rohre, Fittings | **4100 Wareneinkauf** | Lieferant ist Großhändler (Grohe, Viega, Geberit...) oder Rechnung enthält Artikelnummern |
-| Bürobedarf, Papier, Toner, Reinigungsmittel | **4200 Büro** | Lieferant ist Büroausstatter (Staples, Viking...) |
-| Fahrzeuge, Tanken, Werkstatt, TÜV | **4300 Fuhrpark** | Lieferant ist Tankstelle, Werkstatt oder Leasinggesellschaft |
-| Unklar / passt nicht | **4900 Sonstiges** | Frau Meier kann nicht zuordnen → Frau Engel klärt es später |
-
-**Wichtig:** Frau Meier entscheidet anhand des **Lieferantennamens und des Rechnungsinhalts**, nicht anhand eines formalen Regelwerks. Sie kennt die meisten Lieferanten nach Jahren. Bei unbekannten Lieferanten liest sie die Rechnungspositionen.
-
-**Häufigkeit:** ca. 70% Wareneinkauf (4100), 15% Büro (4200), 10% Fuhrpark (4300), 5% Sonstiges (4900).
-
-## MwSt.-Satz: Entscheidungsregeln
-
-| Satz | Wann | Frau Meiers Vorgehen |
-|------|------|---------------------|
-| **19%** | Standardfall (~90% aller Rechnungen) | Default im Dropdown, nichts ändern |
-| **7%** | Ermäßigter Satz (Lebensmittel für Kantine, Bücher/Zeitschriften) | Steht auf der Rechnung, Frau Meier liest es ab und ändert Dropdown |
-| **0%** | Steuerfreie Leistungen, innergemeinschaftliche Lieferungen (EU mit USt-IdNr.) | Selten (~1x/Monat), Frau Meier erkennt es an "steuerfrei" oder "Reverse Charge" auf der Rechnung |
-
-## Bruttobetrag-Prüfung
-
-Frau Meier vergleicht **nach Eingabe von Nettobetrag und MwSt.-Satz** den von BüroWare berechneten Bruttobetrag mit dem Bruttobetrag auf der Rechnung:
-- **Stimmt überein** → weiter mit Kostenstelle
-- **Weicht ab** → Frau Meier prüft: Hat sie den Nettobetrag richtig abgetippt? Stimmt der MwSt.-Satz? Korrigiert und prüft erneut. In seltenen Fällen hat die Rechnung selbst einen Rundungsfehler — dann trägt sie den Cent-Differenzbetrag in "Bemerkungen" ein.
-
-## Gutschrift-Ablauf im Detail
-
-- **Erkennung:** Wort "Gutschrift" im PDF-Titel oder im E-Mail-Betreff
-- **BüroWare:** Buchhaltung → Rechnungseingang → **Neue Gutschrift** (Button direkt neben "Neue Rechnung")
-- **Felder:** Identisch zur Rechnung. BüroWare setzt den Betrag automatisch negativ.
-- **Rest:** Speichern, PDF anhängen, E-Mail verschieben — alles gleich.
-- **Häufigkeit:** ~2x pro Woche. Typische Gründe: Retouren, Preiskorrekturen, Mengenabweichungen.
-
-## Fremdwährungs-Ablauf im Detail
-
-- **Erkennung:** Beträge auf der Rechnung in CHF (oder anderer Nicht-EUR-Währung)
-- **Umrechnung:** Frau Meier öffnet neuen Browser-Tab → Google → "CHF EUR Kurs" → Google zeigt aktuellen Wechselkurs. Sie rechnet manuell: Nettobetrag × Kurs = EUR-Nettobetrag. Bruttobetrag × Kurs = EUR-Bruttobetrag.
-- **BüroWare:** Trägt den EUR-Betrag ein. Im Feld "Bemerkungen": "Original: [Betrag] CHF, Kurs [Kurs], umgerechnet: [EUR-Betrag] EUR"
-- **Häufigkeit:** ~1x pro Monat, fast immer CHF (Schweizer Sanitär-Zulieferer)
-- **Quelle des Kurses:** Google-Suche, kein offizielles Treasury-Tool
-
-## Unleserliches PDF: Exakter Ablauf
-
-- **Erkennung:** PDF öffnet sich, aber Inhalt ist nicht lesbar (verschmiert, zu dunkel, beschädigt, falsches Dokument angehängt)
-- **Aktion:** Frau Meier klickt in Outlook auf "Antworten" und schreibt: "Guten Tag, die beigefügte Rechnung ist leider nicht lesbar. Könnten Sie diese bitte erneut senden? Vielen Dank."
-- **E-Mail verschieben:** In Outlook-Ordner "Klärung" (nicht "Verarbeitet")
-- **Nachverfolgung:** Keine systematische — Frau Meier schaut "ab und zu" in den Klärungsordner
-- **Häufigkeit:** ~1–2x pro Monat
-
----
-
-# TEIL A.4 — TESTPLAN STRUKTURIERUNG
-
-## Phasenübergang: Was zwischen Exploration und Strukturierung passiert
+### Phasenübergang: Was zwischen Exploration und Strukturierung passiert
 
 ```
 1. Explorer meldet phase_complete
@@ -417,52 +417,29 @@ Frau Meier vergleicht **nach Eingabe von Nettobetrag und MwSt.-Satz** den von B�
    mit vorausgefülltem Artefakt und ggf. Hinweisen aus der Initialisierung
 ```
 
-**Für den Test relevant:** Das vorläufige Strukturartefakt ist bereits da, wenn der User den ersten Strukturierungs-Turn sieht. Der Structurer soll sofort mit der Vertiefung beginnen, nicht bei Null anfangen.
+### Erwartete Lücken im Init-Artefakt (vom Dialog zu füllen)
 
-## Phase 2: STRUKTURIERUNG
+| Lücke | Beispiel bei Frau Meier |
+|-------|------------------------|
+| **Feldlevel-Details** fehlen | Init weiß "Daten eintippen in BüroWare" aber nicht welche Felder in welcher Reihenfolge |
+| **Entscheidungsregeln** unscharf | Init weiß "Kostenstelle wählen" aber nicht die 4100/4200/4300/4900-Zuordnung |
+| **Sonderfälle** dünn beschrieben | Init weiß "Gutschrift kommt vor" aber nicht den exakten Ablauf |
+| **Spannungsfelder** nicht erkannt | Init sieht "PDF und BüroWare" aber erkennt nicht den Medienbruch |
+| **Unsicherheiten** aus Init | "Kommentar Initialisierung: Unklar ob Bruttobetrag-Prüfung automatisch" |
 
-**Ziel:** Strukturartefakt verfeinern. Init hat den Grobrahmen, Dialog füllt Details.
+### Themen die im Strukturierungsdialog abgedeckt werden müssen
 
-### Welche Lücken die Init typischerweise lässt
-
-Die Exploration liefert den Prozess in Freitext. Init_structuring erzeugt daraus Schritte — aber:
-
-| Lücke | Beispiel bei Frau Meier | Muss im Dialog gefüllt werden |
-|-------|------------------------|-------------------------------|
-| **Feldlevel-Details** fehlen | Init weiß "Daten eintippen in BüroWare" aber nicht welche Felder in welcher Reihenfolge | Structurer fragt nach Feldern, Frau Meier zählt auf |
-| **Entscheidungsregeln** unscharf | Init weiß "Kostenstelle wählen" aber nicht die 4100/4200/4300/4900-Zuordnung | Structurer fragt: "Nach welchen Kriterien wählen Sie?" |
-| **Sonderfälle** dünn beschrieben | Init weiß "Gutschrift kommt vor" aber nicht den exakten Ablauf | Structurer fragt: "Was genau machen Sie anders bei einer Gutschrift?" |
-| **Spannungsfelder** nicht erkannt | Init sieht "PDF und BüroWare" aber erkennt nicht den Medienbruch | Structurer sollte Spannungsfeld eigenständig erkennen oder nachfragen |
-| **Unsicherheiten** aus Init | "Kommentar Initialisierung: Unklar ob Bruttobetrag-Prüfung automatisch" | Structurer fragt gezielt nach den markierten Unsicherheiten |
-
-### Geplante Gesprächsstrategie
-
-**Erwartung:** Der Structurer hat das vorläufige Artefakt und vertieft gezielt. Frau Meier antwortet im selben Stil wie in der Exploration — praktisch, konkret, keine Fachbegriffe.
-
-| Turn | Erwartete Structurer-Frage (sinngemäß) | Frau Meiers Antwort | Was im Artefakt passieren muss |
-|------|---------------------------------------|---------------------|-------------------------------|
-| S1 | Structurer stellt sich vor, zeigt Übersicht der erkannten Schritte, fragt ob der Ablauf grob stimmt | "Ja, das passt soweit. Wobei — bei mir kommt vor dem Eintippen noch: ich muss ja erstmal gucken ob das eine Rechnung oder Gutschrift ist. Das ist ein anderer Button in BüroWare." | Entscheidungsschritt "Rechnung oder Gutschrift?" wird eingefügt, Gutschrift-Pfad wird angelegt |
-| S2 | Structurer fragt nach der Eingabemaske in BüroWare — welche Felder, welche Reihenfolge | "Also da gibt's erstmal das Kreditor-Suchfeld, dann Rechnungsnummer, Datum, Eingangsdatum — das ist immer heute —, Nettobetrag, MwSt.-Satz als Dropdown, Bruttobetrag wird automatisch berechnet, Kostenstelle auch Dropdown, Zahlungsziel als Datum, und Bemerkungen, das nutze ich fast nie." | Beschreibung von "Rechnungsdaten eintippen" wird massiv erweitert mit allen Feldern |
-| S3 | Structurer fragt nach Kostenstellen-Regeln | "Also ich guck mir an was für eine Rechnung das ist. Material und Werkzeug, also alles von Grohe oder Viega zum Beispiel, das ist 4100 Wareneinkauf. Bürosachen sind 4200, Fuhrpark ist 4300 — also Tanken, TÜV, Werkstatt. Und wenn ich's nicht zuordnen kann, nehme ich 4900 Sonstiges, das klärt dann die Frau Engel." | Kostenstelle-Entscheidungslogik wird in Beschreibung dokumentiert |
-| S4 | Structurer fragt nach dem Bruttobetrag-Check | "Der Brutto wird ja automatisch berechnet. Ich guck dann ob das mit der Rechnung übereinstimmt. Meistens passt's. Wenn nicht, hab ich mich vertippt — dann korrigiere ich den Nettobetrag oder den MwSt.-Satz und guck nochmal." | Bruttobetrag-Prüfung in Beschreibung ergänzt, ggf. als Teil des Eintippschritts |
-| S5 | Structurer fragt nach dem Speichern und PDF-Anhängen | "Nach dem Speichern kriege ich die Belegnummer angezeigt, so wie 'ER-2026-00456'. Und dann ist da so ein Büroklammer-Symbol, da klick ich drauf und such die PDF-Datei raus die ich vorher gespeichert hab. Dann hängt die dran." | Schritte "Speichern" und "PDF anhängen" werden detailliert |
-| S6 | Structurer fragt nach dem Speicherort der PDFs | "Das ist auf dem Netzlaufwerk. S:\Buchhaltung\Rechnungseingang\, dann nach Jahr und Monat sortiert. Also zum Beispiel S:\Buchhaltung\Rechnungseingang\2026\03\. Den Dateinamen lass ich so wie er ist." | Beschreibung des PDF-Speicherschritts wird erweitert |
-| S7 | Structurer fragt ob er noch etwas übersehen hat, fasst zusammen | "Ne, das passt so. Ach warte — eins noch: bei dem Kreditor suchen, wenn der nicht da ist, dann klicke ich auf 'Neuer Kreditor' und geb Name, Adresse und IBAN ein. Das kommt so zweimal die Woche vor." | Neukreditor-Schritt wird geprüft/ergänzt |
-| S8 | Structurer meldet nearing_completion, schreibt Zusammenfassung | "Ja, ich denke das ist alles." | prozesszusammenfassung geschrieben, Nutzer bestätigt phase_complete |
-
-### Universelle Reaktionen in der Strukturierung
-
-| Situation | Frau Meiers Reaktion |
-|-----------|---------------------|
-| Structurer fragt nach "Kontrollfluss" oder "Nachfolger" | "Also nach dem Speichern mach ich das mit dem PDF-Anhängen, und danach die E-Mail verschieben. So meinen Sie das?" |
-| Structurer zeigt eine Zusammenfassung und fragt ob es passt | "Ja, das stimmt so." ODER "Nee, da fehlt noch was: [Detail]" |
-| Structurer fragt nach etwas das schon in der Exploration stand | "Das hab ich doch am Anfang schon erzählt. [Wiederholt leicht genervt]" |
-| Structurer erkennt ein Spannungsfeld und fragt nach | "Ja, das ist echt nervig. Ich muss immer hin und her wechseln zwischen dem PDF und BüroWare. Copy-Paste geht leider nicht weil BüroWare das nicht unterstützt von externen Programmen." |
-| Structurer will einen Schritt aufteilen | "Ja, kann man so trennen. Für mich ist das ein Vorgang, aber wenn Sie das getrennt brauchen, klar." |
-
----
-
-# TEIL B.2 — ZIEL-ARTEFAKTE STRUKTURIERUNG
+| Thema | Erwartete Artefakt-Änderung |
+|-------|----------------------------|
+| **Gutschrift-Erkennung** | Entscheidungsschritt vollständig beschrieben (Menüpunkt, Felder, negativer Betrag) |
+| **BüroWare-Feldabfolge** | Alle 9 Felder mit Reihenfolge und Feldtypen in Beschreibung |
+| **Kostenstelle-Zuordnung** | 4 Kategorien mit Erkennungsmerkmalen und Häufigkeiten |
+| **MwSt.-Satz-Regeln** | 19%/7%/0% mit Erkennungsmerkmalen |
+| **Bruttobetrag-Prüfung** | Als Prüfschritt in Beschreibung ergänzt |
+| **PDF-Speicherort** | Netzlaufwerk-Pfad und Dateibenennungskonvention |
+| **PDF-Anhängen in BüroWare** | Büroklammer-Icon, Dateidialog, Thumbnail-Vorschau |
+| **Neukreditor-Details** | Plus-Button, modales Fenster, Felder: Name/Adresse/IBAN |
+| **Spannungsfeld Medienbruch** | spannungsfeld-Feld am Eintippschritt |
 
 ## Ziel-Artefakt: Strukturartefakt nach Init (vorläufig)
 
@@ -477,33 +454,35 @@ Die Exploration liefert den Prozess in Freitext. Init_structuring erzeugt daraus
 "Frau Meier speichert den PDF-Anhang der E-Mail auf dem Netzlaufwerk. Kommentar Initialisierung: Genauer Speicherpfad und Dateibenennungskonvention aus Exploration nicht ersichtlich."
 
 **s3** — PDF öffnen und Rechnungsdaten ablesen [aktion, reihenfolge 3, → s4, completeness_status: vollstaendig]
-"Frau Meier öffnet das gespeicherte PDF in Adobe Acrobat Reader (Doppelklick). Sie liest ab: Lieferantenname, Rechnungsnummer, Rechnungsdatum, Nettobetrag, MwSt.-Betrag, Bruttobetrag, Zahlungsziel, ggf. IBAN des Lieferanten."
+"Frau Meier öffnet das gespeicherte PDF in Adobe Acrobat Reader (Doppelklick). Sie liest ab: Lieferantenname, Rechnungsnummer, Rechnungsdatum, Nettobetrag, MwSt.-Betrag, Bruttobetrag, Zahlungsziel, ggf. IBAN des Lieferanten. Außerdem stellt sie fest, ob es sich um eine Gutschrift handelt."
 
-**s4** — Kreditor in BüroWare vorhanden? [entscheidung, reihenfolge 4, bedingung: "Wird der Lieferant im BüroWare-Kreditor-Suchfeld gefunden?", Ja → s5, Nein → s4a, konvergenz: s5, completeness_status: teilweise]
+**s4** — Rechnung oder Gutschrift? [entscheidung, reihenfolge 4, bedingung: "Ist das Dokument als Gutschrift gekennzeichnet?", Ja → s4a, Nein → s5, konvergenz: s8, completeness_status: teilweise]
+"Frau Meier prüft ob das PDF-Dokument eine Gutschrift ist. Gutschriften kommen ca. 2x pro Woche vor. Kommentar Initialisierung: Unklar woran genau eine Gutschrift erkannt wird (Titel, Betreff, Vermerk auf dem Beleg?)."
+
+**s4a** — Gutschrift in BüroWare erfassen [aktion, reihenfolge 5, → s8, completeness_status: teilweise]
+"Gutschriften werden über einen anderen Menüpunkt in BüroWare erfasst (nicht 'Neue Rechnung'). Betrag wird automatisch negativ gebucht. Kommentar Initialisierung: Unklar ob die Eingabefelder identisch zur Rechnungseingabe sind. Unklar ob der Kreditor-Suchschritt auch bei Gutschriften nötig ist."
+
+**s5** — Kreditor in BüroWare vorhanden? [entscheidung, reihenfolge 6, bedingung: "Wird der Lieferant im BüroWare-Kreditor-Suchfeld gefunden?", Ja → s6, Nein → s5a, konvergenz: s6, completeness_status: teilweise]
 "Frau Meier wechselt zu BüroWare und öffnet Buchhaltung → Rechnungseingang → Neue Rechnung. Im Feld 'Kreditor' sucht sie nach dem Lieferantennamen. Kommentar Initialisierung: Unklar ob die Suche über Autocomplete-Dropdown funktioniert oder ein separates Suchfenster hat."
 
-**s4a** — Neuen Kreditor anlegen [aktion, reihenfolge 5, → s5, completeness_status: teilweise]
+**s5a** — Neuen Kreditor anlegen [aktion, reihenfolge 7, → s6, completeness_status: teilweise]
 "Frau Meier legt einen neuen Kreditor in BüroWare an mit Name, Adresse und IBAN. Kommt ca. 2x pro Woche vor. Kommentar Initialisierung: Unklar ob das ein separates Formular ist oder in der Rechnungsmaske integriert."
 
-**s5** — Rechnungsdaten in BüroWare eintippen [aktion, reihenfolge 6, → s6, completeness_status: teilweise]
+**s6** — Rechnungsdaten in BüroWare eintippen [aktion, reihenfolge 8, → s7, completeness_status: teilweise]
 "Frau Meier tippt die Rechnungsdaten in die Eingabemaske: Rechnungsnummer, Rechnungsdatum, Nettobetrag, MwSt.-Satz (19%/7%/0%), Kostenstelle, Zahlungsziel. Der Bruttobetrag wird automatisch berechnet — Frau Meier prüft ob er mit der Rechnung übereinstimmt. Speichern → Belegnummer wird vergeben. Kommentar Initialisierung: Unklar nach welchen Regeln die Kostenstelle zugeordnet wird. Unklar ob es ein Eingangsdatum-Feld gibt."
 spannungsfeld: "Frau Meier muss alle Rechnungsdaten manuell vom PDF-Bildschirm in BüroWare abtippen — reiner Medienbruch, kein automatischer Import."
 
-**s6** — PDF in BüroWare anhängen [aktion, reihenfolge 7, → s7, completeness_status: teilweise]
+**s7** — PDF in BüroWare anhängen [aktion, reihenfolge 9, → s8, completeness_status: teilweise]
 "Nach dem Speichern hängt Frau Meier das zuvor gespeicherte PDF als Beleg in BüroWare an. Kommentar Initialisierung: Unklar über welche Funktion (Menü, Button, Drag&Drop) das Anhängen erfolgt."
 
-**s7** — E-Mail als erledigt markieren [aktion, reihenfolge 8, → [], completeness_status: vollstaendig]
+**s8** — E-Mail als erledigt markieren [aktion, reihenfolge 10, → [], completeness_status: vollstaendig]
 "Frau Meier wechselt zurück zu Outlook und verschiebt die bearbeitete E-Mail per Drag & Drop in den Ordner 'Verarbeitet' (Unterordner im Posteingang). Der Prozess wiederholt sich für die nächste E-Mail."
 
-**s_err_gutschrift** — Gutschrift statt Rechnung [ausnahme, reihenfolge 99, → [], completeness_status: teilweise]
-ausnahme_beschreibung: "E-Mail enthält eine Gutschrift statt einer Rechnung. Kommt ca. 2x pro Woche vor."
-"Gutschriften werden über einen anderen Menüpunkt in BüroWare erfasst. Betrag wird automatisch negativ gebucht. Kommentar Initialisierung: Unklar ob sich die Eingabefelder von einer normalen Rechnung unterscheiden."
-
-**s_err_fremd** — Rechnung in Fremdwährung [ausnahme, reihenfolge 100, → [], completeness_status: teilweise]
+**s_err_fremd** — Rechnung in Fremdwährung [ausnahme, reihenfolge 99, → [], completeness_status: teilweise]
 ausnahme_beschreibung: "Rechnung in Fremdwährung (typisch CHF). Kommt ca. 1x pro Monat vor."
 "Frau Meier rechnet den Betrag manuell in EUR um und trägt den umgerechneten Betrag ein. Kommentar Initialisierung: Unklar woher der Wechselkurs stammt und wie er dokumentiert wird."
 
-**s_err_pdf** — Unleserliches PDF [ausnahme, reihenfolge 101, → [], completeness_status: vollstaendig]
+**s_err_pdf** — Unleserliches PDF [ausnahme, reihenfolge 100, → [], completeness_status: vollstaendig]
 ausnahme_beschreibung: "PDF-Anhang ist unleserlich (schlechter Scan, beschädigte Datei). Selten."
 "Frau Meier schreibt dem Lieferanten eine Antwort-E-Mail mit der Bitte um erneute Zusendung. Die E-Mail wird in den Outlook-Ordner 'Klärung' verschoben."
 
@@ -511,7 +490,7 @@ ausnahme_beschreibung: "PDF-Anhang ist unleserlich (schlechter Scan, beschädigt
 
 Typische Warnings die der CoverageValidator melden sollte:
 - "Kostenstelle-Zuordnungsregeln nicht dokumentiert — im Dialog klären"
-- "Gutschrift-Ablauf nur als Ausnahme modelliert, könnte auch Entscheidungsschritt im Hauptfluss sein"
+- "Gutschrift-Ablauf dünn beschrieben — Erkennungsmerkmale und genauen BüroWare-Menüpunkt im Dialog klären"
 - "Speicherpfad-Konvention unklar"
 
 ### Was im Init NICHT enthalten sein darf (Halluzinationen)
@@ -581,15 +560,17 @@ ausnahme_beschreibung: "Rechnung in Nicht-EUR-Währung (fast immer CHF von Schwe
 
 | Kriterium | Init | Final |
 |-----------|------|-------|
-| Anzahl Schritte (regulär) | 7–8 | 10 (s1–s8 + s4a + s5a) |
-| Anzahl Ausnahmen | 1–3 | 3 (s_err_pdf, s_err_fremd, ggf. weniger wenn Gutschrift als Entscheidung modelliert) |
-| Entscheidungsschritte | 1 (Kreditor) | 2 (Gutschrift + Kreditor) |
-| completeness_status: vollstaendig | 40–60% der Schritte | 100% |
-| "Kommentar Initialisierung:" | 3–5 Stück | 0 |
+| Anzahl Schritte (regulär) | 10 (s1–s8 + s4a + s5a) | 10 (s1–s8 + s4a + s5a) |
+| Anzahl Ausnahmen | 2 (s_err_fremd, s_err_pdf) | 2 (s_err_pdf, s_err_fremd) |
+| Entscheidungsschritte | 2 (Gutschrift + Kreditor), aber dünn | 2 (Gutschrift + Kreditor), voll detailliert |
+| completeness_status: vollstaendig | ~40% (s1, s3, s8, s_err_pdf) | 100% |
+| "Kommentar Initialisierung:" | 5–6 Stück | 0 |
 | Felder in s6 (BüroWare-Eintippen) | Grob ("Rechnungsdaten eintippen") | Alle 9 Felder mit Reihenfolge und Feldtypen |
 | Kostenstelle-Regeln | "Kostenstelle wählen" | 4 Kategorien mit Erkennungsmerkmalen und Häufigkeiten |
-| spannungsfeld | 0–1 | 1+ (Medienbruch PDF → BüroWare) |
-| Gutschrift | Als Ausnahme oder fehlend | Als Entscheidungsschritt s4 im Hauptfluss |
+| spannungsfeld | 1 (Medienbruch, bereits von Init erkannt) | 1 (Medienbruch, detaillierter) |
+| Gutschrift | Als Entscheidung im Hauptfluss (prompt-konform), aber Beschreibung dünn | Als Entscheidung s4, vollständig mit Menüpunkt, Feldern, negativem Betrag |
+
+**Hinweis: Abdeckungslimit dieses Testprozesses.** Frau Meiers Prozess enthält keine `regeln`-Entscheidung (≥3 Ausgänge) und keine `schleife` (keine Mehrfachpositionen pro Rechnung). Diese Typen werden durch die Prompt-Beispiele (init_structuring: Versandart mit 3 Regeln, Bestellpositionen als Schleife; structuring: Freigabestufen, Rechnungspositionen kontieren) abgedeckt, aber nicht durch diesen E2E-Testfall. Für vollständige Typ-Abdeckung müsste ein zweiter Testprozess herangezogen werden (z.B. Angebotsanfragen oder Reklamationen).
 
 ### Dinge die NICHT im Strukturartefakt stehen dürfen (Halluzinationen)
 - OCR, automatische Belegerkennung, Scanner, KI-gestützt

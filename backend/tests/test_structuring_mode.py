@@ -367,10 +367,20 @@ def test_guardrail_blocks_phase_complete_with_leer_schritte() -> None:
     )
 
 
-def test_guardrail_allows_phase_complete_when_schritte_filled() -> None:
-    """Guardrail passes through phase_complete when schritte exist and none are leer."""
+def test_guardrail_blocks_phase_complete_when_teilweise() -> None:
+    """Guardrail downgrades phase_complete to nearing_completion if any schritt is teilweise."""
     schritte = {
         "s1": _make_schritt("s1", status=CompletenessStatus.teilweise),
+        "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.vollstaendig),
+    }
+    ctx = _make_context(schritte=schritte)
+    assert _apply_guardrails(Phasenstatus.phase_complete, ctx, []) == Phasenstatus.nearing_completion
+
+
+def test_guardrail_allows_phase_complete_when_all_vollstaendig() -> None:
+    """Guardrail passes through phase_complete only when ALL schritte are vollstaendig."""
+    schritte = {
+        "s1": _make_schritt("s1", status=CompletenessStatus.vollstaendig),
         "s2": _make_schritt("s2", reihenfolge=2, status=CompletenessStatus.vollstaendig),
     }
     ctx = _make_context(schritte=schritte)

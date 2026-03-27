@@ -1,13 +1,21 @@
 /**
  * Live-Persona-Runner — Dynamische E2E-Tests mit LLM-generierter Persona.
  *
- * Statt vorgeskripteter Turns spielt ein LLM die Persona (z.B. Herr Krause)
- * und antwortet natürlich auf die Fragen des Explorers — genau wie ein
+ * Statt vorgeskripteter Turns spielt ein LLM die Persona (z.B. Frau Meier)
+ * und antwortet natürlich auf die Fragen des Systems — genau wie ein
  * manueller Test, nur automatisiert.
  *
+ * Unterstützt Multi-Phase: Exploration → Moderator → Strukturierung (und weiter).
+ *
  * Usage:
- *   npx tsx e2e/run-live-persona.ts --playbook agent-docs/e2e-playbook-angebotsanfragen.md
- *   npx tsx e2e/run-live-persona.ts --playbook agent-docs/e2e-human-playbook.md --max-turns 15
+ *   # Nur Exploration (default)
+ *   npx tsx e2e/run-live-persona.ts --playbook agent-docs/e2e-human-playbook.md
+ *
+ *   # Exploration + Strukturierung
+ *   npx tsx e2e/run-live-persona.ts --playbook agent-docs/e2e-human-playbook.md --stop-after strukturierung
+ *
+ *   # Alle Phasen bis Validierung
+ *   npx tsx e2e/run-live-persona.ts --playbook agent-docs/e2e-human-playbook.md --stop-after validierung --max-turns 60
  *
  * Requires:
  *   - Running backend (BACKEND_URL, default http://127.0.0.1:8000)
@@ -23,6 +31,9 @@ import OpenAI from 'openai';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
+const PHASE_ORDER = ['exploration', 'strukturierung', 'spezifikation', 'validierung'] as const;
+type Phase = (typeof PHASE_ORDER)[number];
+
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
@@ -33,6 +44,7 @@ interface Config {
   maxTurns: number;
   personaModel: string;
   outputDir: string;
+  stopAfter: Phase;
 }
 
 function parseArgs(): Config {
@@ -40,9 +52,10 @@ function parseArgs(): Config {
   const config: Config = {
     playbookPath: '',
     backendUrl: process.env['BACKEND_URL'] ?? 'http://127.0.0.1:8000',
-    maxTurns: 20,
+    maxTurns: 30,
     personaModel: process.env['PERSONA_MODEL'] ?? 'gpt-5.4',
     outputDir: join(__dirname, 'reports'),
+    stopAfter: 'exploration',
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -50,10 +63,18 @@ function parseArgs(): Config {
     else if (args[i] === '--max-turns' && args[i + 1]) config.maxTurns = parseInt(args[++i], 10);
     else if (args[i] === '--model' && args[i + 1]) config.personaModel = args[++i];
     else if (args[i] === '--output' && args[i + 1]) config.outputDir = args[++i];
+    else if (args[i] === '--stop-after' && args[i + 1]) {
+      const phase = args[++i] as Phase;
+      if (!PHASE_ORDER.includes(phase)) {
+        console.error(`Ungültige Phase: ${phase}. Erlaubt: ${PHASE_ORDER.join(', ')}`);
+        process.exit(1);
+      }
+      config.stopAfter = phase;
+    }
   }
 
   if (!config.playbookPath) {
-    console.error('Usage: npx tsx e2e/run-live-persona.ts --playbook <path-to-playbook.md>');
+    console.error('Usage: npx tsx e2e/run-live-persona.ts --playbook <path> [--stop-after exploration|strukturierung|spezifikation|validierung] [--max-turns N]');
     process.exit(1);
   }
   return config;
@@ -78,15 +99,21 @@ class PersonaLLM {
   private buildSystemPrompt(playbook: string): string {
     return `Du spielst eine Persona in einem E2E-Test der Digitalisierungsfabrik.
 
-DEINE AUFGABE: Du bist die Person die im Playbook beschrieben ist. Du antwortest natürlich und authentisch auf die Fragen des Interviewers (des "Explorers"). Du kennst deinen Arbeitsprozess genau und beschreibst ihn so wie du ihn jeden Tag machst.
+DEINE AUFGABE: Du bist die Person die im Playbook beschrieben ist. Du kennst deinen Arbeitsprozess genau, aber vieles davon ist dir nicht explizit bewusst — du hast ein tiefes, aber eher implizites Wissen. Du machst das jeden Tag, es ist Routine, du denkst nicht in Schritten und Feldern sondern in "ich mach halt immer so".
+
+GESPRÄCHSVERHALTEN:
+- Gib auf eine offene Frage erstmal den groben Überblick (3-4 Sätze), nicht alle Details sofort
+- Details kommen erst wenn gezielt nachgefragt wird — Feldnamen, exakte Reihenfolgen, Sonderfälle
+- Manche Dinge fallen dir erst ein wenn der Kontext stimmt ("Ach ja, und dann gibt's noch...")
+- Du darfst gelegentlich kurz nachdenken ("Hmm, Moment...", "Da muss ich überlegen...")
+- Häufiges (30x/Tag) beschreibst du flüssig und sicher. Seltenes (1x/Monat) eher knapp und unsicher
+- Lies das Playbook-Kapitel "Gesprächsverhalten" genau — es beschreibt dein Verhalten im Detail
 
 REGELN:
 - Antworte als die Persona, nicht als KI-Assistent
 - Sprich so wie die Persona spricht (siehe Charakter/typische Formulierungen im Playbook)
-- Gib Informationen basierend auf deinem Prozesswissen — aber nur das was gefragt wird
-- Wenn der Explorer nach etwas fragt das im Playbook steht: antworte damit
-- Wenn der Explorer nach etwas fragt das NICHT explizit im Playbook steht: sag "Das weiß ich nicht" oder "Das kommt bei uns nicht vor" oder "Da müssten Sie unsere IT fragen". Erfinde KEINE Prozessschritte, Ausnahmen, Regeln oder Systeme die nicht im Playbook stehen!
-- Wenn der Explorer fragt ob alles passt oder ob du bestätigst: bestätige knapp
+- Wenn nach etwas gefragt wird das NICHT im Playbook steht: sag "Das weiß ich nicht" oder "Da müssten Sie unsere IT fragen". Erfinde KEINE Prozessschritte, Systeme oder Regeln!
+- Wenn gefragt wird ob alles passt: bestätige knapp
 - Antworte auf Deutsch
 - Halte dich kurz — Sachbearbeiter reden nicht in Absätzen
 
@@ -95,8 +122,8 @@ PLAYBOOK (dein vollständiges Prozesswissen):
 ${playbook}`;
   }
 
-  async respond(explorerQuestion: string): Promise<string> {
-    this.dialog.push({ role: 'user', content: explorerQuestion });
+  async respond(question: string): Promise<string> {
+    this.dialog.push({ role: 'user', content: question });
 
     const response = await this.client.chat.completions.create({
       model: this.model,
@@ -124,6 +151,8 @@ ${playbook}`;
 
 interface TurnLog {
   turn: number;
+  phase: string;
+  mode: string;
   explorer_question: string;
   persona_response: string;
   phasenstatus: string;
@@ -133,56 +162,67 @@ interface TurnLog {
   response_time_ms: number;
 }
 
+interface PhaseResult {
+  phase: string;
+  turns: number;
+  completed: boolean;
+  artifacts: ArtifactSnapshots | null;
+}
+
 async function run(config: Config): Promise<void> {
-  // Load playbook
   const playbook = await readFile(config.playbookPath, 'utf-8');
   const playbookName = config.playbookPath.split(/[/\\]/).pop() ?? 'unknown';
 
-  // Extract persona name from playbook (first "Persona:" line)
   const personaMatch = playbook.match(/\*\*Persona:\*\*\s*(.+)/);
   const personaName = personaMatch ? personaMatch[1].trim() : 'Unbekannt';
 
-  // Setup OpenAI
   const apiKey = process.env['OPENAI_API_KEY'] ?? process.env['LLM_API_KEY'] ?? '';
   if (!apiKey) {
     console.error('Kein API-Key gefunden. Setze OPENAI_API_KEY oder LLM_API_KEY.');
     process.exit(1);
   }
 
+  const stopIdx = PHASE_ORDER.indexOf(config.stopAfter);
+  const targetPhases = PHASE_ORDER.slice(0, stopIdx + 1);
+
   console.log(`Live-Persona-Runner — Digitalisierungsfabrik`);
-  console.log(`Playbook:  ${playbookName}`);
-  console.log(`Persona:   ${personaName}`);
-  console.log(`Model:     ${config.personaModel}`);
-  console.log(`Backend:   ${config.backendUrl}`);
-  console.log(`Max Turns: ${config.maxTurns}\n`);
+  console.log(`Playbook:    ${playbookName}`);
+  console.log(`Persona:     ${personaName}`);
+  console.log(`Model:       ${config.personaModel}`);
+  console.log(`Backend:     ${config.backendUrl}`);
+  console.log(`Phasen:      ${targetPhases.join(' → ')}`);
+  console.log(`Max Turns:   ${config.maxTurns}\n`);
 
   const persona = new PersonaLLM(apiKey, config.personaModel, playbook);
   const client = new SessionClient(config.backendUrl, 180_000);
 
-  // Create project and connect
   const projectId = await client.createProject(`live-persona-${Date.now()}`);
   const greeting = await client.connect(projectId);
 
   console.log(`Projekt erstellt: ${projectId}`);
   console.log(`Begrüßung: ${greeting.message.substring(0, 100)}...\n`);
 
-  const turns: TurnLog[] = [];
+  const allTurns: TurnLog[] = [];
+  const phaseResults: PhaseResult[] = [];
   let currentQuestion = greeting.message;
-  let phaseComplete = false;
+  let turnNr = 0;
+  let lastPhase = '';
 
-  for (let turn = 1; turn <= config.maxTurns; turn++) {
-    // Persona generates response
+  // ── Main loop — runs until target phase completes or max turns ──
+
+  while (turnNr < config.maxTurns) {
     const personaAnswer = await persona.respond(currentQuestion);
+    turnNr++;
 
-    console.log(`--- Turn ${turn} ---`);
-    console.log(`Explorer: ${currentQuestion.substring(0, 120)}${currentQuestion.length > 120 ? '...' : ''}`);
-    console.log(`Persona:  ${personaAnswer.substring(0, 120)}${personaAnswer.length > 120 ? '...' : ''}`);
-
-    // Send to backend
     const response: TurnResponse = await client.sendMessage(projectId, personaAnswer);
 
+    const phase = response.state.aktive_phase || 'unknown';
+    const mode = response.state.aktiver_modus || 'unknown';
+
     const log: TurnLog = {
-      turn,
+      turn: turnNr,
+      phase,
+      mode,
       explorer_question: currentQuestion,
       persona_response: personaAnswer,
       phasenstatus: response.state.phasenstatus,
@@ -191,174 +231,174 @@ async function run(config: Config): Promise<void> {
       slots_total: response.state.bekannte_slots,
       response_time_ms: response.response_time_ms,
     };
-    turns.push(log);
+    allTurns.push(log);
 
+    // Phase change detection
+    if (phase !== lastPhase && lastPhase !== '') {
+      console.log(`\n══════ Phasenwechsel: ${lastPhase} → ${phase} ══════\n`);
+    }
+    lastPhase = phase;
+
+    console.log(`--- Turn ${turnNr} [${phase}/${mode}] ---`);
+    console.log(`System:  ${currentQuestion.substring(0, 120)}${currentQuestion.length > 120 ? '...' : ''}`);
+    console.log(`Persona: ${personaAnswer.substring(0, 120)}${personaAnswer.length > 120 ? '...' : ''}`);
     console.log(`Status: ${response.state.phasenstatus} | Slots: ${response.state.befuellte_slots}/${response.state.bekannte_slots} | ${response.response_time_ms}ms`);
     console.log('');
 
-    // Check completion
-    if (response.state.flags.includes('phase_complete') || response.state.phasenstatus === 'phase_complete') {
-      console.log(`=== Phase complete nach ${turn} Turns ===\n`);
-      phaseComplete = true;
-      // Collect the moderator auto-response as final message
+    // ── Phase complete handling ──
+
+    const isPhaseComplete = response.state.flags.includes('phase_complete')
+      || response.state.phasenstatus === 'phase_complete';
+
+    if (isPhaseComplete) {
+      const completedPhase = phase === 'moderator' ? lastPhase : phase;
+
+      // Snapshot artifacts at phase boundary
+      const artifacts = await client.getArtifacts(projectId);
+      const phaseTurns = allTurns.filter(t => t.phase === completedPhase || t.phase === phase).length;
+      phaseResults.push({ phase: completedPhase, turns: phaseTurns, completed: true, artifacts });
+
+      console.log(`=== ${completedPhase} complete nach ${phaseTurns} Turns ===\n`);
+
+      // Check if we've reached our target phase
+      const completedIdx = PHASE_ORDER.indexOf(completedPhase as Phase);
+      const targetIdx = PHASE_ORDER.indexOf(config.stopAfter);
+
+      if (completedIdx >= targetIdx) {
+        console.log(`Zielphase '${config.stopAfter}' erreicht — Test beendet.\n`);
+        break;
+      }
+
+      // Continue to next phase — moderator message is in response.message
+      // The persona needs to confirm the phase transition
+      console.log(`Moderator fragt nach Phasenwechsel, Persona bestätigt...\n`);
       currentQuestion = response.message;
-      break;
+
+      // Loop through moderator interaction until phase actually advances
+      const prevPhase = phase;
+      let moderatorTurns = 0;
+      while (moderatorTurns < 5 && turnNr < config.maxTurns) {
+        const confirmAnswer = await persona.respond(currentQuestion);
+        turnNr++;
+
+        const confirmResponse = await client.sendMessage(projectId, confirmAnswer);
+        const confirmPhase = confirmResponse.state.aktive_phase || 'unknown';
+        const confirmMode = confirmResponse.state.aktiver_modus || 'unknown';
+
+        allTurns.push({
+          turn: turnNr,
+          phase: confirmPhase,
+          mode: confirmMode,
+          explorer_question: currentQuestion,
+          persona_response: confirmAnswer,
+          phasenstatus: confirmResponse.state.phasenstatus,
+          flags: confirmResponse.state.flags,
+          slots_filled: confirmResponse.state.befuellte_slots,
+          slots_total: confirmResponse.state.bekannte_slots,
+          response_time_ms: confirmResponse.response_time_ms,
+        });
+
+        console.log(`--- Turn ${turnNr} [${confirmPhase}/${confirmMode}] (Moderator-Übergang) ---`);
+        console.log(`Persona: ${confirmAnswer.substring(0, 120)}${confirmAnswer.length > 120 ? '...' : ''}`);
+        console.log(`Status: ${confirmResponse.state.phasenstatus} | ${confirmResponse.response_time_ms}ms\n`);
+
+        currentQuestion = confirmResponse.message;
+        moderatorTurns++;
+
+        // Phase has advanced — break out of moderator loop
+        if (confirmPhase !== prevPhase && confirmMode !== 'moderator') {
+          lastPhase = confirmPhase;
+          break;
+        }
+      }
+      continue;
     }
 
     currentQuestion = response.message;
   }
 
-  if (!phaseComplete) {
-    console.log(`=== Max Turns (${config.maxTurns}) erreicht ohne phase_complete ===\n`);
+  if (turnNr >= config.maxTurns) {
+    console.log(`=== Max Turns (${config.maxTurns}) erreicht ===\n`);
   }
 
-  // Fetch final artifacts
-  const artifacts = await client.getArtifacts(projectId);
+  // ── Fetch final artifacts and generate report ──
+
+  const finalArtifacts = await client.getArtifacts(projectId);
   client.disconnect();
 
-  // Generate report
   await mkdir(config.outputDir, { recursive: true });
-  const reportPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.md`);
-  const jsonPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.json`);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+  const baseName = `live-persona-${playbookName.replace('.md', '')}-${timestamp}`;
+  const reportPath = join(config.outputDir, `${baseName}.md`);
+  const jsonPath = join(config.outputDir, `${baseName}.json`);
 
-  const report = generateReport(personaName, playbookName, config, turns, artifacts, phaseComplete);
+  const completedPhases = phaseResults.filter(p => p.completed).map(p => p.phase);
 
-  // Generate qualitative analysis via LLM
+  const report = generateReport(personaName, playbookName, config, allTurns, finalArtifacts, phaseResults);
+
   console.log('Generiere qualitative Analyse...');
-  const analysis = await generateAnalysis(apiKey, playbook, artifacts, turns, phaseComplete);
+  const analysis = await generateAnalysis(apiKey, playbook, finalArtifacts, allTurns, completedPhases);
 
   const fullReport = report + '\n\n---\n\n' + analysis;
   await writeFile(reportPath, fullReport, 'utf-8');
-  await writeFile(jsonPath, JSON.stringify({ turns, artifacts, config: { ...config, apiKey: '***' } }, null, 2), 'utf-8');
+  await writeFile(jsonPath, JSON.stringify({
+    turns: allTurns, artifacts: finalArtifacts, phaseResults,
+    config: { ...config, apiKey: '***' },
+  }, null, 2), 'utf-8');
 
   console.log(`\nReport: ${reportPath}`);
   console.log(`Rohdaten: ${jsonPath}`);
 }
 
-/** Generate qualitative analysis by feeding playbook + artifacts + dialog to an LLM. */
+// ---------------------------------------------------------------------------
+// Analysis (LLM-gestützt, phasenübergreifend)
+// ---------------------------------------------------------------------------
+
 async function generateAnalysis(
   apiKey: string, playbook: string,
-  artifacts: ArtifactSnapshots, turns: TurnLog[], phaseComplete: boolean,
+  artifacts: ArtifactSnapshots, turns: TurnLog[], completedPhases: string[],
 ): Promise<string> {
   const client = new OpenAI({ apiKey });
-
-  // Always use the strongest available model for analysis — this is a quality gate
   const analysisModel = 'gpt-5.4';
 
-  // Extract slot contents for direct analysis
-  const slots = extractActualSlots(artifacts);
-  const slotDump = Object.entries(slots)
-    .map(([id, content]) => `### ${id}\n${content}`)
-    .join('\n\n');
+  // Build artifact dumps per phase
+  const artifactSections: string[] = [];
 
-  // Build concise dialog summary (not the full report with JSON)
+  // Exploration slots
+  const explorationSlots = extractExplorationSlots(artifacts);
+  if (Object.keys(explorationSlots).length > 0) {
+    artifactSections.push('## EXPLORATION — Slot-Inhalte\n\n' +
+      Object.entries(explorationSlots)
+        .map(([id, content]) => `### ${id}\n${content}`)
+        .join('\n\n'));
+  }
+
+  // Structure artifact
+  const structureData = extractStructureData(artifacts);
+  if (structureData) {
+    artifactSections.push('## STRUKTURIERUNG — Strukturartefakt\n\n' + structureData);
+  }
+
   const dialogSummary = turns
-    .map(t => `Turn ${t.turn} [${t.phasenstatus}]: Explorer: "${t.explorer_question.substring(0, 150)}" → Persona: "${t.persona_response.substring(0, 150)}"`)
+    .map(t => `Turn ${t.turn} [${t.phase}/${t.mode}] ${t.phasenstatus}: System: "${t.explorer_question.substring(0, 120)}" → Persona: "${t.persona_response.substring(0, 120)}"`)
     .join('\n');
+
+  const phasenInfo = completedPhases.length > 0
+    ? `Abgeschlossene Phasen: ${completedPhases.join(', ')}`
+    : 'Keine Phase vollständig abgeschlossen';
+
+  const systemPrompt = buildAnalysisPrompt(completedPhases);
 
   const response = await client.chat.completions.create({
     model: analysisModel,
     temperature: 0.3,
-    max_completion_tokens: 8000,
+    max_completion_tokens: 12000,
     messages: [
-      {
-        role: 'system',
-        content: `Du bist ein erfahrener Qualitätsanalyst für RPA-Prozesserhebungen. Du bewertest das Ergebnis eines E2E-Tests der **Explorationsphase**.
-
-BEWERTUNGSMASSSTAB:
-Dies ist die ERSTE von vier Phasen (Exploration → Strukturierung → Spezifikation → Validierung). Die Exploration muss den Prozess **im Überblick nachvollziehbar** machen — nicht jedes Detail erfassen. Fehlende Einzelfelder, Variable oder Klick-Details sind KEIN Durchfallgrund, solange der Prozess in seinen wesentlichen Abläufen, Systemen, Entscheidungen und Schleifen verstanden wurde. Details werden in den Folgephasen ergänzt.
-
-Bewertungsskala:
-- **BESTANDEN** — Prozess ist nachvollziehbar, ein Prozessanalyst könnte damit in die nächste Phase gehen. Fehlende Details sind akzeptabel.
-- **BESTANDEN MIT LÜCKEN** — Prozess ist im Kern nachvollziehbar, aber es fehlen wichtige strukturelle Elemente (z.B. ein ganzer Entscheidungspfad, ein System, ein wesentlicher Prozessschritt).
-- **NICHT BESTANDEN** — Prozess ist nicht nachvollziehbar oder es fehlen wesentliche Teile (z.B. Start/Ende unklar, Hauptablauf unvollständig, Halluzinationen).
-
-SORGFALTSPFLICHT:
-Du bekommst drei Quellen. Prüfe JEDE Aussage gegen die ARTEFAKT-ROHDATEN.
-- Behaupte nie dass etwas fehlt ohne im Artefakt nachgeschaut zu haben.
-- Behaupte nie dass etwas da ist ohne es im Artefakt gefunden zu haben.
-- Die Artefakt-Rohdaten sind die Wahrheit — nicht der Dialog, nicht der Report-Text.
-
-ANTI-SCHÖNFÄRBEREI:
-- Sei skeptisch. Dein Job ist es Lücken zu finden, nicht das Artefakt zu loben.
-- "Für die Exploration akzeptabel" ist KEIN Freibrief. Wenn ein zentraler Entscheidungspfad, eine Geschäftsregel oder ein häufiger Ausnahmefall (~wöchentlich oder öfter) im Playbook steht aber NICHT im Artefakt: das ist eine echte Lücke, auch in der Explorationsphase.
-- Unterscheide klar: (a) Detail das in Folgephasen kommt (z.B. exakte Feldnamen, Citrix-Zugang) vs. (b) strukturelles Element das den Prozess unvollständig macht (z.B. fehlende Geschäftsregel, fehlender Ausnahmefall, fehlendes System).
-
-WAS IST EINE ENTSCHEIDUNG UND WAS NICHT:
-Eine Entscheidung ist NUR dann eine Entscheidung wenn der **Prozessablauf sich dadurch verzweigt** — also wenn je nach Bedingung ein ANDERER Schritt folgt. Beispiele:
-- ENTSCHEIDUNG: "Kreditor vorhanden? Ja → weiter. Nein → erst Kreditor anlegen." (Anderer Ablauf!)
-- ENTSCHEIDUNG: "Frist abgelaufen? Ja → Kulanzregel. Nein → volle Leistung." (Anderer Ablauf!)
-- KEINE Entscheidung: "MwSt.-Satz 19%/7%/0% im Dropdown auswählen" (Dateneingabe — derselbe nächste Schritt egal welcher Wert)
-- KEINE Entscheidung: "Kostenstelle 4100/4200/4300/4900 wählen" (Dateneingabe — kein anderer Ablauf)
-- KEINE Entscheidung: "Textbaustein Neukunde/Bestandskunde/Eilanfrage wählen" (Auswahl — Mail wird so oder so gesendet)
-Ein Dropdown oder eine Auswahl aus einer Liste ist KEINE Entscheidung wenn danach immer derselbe Prozessschritt kommt. Solche Auswahlen gehören als Detail unter ihren Schritt in die prozessbeschreibung, nicht als ENTSCHEIDUNG in entscheidungen_und_schleifen.
-Flagge eine fehlende Dropdown-Auswahl NICHT als strukturelle Lücke. Flagge eine fehlende Auswahl NICHT als fehlende Entscheidung. Nur echte Verzweigungen zählen.
-
-PASSIVE SYSTEME:
-Programme die sich automatisch öffnen (z.B. PDF-Viewer bei Doppelklick auf PDF, Datei-Dialog bei "Speichern unter") sind KEINE beteiligten Systeme im Sinne der Exploration. Nur Systeme zu denen der Nutzer aktiv wechselt und in denen er arbeitet zählen. Flagge fehlende passive Systeme NICHT als Lücke.
-
-HALLUZINATIONS-CHECK:
-Prüfe ob im Artefakt Konzepte, Systeme, Entscheidungsregeln oder Prozessschritte stehen, die NICHT im Playbook vorkommen und auch nicht plausibel aus dem Dialog ableitbar sind. Wenn ja: als Halluzination flaggen.
-
-Du bekommst:
-1. PLAYBOOK — Ground Truth (was der Prozess wirklich ist, inkl. Ziel-Artefakt)
-2. ARTEFAKT-ROHDATEN — Die tatsächlichen Slot-Inhalte die der Explorer geschrieben hat (DIESE sind die Bewertungsgrundlage!)
-3. DIALOG — Der vollständige Gesprächsverlauf
-
-Schreibe deine Analyse EXAKT in diesem Format auf Deutsch:
-
-## Qualitative Analyse
-
-### Gesamturteil
-
-**Ergebnis: BESTANDEN / BESTANDEN MIT LÜCKEN / NICHT BESTANDEN**
-
-Ein Absatz Begründung.
-
-### Soll/Ist-Vergleich pro Slot
-
-Für JEDEN der 6 Slots (prozessausloeser, prozessziel, prozessbeschreibung, entscheidungen_und_schleifen, beteiligte_systeme, variablen_und_daten):
-
-**{slot_id}**
-- Playbook fordert: {Zusammenfassung der Soll-Inhalte}
-- Artefakt enthält: {Zusammenfassung was tatsächlich drin steht, mit Kurzitaten}
-- Fehlend: {Was fehlt — oder "nichts"}
-- Halluziniert: {Was im Artefakt steht aber nicht im Playbook — oder "nichts"}
-- Bewertung: VOLLSTÄNDIG / LÜCKENHAFT / UNZUREICHEND
-
-### Fehlende Inhalte (gegen Playbook)
-
-Nummerierte Liste ALLER Lücken. Für jede:
-- Was fehlt (konkretes Konzept/Regel/System)
-- In welchem Slot es fehlt
-- Schweregrad: **strukturell** (beeinträchtigt Prozessverständnis) oder **Detail** (Folgephase)
-- Playbook-Referenz (wo im Playbook steht das)
-
-### Halluzinationen
-
-Liste aller Konzepte im Artefakt die nicht im Playbook oder Dialog belegt sind — oder "Keine gefunden."
-
-### Dialogführung
-
-Kurz: Fragen zielführend? Wiederholungen? Timing? Sonderfälle abgefragt?
-
-### Fazit
-
-| Aspekt | Bewertung |
-|--------|-----------|
-| Prozess-Grundverständnis | ... |
-| Entscheidungslogik | ... |
-| Systeme | ... |
-| Sonderfälle/Ausnahmen | ... |
-| Halluzinationen | ... |
-| Granularität | ... |
-
-**Endurteil: BESTANDEN / BESTANDEN MIT LÜCKEN / NICHT BESTANDEN**`
-      },
+      { role: 'system', content: systemPrompt },
       {
         role: 'user',
-        content: `PLAYBOOK (Ground Truth):\n\n${playbook}\n\n---\n\nARTEFAKT-ROHDATEN (Slot-Inhalte — dies ist die Bewertungsgrundlage!):\n\n${slotDump}\n\n---\n\nDIALOG-ZUSAMMENFASSUNG (${turns.length} Turns, phase_complete: ${phaseComplete}):\n\n${dialogSummary}`
-      }
+        content: `PLAYBOOK (Ground Truth):\n\n${playbook}\n\n---\n\nARTEFAKT-ROHDATEN (${phasenInfo}):\n\n${artifactSections.join('\n\n---\n\n')}\n\n---\n\nDIALOG-ZUSAMMENFASSUNG (${turns.length} Turns):\n\n${dialogSummary}`,
+      },
     ],
   });
 
@@ -371,51 +411,198 @@ Kurz: Fragen zielführend? Wiederholungen? Timing? Sonderfälle abgefragt?
   return analysisContent ?? '(Analyse konnte nicht generiert werden)';
 }
 
+function buildAnalysisPrompt(completedPhases: string[]): string {
+  const hasExploration = completedPhases.includes('exploration');
+  const hasStrukturierung = completedPhases.includes('strukturierung');
+
+  let prompt = `Du bist ein erfahrener Qualitätsanalyst für RPA-Prozesserhebungen. Du bewertest das Ergebnis eines E2E-Tests der Digitalisierungsfabrik.
+
+ABGESCHLOSSENE PHASEN: ${completedPhases.join(', ') || 'keine'}
+
+BEWERTUNGSSKALA (pro Phase):
+- **BESTANDEN** — Artefakt erfüllt die Phase-Anforderungen. Fehlende Details akzeptabel.
+- **BESTANDEN MIT LÜCKEN** — Im Kern ok, aber wichtige strukturelle Elemente fehlen.
+- **NICHT BESTANDEN** — Artefakt unbrauchbar für die Folgephase.
+
+SORGFALTSPFLICHT:
+- Prüfe JEDE Aussage gegen die ARTEFAKT-ROHDATEN (nicht den Dialog).
+- Behaupte nie dass etwas fehlt/existiert ohne es im Artefakt geprüft zu haben.
+
+ANTI-SCHÖNFÄRBEREI:
+- Sei skeptisch. Finde Lücken. Unterscheide: (a) Detail für Folgephasen vs. (b) strukturelles Element das den Prozess unvollständig macht.
+
+HALLUZINATIONS-CHECK:
+- Prüfe ob Konzepte im Artefakt stehen die NICHT im Playbook vorkommen. Wenn ja: flaggen.
+
+WAS IST EINE ENTSCHEIDUNG:
+Eine Entscheidung = Prozessablauf verzweigt sich. Dropdown/Auswahl (Kostenstelle, MwSt-Satz) ist KEINE Entscheidung wenn danach derselbe Schritt kommt.
+
+PASSIVE SYSTEME:
+Programme die sich automatisch öffnen (PDF-Viewer, Dateidialog) sind KEINE beteiligten Systeme.`;
+
+  // Phase-specific instructions
+  if (hasExploration) {
+    prompt += `
+
+## Bewertung: EXPLORATION
+Die Exploration muss den Prozess im Überblick nachvollziehbar machen. Prüfe die 6 Slots (prozessausloeser, prozessziel, prozessbeschreibung, entscheidungen_und_schleifen, beteiligte_systeme, variablen_und_daten) gegen das Playbook-Zielartefakt.`;
+  }
+
+  if (hasStrukturierung) {
+    prompt += `
+
+## Bewertung: STRUKTURIERUNG
+Das Strukturartefakt muss den Prozess als logische Schrittfolge modellieren. Prüfe:
+- **Vollständigkeit:** Jeder substanzielle Prozessschritt aus der Exploration findet sich als Strukturschritt wieder.
+- **Entscheidungen:** Geschäftliche Varianten (z.B. Gutschrift) als typ "entscheidung" modelliert, nicht als "ausnahme". Bedingung als Frage, Nachfolger klar zugeordnet.
+- **Graph-Konsistenz:** Alle nachfolger/konvergenz/schleifenkoerper verweisen auf existierende Schritte. Ein Start, mindestens ein Ende.
+- **Beschreibungstiefe:** Spezifikationsreif — Wer, Wo, Was, Welche Daten, Was kann schiefgehen.
+- **Spannungsfelder:** Medienbrüche und analoge Abhängigkeiten erkannt und dokumentiert.
+- Vergleiche gegen das Strukturartefakt-Ziel im Playbook (TEIL B).`;
+  }
+
+  if (hasExploration && hasStrukturierung) {
+    prompt += `
+
+## Phasenübergreifende Konsistenz
+- Geht Information aus der Exploration im Strukturartefakt verloren?
+- Wurden Explorationsdetails korrekt in Strukturschritte überführt?
+- Stimmen die Systeme/Akteure/Entscheidungen zwischen beiden Artefakten überein?`;
+  }
+
+  prompt += `
+
+## Output-Format
+
+Schreibe deine Analyse EXAKT in diesem Format auf Deutsch:
+
+# Qualitative Analyse
+
+## Gesamturteil
+
+**Ergebnis: BESTANDEN / BESTANDEN MIT LÜCKEN / NICHT BESTANDEN**
+
+Ein Absatz Begründung.`;
+
+  if (hasExploration) {
+    prompt += `
+
+## Exploration: Soll/Ist-Vergleich
+
+Für JEDEN der 6 Slots:
+
+**{slot_id}**
+- Soll: {Zusammenfassung der Playbook-Vorgaben}
+- Ist: {Was tatsächlich im Artefakt steht}
+- Fehlend / Halluziniert: {oder "nichts"}
+- Bewertung: VOLLSTÄNDIG / LÜCKENHAFT / UNZUREICHEND`;
+  }
+
+  if (hasStrukturierung) {
+    prompt += `
+
+## Strukturierung: Soll/Ist-Vergleich
+
+Für JEDEN Strukturschritt im Soll-Artefakt:
+- Existiert er im Ist? Unter welcher ID?
+- Beschreibungstiefe: ausreichend für Spezifikation?
+- Fehlende Schritte / Halluzinierte Schritte
+
+**Graph-Analyse:**
+- Referenzielle Integrität (alle Verweise gültig?)
+- Entscheidungen korrekt typisiert?
+- Konvergenz/Schleifen korrekt?
+
+**Spannungsfelder:**
+- Welche erkannt? Welche fehlen?`;
+  }
+
+  prompt += `
+
+## Fehlende Inhalte
+Nummerierte Liste aller Lücken mit Schweregrad (strukturell / Detail).
+
+## Halluzinationen
+Liste oder "Keine gefunden."
+
+## Dialogführung
+Kurz: Gesprächsführung, Effizienz, Persona-Verhalten realistisch?
+
+## Fazit
+
+| Phase | Aspekt | Bewertung |
+|-------|--------|-----------|
+${hasExploration ? '| Exploration | Prozess-Grundverständnis | ... |\n| Exploration | Entscheidungslogik | ... |\n| Exploration | Systeme | ... |\n| Exploration | Sonderfälle | ... |' : ''}
+${hasStrukturierung ? '| Strukturierung | Schrittabdeckung | ... |\n| Strukturierung | Beschreibungstiefe | ... |\n| Strukturierung | Graph-Konsistenz | ... |\n| Strukturierung | Entscheidungsmodellierung | ... |' : ''}
+| Gesamt | Halluzinationen | ... |
+
+**Endurteil: BESTANDEN / BESTANDEN MIT LÜCKEN / NICHT BESTANDEN**`;
+
+  return prompt;
+}
+
+// ---------------------------------------------------------------------------
+// Report generation
+// ---------------------------------------------------------------------------
+
 function generateReport(
   personaName: string,
   playbookName: string,
   config: Config,
   turns: TurnLog[],
   artifacts: ArtifactSnapshots,
-  phaseComplete: boolean,
+  phaseResults: PhaseResult[],
 ): string {
   const totalTime = turns.reduce((sum, t) => sum + t.response_time_ms, 0);
-  const nearingIdx = turns.findIndex(t => t.phasenstatus === 'nearing_completion');
   const personaShort = personaName.split(',')[0];
 
-  const actualSlots = extractActualSlots(artifacts);
+  const explorationSlots = extractExplorationSlots(artifacts);
   const slotIds = ['prozessausloeser', 'prozessziel', 'prozessbeschreibung',
     'entscheidungen_und_schleifen', 'beteiligte_systeme', 'variablen_und_daten'];
-  const filledSlots = slotIds.filter(id => actualSlots[id]?.trim()).length;
+  const filledSlots = slotIds.filter(id => explorationSlots[id]?.trim()).length;
 
-  const avgPersonaLen = Math.round(turns.reduce((s, t) => s + t.persona_response.length, 0) / turns.length);
+  const avgPersonaLen = turns.length > 0
+    ? Math.round(turns.reduce((s, t) => s + t.persona_response.length, 0) / turns.length)
+    : 0;
+
+  const completedPhases = phaseResults.filter(p => p.completed).map(p => p.phase);
 
   const lines: string[] = [];
 
-  // --- Summary (factual metrics only — verdict comes from LLM analysis) ---
+  // ── Eckdaten ──
   lines.push(`# Live-Persona-Test: ${personaName}`, '');
   lines.push('## Eckdaten', '');
   lines.push(`| Parameter | Wert |`);
   lines.push(`|-----------|------|`);
   lines.push(`| Playbook | \`${playbookName}\` |`);
   lines.push(`| Persona-Model | ${config.personaModel} |`);
-  lines.push(`| Explorer-Model | GPT-5.4 (Backend) |`);
+  lines.push(`| Stop-After | ${config.stopAfter} |`);
   lines.push(`| Max Turns | ${config.maxTurns} |`);
   lines.push(`| Tatsächliche Turns | ${turns.length} |`);
-  lines.push(`| Phase complete | ${phaseComplete ? 'Ja' : 'Nein'} |`);
-  lines.push(`| nearing_completion ab | Turn ${nearingIdx >= 0 ? nearingIdx + 1 : 'nie'} |`);
+  lines.push(`| Abgeschlossene Phasen | ${completedPhases.join(', ') || 'keine'} |`);
   lines.push(`| Backend-Dauer | ${(totalTime / 1000).toFixed(0)}s |`);
-  lines.push(`| Slots befüllt | ${filledSlots}/${slotIds.length} |`);
+  lines.push(`| Exploration: Slots befüllt | ${filledSlots}/${slotIds.length} |`);
   lines.push(`| Mittlere Antwortlänge Persona | ${avgPersonaLen} Zeichen |`);
   lines.push('');
 
-  // --- Dialog ---
+  // ── Phase summary ──
+  if (phaseResults.length > 0) {
+    lines.push('## Phasen-Übersicht', '');
+    lines.push('| Phase | Turns | Abgeschlossen |');
+    lines.push('|-------|-------|---------------|');
+    for (const pr of phaseResults) {
+      lines.push(`| ${pr.phase} | ${pr.turns} | ${pr.completed ? 'Ja' : 'Nein'} |`);
+    }
+    lines.push('');
+  }
+
+  // ── Dialog ──
   lines.push('---', '', '## Vollständiger Dialog', '');
 
   for (const t of turns) {
-    lines.push(`### Turn ${t.turn} — \`${t.phasenstatus}\` | ${t.slots_filled}/${t.slots_total} Slots | ${(t.response_time_ms / 1000).toFixed(1)}s`);
+    lines.push(`### Turn ${t.turn} — \`${t.phase}/${t.mode}\` · \`${t.phasenstatus}\` · ${t.slots_filled}/${t.slots_total} Slots · ${(t.response_time_ms / 1000).toFixed(1)}s`);
     lines.push('');
-    lines.push(`**Explorer:**`);
+    lines.push(`**System:**`);
     lines.push(`> ${t.explorer_question.replace(/\n/g, '\n> ')}`);
     lines.push('');
     lines.push(`**${personaShort}:**`);
@@ -423,29 +610,34 @@ function generateReport(
     lines.push('');
   }
 
-  // --- Artefakt-Inhalt pro Slot ---
-  lines.push('---', '', '## Artefakt-Inhalt', '');
-
+  // ── Exploration artifact ──
+  lines.push('---', '', '## Artefakt: Exploration', '');
   for (const slotId of slotIds) {
-    const actual = actualSlots[slotId];
+    const actual = explorationSlots[slotId];
     lines.push(`### ${slotId}`, '');
-    if (actual?.trim()) {
-      lines.push(`> ${actual.replace(/\n/g, '\n> ')}`);
-    } else {
-      lines.push('> (leer)');
-    }
+    lines.push(actual?.trim() ? `> ${actual.replace(/\n/g, '\n> ')}` : '> (leer)');
     lines.push('');
   }
 
-  // --- Raw artifacts ---
-  lines.push('---', '', '<details><summary>Artefakt (Rohdaten JSON)</summary>', '',
+  // ── Structure artifact ──
+  const structureData = extractStructureData(artifacts);
+  if (structureData) {
+    lines.push('---', '', '## Artefakt: Strukturierung', '');
+    lines.push(structureData, '');
+  }
+
+  // ── Raw artifacts ──
+  lines.push('---', '', '<details><summary>Artefakte (Rohdaten JSON)</summary>', '',
     '```json', JSON.stringify(artifacts, null, 2), '```', '', '</details>');
 
   return lines.join('\n');
 }
 
-/** Extract actual slot contents from artifacts response. */
-function extractActualSlots(artifacts: ArtifactSnapshots): Record<string, string> {
+// ---------------------------------------------------------------------------
+// Artifact extraction helpers
+// ---------------------------------------------------------------------------
+
+function extractExplorationSlots(artifacts: ArtifactSnapshots): Record<string, string> {
   const result: Record<string, string> = {};
   const exploration = artifacts.exploration;
   if (!exploration) return result;
@@ -456,6 +648,49 @@ function extractActualSlots(artifacts: ArtifactSnapshots): Record<string, string
     result[slotId] = (slot['inhalt'] as string) ?? '';
   }
   return result;
+}
+
+function extractStructureData(artifacts: ArtifactSnapshots): string | null {
+  const struktur = artifacts.struktur;
+  if (!struktur) return null;
+
+  const schritte = struktur['schritte'] as Record<string, Record<string, unknown>> | undefined;
+  if (!schritte || Object.keys(schritte).length === 0) return null;
+
+  const zusammenfassung = (struktur['prozesszusammenfassung'] as string) ?? '';
+
+  const lines: string[] = [];
+  if (zusammenfassung) {
+    lines.push(`**prozesszusammenfassung:** ${zusammenfassung}`, '');
+  }
+
+  // Sort by reihenfolge
+  const sorted = Object.entries(schritte)
+    .sort(([, a], [, b]) => ((a['reihenfolge'] as number) ?? 99) - ((b['reihenfolge'] as number) ?? 99));
+
+  for (const [id, schritt] of sorted) {
+    const titel = schritt['titel'] ?? '';
+    const typ = schritt['typ'] ?? '';
+    const reihenfolge = schritt['reihenfolge'] ?? '';
+    const nachfolger = schritt['nachfolger'] as string[] ?? [];
+    const beschreibung = schritt['beschreibung'] ?? '';
+    const completeness = schritt['completeness_status'] ?? '';
+    const bedingung = schritt['bedingung'] ?? '';
+    const konvergenz = schritt['konvergenz'] ?? '';
+    const spannungsfeld = schritt['spannungsfeld'] ?? '';
+
+    let header = `**${id}** — ${titel} [${typ}, reihenfolge ${reihenfolge}, → ${JSON.stringify(nachfolger)}`;
+    if (bedingung) header += `, bedingung: "${bedingung}"`;
+    if (konvergenz) header += `, konvergenz: ${konvergenz}`;
+    header += `, ${completeness}]`;
+
+    lines.push(header);
+    lines.push(`"${beschreibung}"`);
+    if (spannungsfeld) lines.push(`spannungsfeld: "${spannungsfeld}"`);
+    lines.push('');
+  }
+
+  return lines.join('\n');
 }
 
 // ---------------------------------------------------------------------------

@@ -16,7 +16,6 @@ from pathlib import Path
 
 from artifacts.models import CompletenessStatus, Phasenstatus
 from core.context_assembler import prompt_context_summary
-from core.patch_summarizer import summarize_patches
 from llm.base import LLMClient
 from llm.tools import APPLY_PATCHES_TOOL
 from modes.base import BaseMode, Flag, ModeContext, ModeOutput, translate_dialog_history
@@ -39,7 +38,7 @@ def _build_exploration_content(context: ModeContext) -> str:
 
 
 def _build_slot_status(context: ModeContext) -> str:
-    """Build a German status string showing current Strukturschritte."""
+    """Build a German status string showing current Strukturschritte with descriptions."""
     schritte = context.structure_artifact.schritte
     if not schritte:
         return "(Noch keine Strukturschritte vorhanden)"
@@ -49,8 +48,10 @@ def _build_slot_status(context: ModeContext) -> str:
         status = schritt.completeness_status.value
         typ = schritt.typ.value
         nachf = ", ".join(schritt.nachfolger) if schritt.nachfolger else "—"
-        line = f"- [{schritt.reihenfolge}] {schritt.titel} ({sid}) [{typ}] [{status}] → {nachf}"
+        line = f"**{sid}** — {schritt.titel} [{typ}, reihenfolge {schritt.reihenfolge}, → {nachf}, {status}]"
         # CR-002: Show control flow details for entscheidung and schleife
+        if schritt.bedingung:
+            line += f" bedingung: \"{schritt.bedingung}\""
         if schritt.regeln:
             line += f" ({len(schritt.regeln)} Regeln)"
         if schritt.schleifenkoerper:
@@ -58,6 +59,11 @@ def _build_slot_status(context: ModeContext) -> str:
         if schritt.konvergenz:
             line += f" [Konvergenz: {schritt.konvergenz}]"
         lines.append(line)
+        # Show beschreibung so the LLM can see what's already documented
+        if schritt.beschreibung:
+            lines.append(f"  \"{schritt.beschreibung}\"")
+        if schritt.spannungsfeld:
+            lines.append(f"  spannungsfeld: \"{schritt.spannungsfeld}\"")
 
     zusammenfassung = context.structure_artifact.prozesszusammenfassung
     if zusammenfassung:
@@ -124,8 +130,11 @@ def _apply_guardrails(
             return Phasenstatus.in_progress
         return llm_phasenstatus
 
-    has_leer = any(s.completeness_status == CompletenessStatus.leer for s in schritte.values())
-    if llm_phasenstatus == Phasenstatus.phase_complete and has_leer:
+    has_incomplete = any(
+        s.completeness_status in (CompletenessStatus.leer, CompletenessStatus.teilweise)
+        for s in schritte.values()
+    )
+    if llm_phasenstatus == Phasenstatus.phase_complete and has_incomplete:
         return Phasenstatus.nearing_completion
 
     return llm_phasenstatus
@@ -238,22 +247,11 @@ class StructuringMode(BaseMode):
         if phasenstatus == Phasenstatus.phase_complete:
             flags.append(Flag.phase_complete)
 
-        # Deterministischer Summarizer: überschreibt LLM-Bestätigung bei Patches (S2-T3)
-        # Verhindert halluzinierte Bestätigungen (B10).
-        # Wenn keine Patches vorhanden: LLM-Text bleibt (Rückfragen, Einleitungen).
-        summarizer_used = False
-        if patches:
-            nutzeraeusserung = summarize_patches(patches, context.structure_artifact)
-            summarizer_used = True
-        else:
-            nutzeraeusserung = response.nutzeraeusserung
-
         return ModeOutput(
-            nutzeraeusserung=nutzeraeusserung,
+            nutzeraeusserung=response.nutzeraeusserung,
             patches=patches,
             phasenstatus=phasenstatus,
             flags=flags,
-            summarizer_active=summarizer_used,
             debug_request=response.debug_request,
             usage=response.usage,
         )
