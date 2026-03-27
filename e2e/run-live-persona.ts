@@ -18,7 +18,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SessionClient } from './framework/ws-client.js';
-import type { TurnResponse } from './framework/types.js';
+import type { TurnResponse, ArtifactSnapshots } from './framework/types.js';
 import OpenAI from 'openai';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -41,7 +41,7 @@ function parseArgs(): Config {
     playbookPath: '',
     backendUrl: process.env['BACKEND_URL'] ?? 'http://127.0.0.1:8000',
     maxTurns: 20,
-    personaModel: process.env['PERSONA_MODEL'] ?? 'gpt-4.1-mini',
+    personaModel: process.env['PERSONA_MODEL'] ?? 'gpt-5.4',
     outputDir: join(__dirname, 'reports'),
   };
 
@@ -85,8 +85,7 @@ REGELN:
 - Sprich so wie die Persona spricht (siehe Charakter/typische Formulierungen im Playbook)
 - Gib Informationen basierend auf deinem Prozesswissen — aber nur das was gefragt wird
 - Wenn der Explorer nach etwas fragt das im Playbook steht: antworte damit
-- Wenn der Explorer nach etwas fragt das NICHT explizit im Playbook steht aber plausibel ist: erfinde eine plausible, konsistente Antwort die zum Prozess passt
-- Erfinde KEINE Technologien oder Systeme die nicht im Playbook stehen
+- Wenn der Explorer nach etwas fragt das NICHT explizit im Playbook steht: sag "Das weiß ich nicht" oder "Das kommt bei uns nicht vor" oder "Da müssten Sie unsere IT fragen". Erfinde KEINE Prozessschritte, Ausnahmen, Regeln oder Systeme die nicht im Playbook stehen!
 - Wenn der Explorer fragt ob alles passt oder ob du bestätigst: bestätige knapp
 - Antworte auf Deutsch
 - Halte dich kurz — Sachbearbeiter reden nicht in Absätzen
@@ -102,7 +101,7 @@ ${playbook}`;
     const response = await this.client.chat.completions.create({
       model: this.model,
       temperature: 0.7,
-      max_tokens: 500,
+      max_completion_tokens: 500,
       messages: [
         { role: 'system', content: this.systemPrompt },
         ...this.dialog,
@@ -222,7 +221,7 @@ async function run(config: Config): Promise<void> {
   const reportPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.md`);
   const jsonPath = join(config.outputDir, `live-persona-${playbookName.replace('.md', '')}.json`);
 
-  const report = generateReport(personaName, playbookName, config, turns, artifacts, phaseComplete, playbook);
+  const report = generateReport(personaName, playbookName, config, turns, artifacts, phaseComplete);
 
   // Generate qualitative analysis via LLM
   console.log('Generiere qualitative Analyse...');
@@ -236,10 +235,10 @@ async function run(config: Config): Promise<void> {
   console.log(`Rohdaten: ${jsonPath}`);
 }
 
-/** Generate qualitative analysis by feeding playbook + artifacts + report to an LLM. */
+/** Generate qualitative analysis by feeding playbook + artifacts + dialog to an LLM. */
 async function generateAnalysis(
   apiKey: string, playbook: string,
-  artifacts: Record<string, unknown>, turns: TurnLog[], phaseComplete: boolean,
+  artifacts: ArtifactSnapshots, turns: TurnLog[], phaseComplete: boolean,
 ): Promise<string> {
   const client = new OpenAI({ apiKey });
 
@@ -266,7 +265,7 @@ async function generateAnalysis(
         role: 'system',
         content: `Du bist ein erfahrener Qualitätsanalyst für RPA-Prozesserhebungen. Du bewertest das Ergebnis eines E2E-Tests der **Explorationsphase**.
 
-WICHTIG — Bewertungsmaßstab:
+BEWERTUNGSMASSSTAB:
 Dies ist die ERSTE von vier Phasen (Exploration → Strukturierung → Spezifikation → Validierung). Die Exploration muss den Prozess **im Überblick nachvollziehbar** machen — nicht jedes Detail erfassen. Fehlende Einzelfelder, Variable oder Klick-Details sind KEIN Durchfallgrund, solange der Prozess in seinen wesentlichen Abläufen, Systemen, Entscheidungen und Schleifen verstanden wurde. Details werden in den Folgephasen ergänzt.
 
 Bewertungsskala:
@@ -274,9 +273,8 @@ Bewertungsskala:
 - **BESTANDEN MIT LÜCKEN** — Prozess ist im Kern nachvollziehbar, aber es fehlen wichtige strukturelle Elemente (z.B. ein ganzer Entscheidungspfad, ein System, ein wesentlicher Prozessschritt).
 - **NICHT BESTANDEN** — Prozess ist nicht nachvollziehbar oder es fehlen wesentliche Teile (z.B. Start/Ende unklar, Hauptablauf unvollständig, Halluzinationen).
 
-KRITISCH — Sorgfaltspflicht:
+SORGFALTSPFLICHT:
 Du bekommst drei Quellen. Prüfe JEDE Aussage gegen die ARTEFAKT-ROHDATEN.
-- "Implizit enthalten" oder "sinngemäß abgedeckt" zählt NICHT. Wenn ein Konzept nicht im Artefakt-Text steht, fehlt es. Punkt.
 - Behaupte nie dass etwas fehlt ohne im Artefakt nachgeschaut zu haben.
 - Behaupte nie dass etwas da ist ohne es im Artefakt gefunden zu haben.
 - Die Artefakt-Rohdaten sind die Wahrheit — nicht der Dialog, nicht der Report-Text.
@@ -286,41 +284,63 @@ ANTI-SCHÖNFÄRBEREI:
 - "Für die Exploration akzeptabel" ist KEIN Freibrief. Wenn ein zentraler Entscheidungspfad, eine Geschäftsregel oder ein häufiger Ausnahmefall (~wöchentlich oder öfter) im Playbook steht aber NICHT im Artefakt: das ist eine echte Lücke, auch in der Explorationsphase.
 - Unterscheide klar: (a) Detail das in Folgephasen kommt (z.B. exakte Feldnamen, Citrix-Zugang) vs. (b) strukturelles Element das den Prozess unvollständig macht (z.B. fehlende Geschäftsregel, fehlender Ausnahmefall, fehlendes System).
 
+HALLUZINATIONS-CHECK:
+Prüfe ob im Artefakt Konzepte, Systeme, Entscheidungsregeln oder Prozessschritte stehen, die NICHT im Playbook vorkommen und auch nicht plausibel aus dem Dialog ableitbar sind. Wenn ja: als Halluzination flaggen.
+
 Du bekommst:
 1. PLAYBOOK — Ground Truth (was der Prozess wirklich ist, inkl. Ziel-Artefakt)
 2. ARTEFAKT-ROHDATEN — Die tatsächlichen Slot-Inhalte die der Explorer geschrieben hat (DIESE sind die Bewertungsgrundlage!)
 3. DIALOG — Der vollständige Gesprächsverlauf
 
-Schreibe eine qualitative Analyse auf Deutsch:
+Schreibe deine Analyse EXAKT in diesem Format auf Deutsch:
 
 ## Qualitative Analyse
 
 ### Gesamturteil
-Ein Absatz: Bestanden / Bestanden mit Lücken / Nicht bestanden? Warum? Könnte ein Prozessanalyst mit diesem Artefakt in die Strukturierungsphase gehen?
 
-### Slot-für-Slot-Bewertung
-Pro Slot: Prüfe den TATSÄCHLICHEN Slot-Inhalt aus den Rohdaten gegen das Playbook.
-- Was steht drin, was fehlt? Belege mit Zitaten aus den Rohdaten.
-- Mechanische "MISS"-Meldungen: False Positive (steht wörtlich oder klar sinngemäß im Artefakt — Beleg angeben!) oder echtes Problem?
+**Ergebnis: BESTANDEN / BESTANDEN MIT LÜCKEN / NICHT BESTANDEN**
+
+Ein Absatz Begründung.
+
+### Soll/Ist-Vergleich pro Slot
+
+Für JEDEN der 6 Slots (prozessausloeser, prozessziel, prozessbeschreibung, entscheidungen_und_schleifen, beteiligte_systeme, variablen_und_daten):
+
+**{slot_id}**
+- Playbook fordert: {Zusammenfassung der Soll-Inhalte}
+- Artefakt enthält: {Zusammenfassung was tatsächlich drin steht, mit Kurzitaten}
+- Fehlend: {Was fehlt — oder "nichts"}
+- Halluziniert: {Was im Artefakt steht aber nicht im Playbook — oder "nichts"}
+- Bewertung: VOLLSTÄNDIG / LÜCKENHAFT / UNZUREICHEND
 
 ### Fehlende Inhalte (gegen Playbook)
-Gehe das Playbook Abschnitt für Abschnitt durch und liste ALLES was im Playbook steht aber NICHT im Artefakt:
-- Fehlende Entscheidungsregeln oder Geschäftslogik
-- Fehlende Ausnahmefälle / Sonderfälle
-- Fehlende Systeme oder Systemdetails
-- Fehlende Variablen oder Daten
 
-Für jede Lücke: Bewerte ob sie (a) strukturell relevant ist (beeinträchtigt Prozessverständnis) oder (b) ein Detail das in Folgephasen ergänzt wird.
+Nummerierte Liste ALLER Lücken. Für jede:
+- Was fehlt (konkretes Konzept/Regel/System)
+- In welchem Slot es fehlt
+- Schweregrad: **strukturell** (beeinträchtigt Prozessverständnis) oder **Detail** (Folgephase)
+- Playbook-Referenz (wo im Playbook steht das)
 
-### Was gut funktioniert hat
-Was hat der Explorer besonders gut erfasst?
+### Halluzinationen
+
+Liste aller Konzepte im Artefakt die nicht im Playbook oder Dialog belegt sind — oder "Keine gefunden."
 
 ### Dialogführung
-Kurz: Fragen zielführend? Wiederholungen? Timing angemessen?
+
+Kurz: Fragen zielführend? Wiederholungen? Timing? Sonderfälle abgefragt?
 
 ### Fazit
+
 | Aspekt | Bewertung |
-Mit: Prozess-Grundverständnis, Entscheidungslogik, Systeme, Sonderfälle, Halluzinationen, Granularität`
+|--------|-----------|
+| Prozess-Grundverständnis | ... |
+| Entscheidungslogik | ... |
+| Systeme | ... |
+| Sonderfälle/Ausnahmen | ... |
+| Halluzinationen | ... |
+| Granularität | ... |
+
+**Endurteil: BESTANDEN / BESTANDEN MIT LÜCKEN / NICHT BESTANDEN**`
       },
       {
         role: 'user',
@@ -343,95 +363,25 @@ function generateReport(
   playbookName: string,
   config: Config,
   turns: TurnLog[],
-  artifacts: Record<string, unknown>,
+  artifacts: ArtifactSnapshots,
   phaseComplete: boolean,
-  playbook: string,
 ): string {
   const totalTime = turns.reduce((sum, t) => sum + t.response_time_ms, 0);
   const nearingIdx = turns.findIndex(t => t.phasenstatus === 'nearing_completion');
   const personaShort = personaName.split(',')[0];
 
-  // Extract target/actual for comparison
-  const targetArtifact = extractTargetArtifact(playbook);
   const actualSlots = extractActualSlots(artifacts);
-  const forbidden = extractForbiddenConcepts(playbook);
-
-  // Run all checks upfront for summary
   const slotIds = ['prozessausloeser', 'prozessziel', 'prozessbeschreibung',
     'entscheidungen_und_schleifen', 'beteiligte_systeme', 'variablen_und_daten'];
+  const filledSlots = slotIds.filter(id => actualSlots[id]?.trim()).length;
 
-  const slotResults: { id: string; keywords: { kw: string; found: boolean }[]; hasSoll: boolean; hasIst: boolean }[] = [];
-  for (const slotId of slotIds) {
-    const target = targetArtifact[slotId];
-    const actual = actualSlots[slotId];
-    const keywords = (target?.mustContain ?? []).map(kw => {
-      // Smart matching: split compound keywords on / and check each alternative
-      const alternatives = kw.split('/').map(s => s.trim());
-      const found = alternatives.some(alt => actual?.toLowerCase().includes(alt.toLowerCase()));
-      return { kw, found };
-    });
-    slotResults.push({ id: slotId, keywords, hasSoll: !!target, hasIst: !!actual?.trim() });
-  }
-
-  // Check forbidden concepts across all actual content
-  const allActual = Object.values(actualSlots).join(' ').toLowerCase();
-  const forbiddenFound = forbidden.filter(f => allActual.includes(f.toLowerCase()));
-
-  // Count totals
-  const totalKeywords = slotResults.flatMap(s => s.keywords);
-  const passCount = totalKeywords.filter(k => k.found).length;
-  const missCount = totalKeywords.filter(k => !k.found).length;
-  const filledSlots = slotResults.filter(s => s.hasIst).length;
-
-  // Avg response length
   const avgPersonaLen = Math.round(turns.reduce((s, t) => s + t.persona_response.length, 0) / turns.length);
 
-  // =========================================================================
-  // Build report
-  // =========================================================================
   const lines: string[] = [];
 
-  // --- Summary ---
+  // --- Summary (factual metrics only — verdict comes from LLM analysis) ---
   lines.push(`# Live-Persona-Test: ${personaName}`, '');
-  lines.push('## Zusammenfassung', '');
-
-  const verdict = !phaseComplete ? 'NICHT ABGESCHLOSSEN'
-    : missCount === 0 && forbiddenFound.length === 0 ? 'BESTANDEN'
-    : forbiddenFound.length > 0 ? 'HALLUZINATION'
-    : missCount <= 2 ? 'BESTANDEN MIT LÜCKEN'
-    : 'LÜCKENHAFT';
-
-  lines.push(`**Ergebnis: ${verdict}**`, '');
-  lines.push(`| Metrik | Wert |`);
-  lines.push(`|--------|------|`);
-  lines.push(`| Turns bis phase_complete | ${phaseComplete ? turns.length : 'nicht erreicht'} |`);
-  lines.push(`| nearing_completion ab | Turn ${nearingIdx >= 0 ? nearingIdx + 1 : 'nie'} |`);
-  lines.push(`| Backend-Dauer | ${(totalTime / 1000).toFixed(0)}s |`);
-  lines.push(`| Slots befüllt | ${filledSlots}/${slotIds.length} |`);
-  lines.push(`| Pflichtbegriffe | ${passCount}/${totalKeywords.length} (${missCount} fehlend) |`);
-  lines.push(`| Halluzinationen | ${forbiddenFound.length === 0 ? 'keine' : forbiddenFound.join(', ')} |`);
-  lines.push(`| Persona-Model | ${config.personaModel} |`);
-  lines.push(`| Mittlere Antwortlänge Persona | ${avgPersonaLen} Zeichen |`);
-  lines.push('');
-
-  if (missCount > 0) {
-    lines.push('### Fehlende Pflichtbegriffe', '');
-    for (const sr of slotResults) {
-      const misses = sr.keywords.filter(k => !k.found);
-      if (misses.length > 0) {
-        lines.push(`- **${sr.id}:** ${misses.map(m => `"${m.kw}"`).join(', ')}`);
-      }
-    }
-    lines.push('');
-  }
-
-  if (forbiddenFound.length > 0) {
-    lines.push('### Halluzinationen gefunden', '');
-    lines.push(`Im Artefakt gefunden: ${forbiddenFound.map(f => `"${f}"`).join(', ')}`, '');
-  }
-
-  // --- Eckdaten ---
-  lines.push('---', '', '## Eckdaten', '');
+  lines.push('## Eckdaten', '');
   lines.push(`| Parameter | Wert |`);
   lines.push(`|-----------|------|`);
   lines.push(`| Playbook | \`${playbookName}\` |`);
@@ -439,6 +389,11 @@ function generateReport(
   lines.push(`| Explorer-Model | GPT-5.4 (Backend) |`);
   lines.push(`| Max Turns | ${config.maxTurns} |`);
   lines.push(`| Tatsächliche Turns | ${turns.length} |`);
+  lines.push(`| Phase complete | ${phaseComplete ? 'Ja' : 'Nein'} |`);
+  lines.push(`| nearing_completion ab | Turn ${nearingIdx >= 0 ? nearingIdx + 1 : 'nie'} |`);
+  lines.push(`| Backend-Dauer | ${(totalTime / 1000).toFixed(0)}s |`);
+  lines.push(`| Slots befüllt | ${filledSlots}/${slotIds.length} |`);
+  lines.push(`| Mittlere Antwortlänge Persona | ${avgPersonaLen} Zeichen |`);
   lines.push('');
 
   // --- Dialog ---
@@ -455,29 +410,13 @@ function generateReport(
     lines.push('');
   }
 
-  // --- Artefakt-Vergleich ---
-  lines.push('---', '', '## Artefakt-Vergleich: Soll vs. Ist', '');
+  // --- Artefakt-Inhalt pro Slot ---
+  lines.push('---', '', '## Artefakt-Inhalt', '');
 
-  for (const sr of slotResults) {
-    const target = targetArtifact[sr.id];
-    const actual = actualSlots[sr.id];
-
-    lines.push(`### ${sr.id}`);
-    lines.push('');
-
-    if (target) {
-      lines.push('<details><summary>Soll (Playbook)</summary>', '');
-      lines.push(`> ${target.content.replace(/\n/g, '\n> ')}`);
-      lines.push('', '</details>', '');
-
-      if (sr.keywords.length > 0) {
-        const checks = sr.keywords.map(k => `${k.found ? 'PASS' : '**MISS**'} ${k.kw}`);
-        lines.push(`**Pflichtbegriffe:** ${checks.join(' | ')}`, '');
-      }
-    }
-
-    lines.push('**Ist:**');
-    if (actual) {
+  for (const slotId of slotIds) {
+    const actual = actualSlots[slotId];
+    lines.push(`### ${slotId}`, '');
+    if (actual?.trim()) {
       lines.push(`> ${actual.replace(/\n/g, '\n> ')}`);
     } else {
       lines.push('> (leer)');
@@ -492,55 +431,10 @@ function generateReport(
   return lines.join('\n');
 }
 
-/** Extract forbidden concepts from playbook. */
-function extractForbiddenConcepts(playbook: string): string[] {
-  const match = playbook.match(/NICHT im Artefakt stehen dürfen[^]*?\n([^#]+)/i);
-  if (!match) return [];
-  return match[1].split(/[,\n]/)
-    .map(s => s.trim())
-    .filter(s => s.length > 2 && !s.startsWith('*') && !s.startsWith('-'));
-}
-
-/** Extract target artifact sections from playbook markdown. */
-function extractTargetArtifact(playbook: string): Record<string, { content: string; mustContain: string[] }> {
-  const result: Record<string, { content: string; mustContain: string[] }> = {};
-  const slotIds = ['prozessausloeser', 'prozessziel', 'prozessbeschreibung',
-    'entscheidungen_und_schleifen', 'beteiligte_systeme', 'variablen_und_daten'];
-
-  for (const slotId of slotIds) {
-    // Find ### slotId section
-    const headerPattern = new RegExp(`### ${slotId}\\b`, 'i');
-    const match = playbook.match(headerPattern);
-    if (!match || match.index === undefined) continue;
-
-    const startIdx = match.index + match[0].length;
-    // Find next ### or --- or end
-    const rest = playbook.substring(startIdx);
-    const endMatch = rest.match(/\n###\s|\n---/);
-    const section = endMatch ? rest.substring(0, endMatch.index) : rest.substring(0, 500);
-
-    // Extract quoted content (lines starting with >)
-    const quotedLines = section.split('\n')
-      .filter(l => l.trim().startsWith('>'))
-      .map(l => l.replace(/^>\s*/, '').trim())
-      .filter(Boolean);
-    const content = quotedLines.join('\n');
-
-    // Extract "Muss enthalten:" line
-    const mustMatch = section.match(/\*\*Muss enthalten:\*\*\s*(.+)/);
-    const mustContain = mustMatch
-      ? mustMatch[1].split(',').map(s => s.trim()).filter(Boolean)
-      : [];
-
-    result[slotId] = { content, mustContain };
-  }
-  return result;
-}
-
 /** Extract actual slot contents from artifacts response. */
-function extractActualSlots(artifacts: Record<string, unknown>): Record<string, string> {
+function extractActualSlots(artifacts: ArtifactSnapshots): Record<string, string> {
   const result: Record<string, string> = {};
-  const exploration = artifacts['exploration'] as Record<string, unknown> | undefined;
+  const exploration = artifacts.exploration;
   if (!exploration) return result;
   const slots = exploration['slots'] as Record<string, Record<string, unknown>> | undefined;
   if (!slots) return result;
