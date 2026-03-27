@@ -561,6 +561,95 @@ class TestCR002PatchPaths:
         assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s1/konvergenz") is True
 
 
+class TestCR012PatchPaths:
+    """CR-012: Template accepts vorgaenger patch path."""
+
+    def test_replace_vorgaenger_accepted(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("replace", "/schritte/s1/vorgaenger") is True
+
+    def test_add_vorgaenger_rejected(self) -> None:
+        assert STRUCTURE_TEMPLATE.is_valid_patch("add", "/schritte/s1/vorgaenger") is False
+
+
+class TestCR012VorgaengerNoInvalidation:
+    """CR-012: vorgaenger changes do NOT trigger algorithm invalidation."""
+
+    def test_replace_vorgaenger_no_invalidation(
+        self, executor: Executor, structure_artifact_with_refs: StructureArtifact
+    ) -> None:
+        patches = [{"op": "replace", "path": "/schritte/s01/vorgaenger", "value": ["s02"]}]
+        result = executor.apply_patches("structure", structure_artifact_with_refs, patches)
+        assert result.success is True
+        assert result.invalidated_abschnitt_ids == []
+
+
+class TestCR012VorgaengerGuardrail:
+    """CR-012: Executor automatically derives vorgaenger from nachfolger."""
+
+    def test_vorgaenger_derived_after_nachfolger_patch(self, executor: Executor) -> None:
+        """When nachfolger is set, vorgaenger is automatically computed."""
+        s1 = Strukturschritt(
+            schritt_id="s1", titel="A", typ=Strukturschritttyp.aktion,
+            beschreibung="a", reihenfolge=1, nachfolger=["s2"],
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        s2 = Strukturschritt(
+            schritt_id="s2", titel="B", typ=Strukturschritttyp.aktion,
+            beschreibung="b", reihenfolge=2, nachfolger=[],
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        art = StructureArtifact(schritte={"s1": s1, "s2": s2}, version=0)
+        # Change s1's nachfolger to also include a new step
+        patches = [
+            {"op": "replace", "path": "/schritte/s1/nachfolger", "value": ["s2"]},
+            {"op": "replace", "path": "/schritte/s1/beschreibung", "value": "updated"},
+        ]
+        result = executor.apply_patches("structure", art, patches)
+        assert result.success is True
+        assert result.artifact is not None
+        patched = result.artifact
+        assert isinstance(patched, StructureArtifact)
+        assert patched.schritte["s1"].vorgaenger == []
+        assert patched.schritte["s2"].vorgaenger == ["s1"]
+
+    def test_vorgaenger_derived_on_step_add(self, executor: Executor) -> None:
+        """Adding a step with nachfolger triggers vorgaenger derivation for targets."""
+        s1 = Strukturschritt(
+            schritt_id="s1", titel="A", typ=Strukturschritttyp.aktion,
+            beschreibung="a", reihenfolge=1, nachfolger=["s2"],
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        s2 = Strukturschritt(
+            schritt_id="s2", titel="B", typ=Strukturschritttyp.aktion,
+            beschreibung="b", reihenfolge=2, nachfolger=[],
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        art = StructureArtifact(schritte={"s1": s1, "s2": s2}, version=0)
+        new_step = {
+            "schritt_id": "s1a", "titel": "Zwischenschritt", "typ": "aktion",
+            "beschreibung": "", "reihenfolge": 2, "nachfolger": ["s2"],
+            "completeness_status": "leer", "algorithmus_status": "ausstehend",
+        }
+        patches = [
+            {"op": "add", "path": "/schritte/s1a", "value": new_step},
+            {"op": "replace", "path": "/schritte/s1/nachfolger", "value": ["s1a"]},
+        ]
+        result = executor.apply_patches("structure", art, patches)
+        assert result.success is True
+        patched = result.artifact
+        assert isinstance(patched, StructureArtifact)
+        # s1 has no predecessors (start)
+        assert patched.schritte["s1"].vorgaenger == []
+        # s1a is reached by s1
+        assert patched.schritte["s1a"].vorgaenger == ["s1"]
+        # s2 is reached by s1a (not s1 anymore)
+        assert patched.schritte["s2"].vorgaenger == ["s1a"]
+
+
 class TestInvalidationEdgeCases:
     def test_step_without_algorithmus_ref_empty_list(self, executor: Executor) -> None:
         s = Strukturschritt(

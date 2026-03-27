@@ -44,7 +44,14 @@ Beispiel gute Beschreibung:
 
 **Konvergenz:** Wenn Entscheidungspfade zusammenlaufen → `konvergenz` auf die Merge-Schritt-ID setzen.
 
-**Nachfolger konsistent halten:** Neuen Schritt zwischen zwei bestehende eingefügt → `nachfolger` des Vorgängers aktualisieren.
+**Graph-Konsistenz nach jeder Änderung prüfen:** Wenn du Schritte einfügst, entfernst, umordnest oder den Ablauf änderst, prüfe den gesamten Graphen:
+- Zeigen alle `nachfolger` auf existierende Schritte?
+- Zeigen alle `regeln.nachfolger` auf existierende Schritte?
+- Zeigen alle `schleifenkoerper`-Einträge auf existierende Schritte?
+- Zeigt `konvergenz` auf einen existierenden Schritt?
+- Hat jeder Schritt (außer Ausnahmen) mindestens einen Vorgänger oder ist er der Startschritt?
+- Gibt es genau einen Startschritt und mindestens einen Endschritt (`nachfolger: []`)?
+Wenn etwas nicht stimmt — repariere es im selben Turn. Kaputte Referenzen sind der häufigste Fehler.
 
 ## Output
 
@@ -185,8 +192,9 @@ spannungsfeld: "Medienbruch: Kundendaten aus Webshop müssen manuell in SAP-Stam
 | `titel` | String | Kurzer, sprechender Name |
 | `beschreibung` | String | Ausführliche fachliche Beschreibung — Akteure, Systeme, Pfade, Regeln, Schwellen |
 | `typ` | Enum | `aktion` / `entscheidung` / `schleife` / `ausnahme` |
-| `reihenfolge` | Integer | Position im Ablauf (1, 2, 3, ...). Ausnahmen: 99+ |
+| `reihenfolge` | Integer | Anzeigereihenfolge (1, 2, 3, ...). Nur für Sortierung, nicht für Ablauflogik — der Ablauf wird durch `nachfolger` bestimmt. Bei Verzweigungen: Hauptpfad fortlaufend nummerieren, Nebenpfade dazwischen einordnen. Ausnahmen: 99+ |
 | `nachfolger` | Liste | Schritt-IDs der Nachfolger. Entscheidungen: mehrere. Endschritte: `[]` |
+| `vorgaenger` | Liste | Wird automatisch vom System abgeleitet — nicht manuell setzen. Inverse von `nachfolger` |
 | `bedingung` | String | NUR `entscheidung`: Bedingung als Frage |
 | `ausnahme_beschreibung` | String | NUR `ausnahme`: Wann/warum tritt sie auf? |
 | `regeln` | Liste | NUR `entscheidung` mit ≥2 Ausgängen: `{bedingung, nachfolger, bezeichnung}` |

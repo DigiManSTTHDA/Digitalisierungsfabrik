@@ -108,6 +108,11 @@ STRUCTURE_TEMPLATE = ArtifactTemplate(
             description="Nachfolger-IDs eines Strukturschritts setzen",
         ),
         TemplatePathPattern(
+            pattern=r"/schritte/s[^/]+/vorgaenger",
+            allowed_ops=["replace"],
+            description="Vorgänger-IDs eines Strukturschritts setzen — wird automatisch abgeleitet (CR-012)",
+        ),
+        TemplatePathPattern(
             pattern=r"/schritte/s[^/]+/bedingung",
             allowed_ops=["replace"],
             description="Bedingungstext setzen (nur bei typ=entscheidung) — löst Invalidierung aus",

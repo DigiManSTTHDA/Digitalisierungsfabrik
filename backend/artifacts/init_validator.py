@@ -51,6 +51,27 @@ def validate_structure_artifact(
         if schritt.konvergenz and schritt.konvergenz not in alle_ids:
             violations.append(StructuralViolation(
                 "kritisch", f"konvergenz '{schritt.konvergenz}' existiert nicht", sid))
+        for vg in schritt.vorgaenger:
+            if vg not in alle_ids:
+                violations.append(StructuralViolation(
+                    "kritisch", f"vorgaenger '{vg}' existiert nicht", sid))
+
+    # R-2: Bidirektionale Konsistenz nachfolger↔vorgaenger (CR-012)
+    # Berechne erwartete vorgaenger aus nachfolger-Referenzen
+    expected_vorgaenger: dict[str, set[str]] = {sid: set() for sid in alle_ids}
+    for sid, schritt in structure.schritte.items():
+        for nf in schritt.nachfolger:
+            if nf in expected_vorgaenger:
+                expected_vorgaenger[nf].add(sid)
+    for sid, schritt in structure.schritte.items():
+        actual = set(schritt.vorgaenger)
+        expected = expected_vorgaenger[sid]
+        if actual != expected:
+            violations.append(StructuralViolation(
+                "kritisch",
+                f"vorgaenger-Inkonsistenz: ist {sorted(actual)}, erwartet {sorted(expected)} (aus nachfolger abgeleitet)",
+                sid,
+            ))
 
     return violations
 

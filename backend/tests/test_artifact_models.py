@@ -163,6 +163,49 @@ class TestStructureArtifact:
         )
         assert schritt.algorithmus_ref == []
 
+    # --- CR-012: Bidirektionale Verifikation ---
+
+    def test_vorgaenger_defaults_to_empty_list(self) -> None:
+        from artifacts.models import (
+            AlgorithmusStatus,
+            CompletenessStatus,
+            Strukturschritt,
+            Strukturschritttyp,
+        )
+
+        schritt = Strukturschritt(
+            schritt_id="step_001",
+            titel="Eingang prüfen",
+            typ=Strukturschritttyp.aktion,
+            reihenfolge=1,
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        assert schritt.vorgaenger == []
+
+    def test_vorgaenger_roundtrip(self) -> None:
+        from artifacts.models import (
+            AlgorithmusStatus,
+            CompletenessStatus,
+            StructureArtifact,
+            Strukturschritt,
+            Strukturschritttyp,
+        )
+
+        schritt = Strukturschritt(
+            schritt_id="s1",
+            titel="Schritt 1",
+            typ=Strukturschritttyp.aktion,
+            reihenfolge=1,
+            nachfolger=["s2"],
+            vorgaenger=["s0"],
+            completeness_status=CompletenessStatus.leer,
+            algorithmus_status=AlgorithmusStatus.ausstehend,
+        )
+        art = StructureArtifact(schritte={"s1": schritt})
+        art2 = StructureArtifact.model_validate(art.model_dump())
+        assert art2.schritte["s1"].vorgaenger == ["s0"]
+
     # --- CR-002: Kontrollfluss-Felder ---
 
     def test_entscheidungsregel_model(self) -> None:

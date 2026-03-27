@@ -697,8 +697,9 @@ Ein Strukturschritt ist die atomare Einheit des Strukturartefakts.
 | `titel` | String | ja | Kurzer, sprechender Name des Schritts |
 | `beschreibung` | String | ja | Fachliche Beschreibung in natürlicher Sprache |
 | `typ` | Enum | ja | `aktion` / `entscheidung` / `schleife` / `ausnahme` |
-| `reihenfolge` | Integer | ja | Position im Prozessablauf |
+| `reihenfolge` | Integer | ja | Anzeigereihenfolge — nur für Sortierung, nicht für Ablauflogik (der Ablauf wird durch `nachfolger` bestimmt) |
 | `nachfolger` | Liste von `schritt_id` | ja | Ein oder mehrere Nachfolger (bei Entscheidungen: mehrere) |
+| `vorgaenger` | Liste von `schritt_id` | ja | Inverse von `nachfolger` — wird automatisch im Code abgeleitet (CR-012). Startschritt: `[]` |
 | `bedingung` | String | nein | Nur bei Typ `entscheidung`: textuelle Beschreibung der Bedingung |
 | `ausnahme_beschreibung` | String | nein | Nur bei Typ `ausnahme`: Beschreibung des Ausnahmefalls |
 | `algorithmus_ref` | Liste von String | ja | Referenzen auf einen oder mehrere korrespondierende Algorithmusabschnitte (`abschnitt_id`). Mindestens eine Referenz ist Pflicht. |
@@ -813,8 +814,11 @@ Algorithmusabschnitt.struktur_ref  →  Strukturschritt.schritt_id
 
 **Invariante:** Zu jedem Strukturschritt existiert mindestens ein Algorithmusabschnitt. Ein Strukturschritt kann mehrere Algorithmusabschnitte haben (1:n). Jeder Algorithmusabschnitt referenziert genau einen Strukturschritt.
 
+**Bidirektionale Konsistenz nachfolger↔vorgaenger (CR-012):**
+Für jeden Strukturschritt X mit `nachfolger: [Y, Z]` muss gelten: X ∈ Y.vorgaenger UND X ∈ Z.vorgaenger (und umgekehrt). `vorgaenger` wird automatisch im Executor aus allen `nachfolger`-Referenzen abgeleitet — das LLM muss es nicht manuell pflegen.
+
 **Invalidierungsregel:**
-Eine Invalidierung wird ausgelöst wenn eines der folgenden Felder eines Strukturschritts geändert wird: `beschreibung`, `typ`, `bedingung`, `ausnahme_beschreibung`. Änderungen an `titel`, `reihenfolge`, `nachfolger` und `spannungsfeld` lösen keine Invalidierung aus.
+Eine Invalidierung wird ausgelöst wenn eines der folgenden Felder eines Strukturschritts geändert wird: `beschreibung`, `typ`, `bedingung`, `ausnahme_beschreibung`. Änderungen an `titel`, `reihenfolge`, `nachfolger`, `vorgaenger` und `spannungsfeld` lösen keine Invalidierung aus.
 Bei Invalidierung:
 - `Strukturschritt.algorithmus_status` → `invalidiert`
 - `Algorithmusabschnitt.status` → `invalidiert` — für **alle** Algorithmusabschnitte die diesen Strukturschritt referenzieren

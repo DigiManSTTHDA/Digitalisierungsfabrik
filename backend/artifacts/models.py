@@ -150,6 +150,7 @@ class Strukturschritt(BaseModel):
     beschreibung: str = ""
     reihenfolge: int
     nachfolger: list[str] = Field(default_factory=list)
+    vorgaenger: list[str] = Field(default_factory=list)  # Inverse von nachfolger — wird automatisch abgeleitet (CR-012)
     bedingung: str | None = None  # Nur bei typ=entscheidung (SDD 5.4)
     ausnahme_beschreibung: str | None = None  # Nur bei typ=ausnahme (SDD 5.4)
     regeln: list[Entscheidungsregel] = Field(

@@ -32,6 +32,21 @@ from artifacts.template_schema import TEMPLATES
 logger = structlog.get_logger(__name__)
 
 ArtifactType = Literal["exploration", "structure", "algorithm"]
+
+
+def _derive_vorgaenger(artifact: StructureArtifact) -> None:
+    """Recompute vorgaenger for all Strukturschritte from nachfolger references (CR-012).
+
+    Deterministic guardrail: after every patch cycle, vorgaenger is derived
+    from nachfolger so the LLM never needs to manage it manually.
+    """
+    vorgaenger_map: dict[str, list[str]] = {sid: [] for sid in artifact.schritte}
+    for sid, schritt in artifact.schritte.items():
+        for nf in schritt.nachfolger:
+            if nf in vorgaenger_map:
+                vorgaenger_map[nf].append(sid)
+    for sid, schritt in artifact.schritte.items():
+        schritt.vorgaenger = sorted(vorgaenger_map.get(sid, []))
 AnyArtifact = ExplorationArtifact | StructureArtifact | AlgorithmArtifact
 
 # Fields on a Strukturschritt that trigger algorithm invalidation when changed
@@ -156,6 +171,12 @@ class Executor:
         invalidated_ids: list[str] = []
         if artifact_type == "structure" and isinstance(patched_artifact, StructureArtifact):
             invalidated_ids = self._collect_invalidated_ids(patches, snapshot, patched_artifact)
+
+        # ------------------------------------------------------------------
+        # Step 6a: Derive vorgaenger from nachfolger (CR-012 guardrail)
+        # ------------------------------------------------------------------
+        if artifact_type == "structure" and isinstance(patched_artifact, StructureArtifact):
+            _derive_vorgaenger(patched_artifact)
 
         # ------------------------------------------------------------------
         # Step 7: Version bump
